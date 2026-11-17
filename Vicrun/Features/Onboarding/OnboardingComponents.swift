@@ -44,11 +44,11 @@ enum OnboardingCopy {
     }
 }
 
-/// Standard questionnaire screen: back + progress bar, title, scrolling content, bottom button.
+/// Standard questionnaire screen: room for the flow's fixed header (back + progress bar), title,
+/// scrolling content, bottom button.
 struct OnboardingScaffold<Content: View>: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var nav: OnboardingNavigator
-    @Environment(\.onboardingStep) private var step
 
     private let title: String?
     private let subtitle: String?
@@ -85,8 +85,7 @@ struct OnboardingScaffold<Content: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ProgressHeader(progress: nav.progress(for: step, store: store), onBack: backAction)
-                .padding(.horizontal, Theme.screenPadding)
+            OnboardingHeaderSpace()
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     header
@@ -107,11 +106,6 @@ struct OnboardingScaffold<Content: View>: View {
                 .animation(.easeOut(duration: 0.35), value: buttonsVisible)
         }
         .background((tinted ? Theme.surface : Color.white).ignoresSafeArea())
-    }
-
-    private var backAction: (() -> Void)? {
-        guard step.allowsBack else { return nil }
-        return { nav.back(store) }
     }
 
     @ViewBuilder private var header: some View {

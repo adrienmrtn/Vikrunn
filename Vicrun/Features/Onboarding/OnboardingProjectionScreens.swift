@@ -3,16 +3,19 @@ import SwiftUI
 /// Screen 22: where the plan takes the user, computed by `PlanEngine` from the real answers.
 struct OnboardingProjectionScreen: View {
     @EnvironmentObject private var store: AppStore
-    /// 1 hero card, 2 times count and the line draws, 3 verdict, 4-6 stat tiles, 7 coach note, 8 button.
+    /// 1 hero card and empty chart, 2 times count while the curve draws, 3 verdict, 4-6 stat tiles,
+    /// 7 coach note, 8 button.
     @State private var stage = 0
 
-    private static let stageDelays: [Double] = [0.35, 0.4, 1.15, 0.35, 0.16, 0.16, 0.45, 0.5]
+    private static let stageDelays: [Double] = [0.35, 0.45, 1.45, 0.35, 0.16, 0.16, 0.45, 0.5]
     private static let counting = Animation.easeInOut(duration: 1.1)
 
     var body: some View {
         let plan = PlanEngine.generate(answers: store.answers)
         OnboardingScaffold(title: title(plan), buttonsVisible: stage >= Self.stageDelays.count) {
             heroCard(plan)
+                .onboardingStaged(0, stage: stage)
+            chart(plan)
                 .onboardingStaged(0, stage: stage)
             stats(plan)
             CoachNote(coach: store.coach, text: note(plan))
@@ -122,7 +125,6 @@ struct OnboardingProjectionScreen: View {
                         .animation(Self.counting, value: counted)
                 }
             }
-            progressLine(drawn: counted)
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 16))
@@ -143,29 +145,25 @@ struct OnboardingProjectionScreen: View {
         .background(Theme.green, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
     }
 
-    /// Thin line from today to the goal that draws itself while the number counts.
-    private func progressLine(drawn: Bool) -> some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(Theme.greenOnDark)
-                .frame(width: 8, height: 8)
-            ZStack {
-                Capsule()
-                    .fill(Color.white.opacity(0.18))
-                Capsule()
-                    .fill(Color.white)
-                    .scaleEffect(x: drawn ? 1 : 0, y: 1, anchor: .leading)
-                    .animation(Self.counting, value: drawn)
-            }
-            .frame(height: 4)
-            Circle()
-                .fill(Color.white)
-                .frame(width: 10, height: 10)
-                .scaleEffect(drawn ? 1 : 0.2)
-                .opacity(drawn ? 1 : 0)
-                .animation(.spring(response: 0.4, dampingFraction: 0.6).delay(1.0), value: drawn)
+    /// The curve from today's level to the goal: it draws itself while the big number counts.
+    private func chart(_ plan: TrainingPlan) -> some View {
+        let usesTimes = plan.goal != .regular && plan.currentSeconds != nil
+        let startValue: String
+        let goalValue: String
+        if usesTimes {
+            let today = plan.currentSeconds ?? 0
+            startValue = Fmt.goalTime(today)
+            goalValue = Fmt.goalTime(plan.predictedSeconds ?? today)
+        } else {
+            startValue = Fmt.km(plan.weeks.first?.plannedKm ?? 0, decimals: 0)
+            goalValue = Fmt.km(plan.peakKm, decimals: 0)
         }
-        .accessibilityHidden(true)
+        return OnboardingProjectionChart(weekCount: plan.weeks.count,
+                                         startCaption: usesTimes ? "Today" : "First week",
+                                         startValue: startValue,
+                                         goalCaption: usesTimes ? "Goal" : "Biggest week",
+                                         goalValue: goalValue,
+                                         drawn: stage >= 2)
     }
 
     private func stats(_ plan: TrainingPlan) -> some View {

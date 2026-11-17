@@ -470,6 +470,9 @@ struct PlanChange: Codable, Identifiable, Equatable {
     var newDistanceKm: Double?
     var newDurationMin: Int?
     var remove: Bool = false
+    /// Snapshot of the session taken when the change is applied, so the chat can still show what changed.
+    var previousDate: Date?
+    var previousDetail: String?
 }
 
 enum ProposalStatus: String, Codable {

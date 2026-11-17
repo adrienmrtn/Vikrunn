@@ -129,18 +129,21 @@ struct OnboardingStagedModifier: ViewModifier {
 
 /// Raises `stage` from its current value to `delays.count`, waiting `delays[n]` seconds before
 /// stage `n + 1`. Stops when the view disappears; with Reduce Motion everything shows at once.
+/// The sequence waits until `isActive` is true (used to chain it after another animation).
 struct OnboardingStageSequence: ViewModifier {
     @Binding var stage: Int
     let delays: [Double]
+    var isActive: Bool = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
-        content.task { await run() }
+        content.task(id: isActive) { await run() }
     }
 
     @MainActor
     private func run() async {
+        guard isActive else { return }
         let total = delays.count
         let first = stage
         guard first < total else { return }
@@ -165,8 +168,8 @@ extension View {
         modifier(OnboardingStagedModifier(visible: stage > index))
     }
 
-    func onboardingStageSequence(_ stage: Binding<Int>, delays: [Double]) -> some View {
-        modifier(OnboardingStageSequence(stage: stage, delays: delays))
+    func onboardingStageSequence(_ stage: Binding<Int>, delays: [Double], isActive: Bool = true) -> some View {
+        modifier(OnboardingStageSequence(stage: stage, delays: delays, isActive: isActive))
     }
 }
 
