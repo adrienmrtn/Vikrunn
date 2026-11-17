@@ -144,6 +144,9 @@ extension AppStore {
         syncTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(max(0, seconds) * 1_000_000_000))
             guard !Task.isCancelled, let self else { return }
+            // From here the upload runs to its end: a later change schedules a new one instead of
+            // cancelling this one half-way.
+            self.syncTask = nil
             await SyncService.pushAll(store: self)
         }
     }

@@ -79,3 +79,33 @@ extension Account {
     /// True for an account that syncs with the server (not a guest).
     var isReal: Bool { !isGuest }
 }
+
+/// How the current account signed in (shown in Profile). Not a secret: kept in the user defaults.
+enum AuthProvider: String {
+    case apple, google, email
+
+    var title: String {
+        switch self {
+        case .apple: return "Apple"
+        case .google: return "Google"
+        case .email: return "E-mail code"
+        }
+    }
+}
+
+extension AuthService {
+    private static let providerKey = "auth.provider"
+
+    var signedInProvider: AuthProvider? {
+        guard let raw = UserDefaults.standard.string(forKey: Self.providerKey) else { return nil }
+        return AuthProvider(rawValue: raw)
+    }
+
+    func rememberProvider(_ provider: AuthProvider?) {
+        if let provider {
+            UserDefaults.standard.set(provider.rawValue, forKey: Self.providerKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.providerKey)
+        }
+    }
+}

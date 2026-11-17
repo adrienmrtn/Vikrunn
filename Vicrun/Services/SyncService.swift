@@ -59,7 +59,7 @@ enum SyncService {
     static func serialized<T: Sendable>(_ work: @escaping @MainActor () async -> T) async -> T {
         let previous = tail
         let task = Task { @MainActor () -> T in
-            await previous?.value
+            _ = await previous?.value
             return await work()
         }
         tail = Task { @MainActor in

@@ -228,7 +228,11 @@ final class AppStore: ObservableObject {
                 changed = true
             }
         }
-        if changed { self.plan = plan }
+        // Derived from the date, the same on every phone: not a change to send to the account
+        // (it would otherwise look more recent than a real edit made on another phone).
+        if changed {
+            syncApplyRemote { self.plan = plan }
+        }
     }
 
     // MARK: Runs

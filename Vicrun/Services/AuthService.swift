@@ -92,6 +92,7 @@ final class AuthService: ObservableObject {
         }
         guard let account = Self.account(fromSession: response.json) else { throw AuthError.invalidCode }
         sessionExpired = false
+        rememberProvider(.email)
         return account
     }
 
@@ -223,6 +224,7 @@ final class AuthService: ObservableObject {
             }
         }
         sessionExpired = false
+        rememberProvider(nil)
         store.eraseEverything()
     }
 
@@ -243,6 +245,7 @@ final class AuthService: ObservableObject {
             }
         }
         sessionExpired = false
+        rememberProvider(nil)
         store.eraseEverything()
     }
 

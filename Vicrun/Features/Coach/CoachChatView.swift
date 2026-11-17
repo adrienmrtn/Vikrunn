@@ -26,6 +26,12 @@ struct CoachChatView: View {
                 }
                 .navigationTitle(store.coach.name)
                 .navigationBarTitleDisplayMode(.large)
+                .task {
+                    // Signed in with an empty conversation: bring back the one saved in the account.
+                    if store.messages.isEmpty, !isSending {
+                        await CoachService.restoreHistory(store: store)
+                    }
+                }
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         CoachChatToneMenu(tone: $store.answers.tone)

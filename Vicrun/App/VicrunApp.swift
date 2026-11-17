@@ -14,12 +14,19 @@ struct VicrunApp: App {
                 .onOpenURL { url in
                     AuthService.shared.handleCallback(url)
                 }
+                .task {
+                    // Launch: catch up with the account (no-op for a guest, silent when offline).
+                    SyncService.resume(store: store)
+                }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { store.refreshMissed() }
+            if phase == .active {
+                store.refreshMissed()
+                SyncService.resume(store: store)
+            }
             if phase == .background {
                 store.save()
-                Task { await SyncService.pushAll(store: store) }
+                SyncService.pushBeforeSuspension(store: store)
             }
         }
     }
@@ -40,5 +47,6 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.35), value: store.hasCompletedOnboarding)
+        .authSyncPrompts()
     }
 }

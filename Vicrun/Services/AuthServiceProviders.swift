@@ -118,6 +118,7 @@ extension AuthService {
         guard var account = Self.account(fromSession: json) else { throw AuthError.appleFailed }
         if account.email == nil { account.email = credential.email }
         noteSignedIn()
+        rememberProvider(.apple)
         return account
     }
 
@@ -172,6 +173,7 @@ extension AuthService {
 
         let account = try await account(fromCallback: callbackURL, verifier: verifier)
         noteSignedIn()
+        rememberProvider(.google)
         return account
     }
 

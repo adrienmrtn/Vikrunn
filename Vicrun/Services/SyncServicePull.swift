@@ -179,6 +179,15 @@ extension SyncService {
     static func completeSignIn(_ account: Account, store: AppStore,
                                policy: SyncSignInPolicy) async -> SyncSignInOutcome {
         await serialized { () -> SyncSignInOutcome in
+            // Signing in again to the account already on this phone (expired session): keep everything,
+            // just take the new session and catch up.
+            if let current = store.account, !current.isGuest, current.userID == account.userID,
+               store.syncState.reconciled {
+                store.account = account
+                _ = await runPull(store: store)
+                _ = await runPush(store: store)
+                return .continued
+            }
             let previous = SyncPreviousSession(account: store.account, state: store.syncState,
                                                lastSyncedAt: store.lastSyncedAt)
             store.syncTask?.cancel()
