@@ -174,10 +174,11 @@ private struct ProgressTabVolumeChart: View {
     private let plannedColor = Color(hex: 0xB9D2C4)
 
     var body: some View {
-        let currentID = store.currentWeek?.id
+        let currentID = store.mainThisWeek?.id
         let done: [Double] = plan.weeks.map { store.mainDoneKm(in: $0) }
         let top = max(1, max(plan.peakKm, done.max() ?? 0))
-        let thisWeek: Double = currentIndex.map { done[$0] } ?? 0
+        // Counted from the runs themselves, so it stays right once the plan is over.
+        let thisWeek: Double = store.mainKmThisWeek
         VStack(alignment: .leading, spacing: 12) {
             MainSectionTitle(title: "Weekly volume",
                              trailing: "\(Self.number(thisWeek)) km this week")
@@ -195,11 +196,6 @@ private struct ProgressTabVolumeChart: View {
                 legend(color: Theme.green, title: "Done")
             }
         }
-    }
-
-    private var currentIndex: Int? {
-        guard let id = store.currentWeek?.id else { return nil }
-        return plan.weeks.firstIndex { $0.id == id }
     }
 
     private func column(number: Int, planned: Double, done: Double, top: Double, isCurrent: Bool) -> some View {

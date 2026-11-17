@@ -48,8 +48,11 @@ final class OnboardingNavigator: ObservableObject {
     func restore(from store: AppStore) {
         guard !isReady else { return }
         let saved = OnboardingStep(rawValue: store.onboardingStep) ?? .welcome
-        if saved.rawValue > OnboardingStep.loading.rawValue, store.plan == nil {
-            store.generatePlan()
+        if saved.rawValue > OnboardingStep.loading.rawValue {
+            // A plan built on another day would start in the past: rebuild it from today.
+            // Nothing can be done or missed yet, the app has not been opened.
+            let fresh = store.plan.map { Calendar.plan.isDateInToday($0.createdAt) } ?? false
+            if !fresh { store.generatePlan() }
         }
         step = saved
         isReady = true

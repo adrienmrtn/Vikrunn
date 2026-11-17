@@ -141,8 +141,10 @@ struct OnboardingTargetScreen: View {
     private var note: String {
         let pace = OnboardingCopy.pacePerKm(seconds: seconds, km: km)
         let base = "\(Fmt.goalTime(seconds)) is \(pace) per km for \(Fmt.km(km))."
-        if Double(seconds) < Double(todaySeconds) * 0.95 {
-            return "\(base) That's ambitious from where you are today, so I'll build towards it carefully."
+        let reachable = Int(Double(todaySeconds) * 0.95)
+        if seconds < reachable {
+            return "\(base) That's ambitious from where you are today (around \(Fmt.goalTime(todaySeconds))). "
+                + "I keep it as your goal and train you towards \(Fmt.goalTime(reachable)) first, so you stay safe."
         }
         if seconds <= todaySeconds {
             return "\(base) A real step up from today, and within reach."

@@ -20,6 +20,21 @@ struct SupabaseResponse {
         return object as? [String: Any] ?? [:]
     }
 
+    /// The body as a list of JSON objects (PostgREST answers), or an empty list.
+    var jsonRows: [[String: Any]] {
+        guard !data.isEmpty, let object = try? JSONSerialization.jsonObject(with: data) else { return [] }
+        return object as? [[String: Any]] ?? []
+    }
+
+    /// Machine-readable error code: GoTrue `error_code`, PostgREST `code`, edge functions `error`.
+    var errorCode: String {
+        let body = json
+        for key in ["error_code", "code", "error"] {
+            if let text = body[key] as? String, !text.isEmpty { return text }
+        }
+        return ""
+    }
+
     /// Best human-readable message found in an error body (GoTrue, PostgREST and edge functions differ).
     var errorMessage: String {
         let body = json
@@ -37,6 +52,18 @@ struct SupabaseResponse {
 
 /// Minimal REST client for Supabase (auth, PostgREST, edge functions) built on URLSession.
 enum SupabaseClient {
+    /// No cache, no cookies: every answer comes from the server, and nothing is written to disk.
+    private static let session: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.urlCache = nil
+        configuration.httpShouldSetCookies = false
+        configuration.httpCookieAcceptPolicy = .never
+        configuration.waitsForConnectivity = false
+        configuration.timeoutIntervalForResource = 120
+        return URLSession(configuration: configuration)
+    }()
+
     /// JSON body from a dictionary or an array.
     static func encode(_ object: Any) -> Data? {
         guard JSONSerialization.isValidJSONObject(object) else { return nil }
@@ -45,7 +72,13 @@ enum SupabaseClient {
 
     static func url(path: String, query: [URLQueryItem] = []) -> URL? {
         guard var components = URLComponents(string: SupabaseConfig.urlString + path) else { return nil }
-        if !query.isEmpty { components.queryItems = query }
+        if !query.isEmpty {
+            components.queryItems = query
+            // URLComponents leaves "+" as it is, and servers read it as a space (dates, e-mail addresses).
+            if let encoded = components.percentEncodedQuery {
+                components.percentEncodedQuery = encoded.replacingOccurrences(of: "+", with: "%2B")
+            }
+        }
         return components.url
     }
 
@@ -63,8 +96,10 @@ enum SupabaseClient {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.timeoutInterval = timeout
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue(SupabaseConfig.publishableKey, forHTTPHeaderField: "apikey")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("atala-ios", forHTTPHeaderField: "X-Client-Info")
         if let accessToken {
             request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         }
@@ -75,12 +110,21 @@ enum SupabaseClient {
             request.httpBody = body
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-            return SupabaseResponse(status: status, data: data)
-        } catch {
-            throw SupabaseError.network
+        // Reads and upserts can be repeated safely; anything else is sent once.
+        let repeatable = method == "GET" || (prefer ?? "").contains("merge-duplicates")
+        var attempt = 0
+        while true {
+            attempt += 1
+            do {
+                let (data, response) = try await session.data(for: request)
+                let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                return SupabaseResponse(status: status, data: data)
+            } catch {
+                // iOS drops idle connections when the app comes back: one more try is enough.
+                let lost = (error as? URLError)?.code == .networkConnectionLost
+                if lost, repeatable, attempt == 1 { continue }
+                throw SupabaseError.network
+            }
         }
     }
 }

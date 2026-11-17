@@ -1,18 +1,58 @@
 import Foundation
 import SwiftUI
 
-/// Single source of truth of the app. Everything is saved on the phone as one JSON file.
+/// Single source of truth of the app. Everything is saved on the phone as one JSON file
+/// (the session tokens go to the Keychain), and mirrored to the account when one is signed in.
 @MainActor
 final class AppStore: ObservableObject {
-    @Published var answers: OnboardingAnswers { didSet { scheduleSave() } }
+    @Published var answers: OnboardingAnswers {
+        didSet {
+            scheduleSave()
+            if answers != oldValue { syncNoteChange(profile: true) }
+        }
+    }
     /// Index of the onboarding screen the user reached, so they can resume where they left.
     @Published var onboardingStep: Int { didSet { scheduleSave() } }
     @Published var hasCompletedOnboarding: Bool { didSet { scheduleSave() } }
-    @Published var plan: TrainingPlan? { didSet { scheduleSave() } }
-    @Published var runs: [RunRecord] { didSet { scheduleSave() } }
+    @Published var plan: TrainingPlan? {
+        didSet {
+            scheduleSave()
+            if plan != oldValue { syncNoteChange(profile: false) }
+        }
+    }
+    @Published var runs: [RunRecord] {
+        didSet {
+            scheduleSave()
+            syncNoteRunsChange(from: oldValue)
+        }
+    }
     @Published var messages: [ChatMessage] { didSet { scheduleSave() } }
-    @Published var settings: AppSettings { didSet { scheduleSave() } }
-    @Published var account: Account? { didSet { scheduleSave() } }
+    @Published var settings: AppSettings {
+        didSet {
+            scheduleSave()
+            if settings != oldValue { syncNoteChange(profile: true) }
+        }
+    }
+    @Published var account: Account? {
+        didSet {
+            scheduleSave()
+            persistSession(replacing: oldValue)
+        }
+    }
+
+    // MARK: Sync state (see SyncServiceStore.swift)
+
+    /// What still has to be sent to the account, and what was last seen there. Saved with the rest.
+    var syncState: SyncState { didSet { scheduleSave() } }
+    /// Last time the phone and the account were in step.
+    @Published var lastSyncedAt: Date? { didSet { scheduleSave() } }
+    /// What the sync is doing right now (not saved).
+    @Published var syncActivity: SyncActivity = .idle
+    /// True while the user must choose between the phone's data and the account's (not saved).
+    @Published var syncChoicePending = false
+    /// Set while server data is being written into the store, so it is not sent straight back.
+    var syncIsApplyingRemote = false
+    var syncTask: Task<Void, Never>?
 
     private struct Snapshot: Codable {
         var answers = OnboardingAnswers()
@@ -23,10 +63,16 @@ final class AppStore: ObservableObject {
         var messages: [ChatMessage] = []
         var settings = AppSettings()
         var account: Account?
+        // Added later: optional, so files saved by earlier versions still load.
+        var syncState: SyncState?
+        var lastSyncedAt: Date?
     }
 
     private let fileURL: URL?
     private var saveTask: Task<Void, Never>?
+
+    /// False for previews and tests: nothing is written to disk, to the Keychain or to the server.
+    var isPersistent: Bool { fileURL != nil }
 
     init(inMemory: Bool = false) {
         var url: URL?
@@ -44,6 +90,27 @@ final class AppStore: ObservableObject {
             decoder.dateDecodingStrategy = .iso8601
             if let loaded = try? decoder.decode(Snapshot.self, from: data) { snapshot = loaded }
         }
+
+        // Session tokens live in the Keychain. Files saved by earlier versions still hold them: move them.
+        var loadedAccount = snapshot.account
+        var tokensToMigrate = false
+        if url != nil {
+            if var real = loadedAccount, !real.isGuest {
+                if let legacy = real.keychainSession {
+                    AuthKeychain.save(legacy)
+                    tokensToMigrate = true
+                } else if let stored = AuthKeychain.load(), stored.userID == real.userID {
+                    real.accessToken = stored.accessToken
+                    real.refreshToken = stored.refreshToken
+                    real.expiresAt = stored.expiresAt
+                    loadedAccount = real
+                }
+            } else {
+                // No account on file (first launch after a reinstall, guest): drop any leftover session.
+                AuthKeychain.clear()
+            }
+        }
+
         answers = snapshot.answers
         onboardingStep = snapshot.onboardingStep
         hasCompletedOnboarding = snapshot.hasCompletedOnboarding
@@ -51,7 +118,10 @@ final class AppStore: ObservableObject {
         runs = snapshot.runs
         messages = snapshot.messages
         settings = snapshot.settings
-        account = snapshot.account
+        account = loadedAccount
+        syncState = snapshot.syncState ?? SyncState()
+        lastSyncedAt = snapshot.lastSyncedAt
+        if tokensToMigrate { save() }
     }
 
     // MARK: Persistence
@@ -69,11 +139,24 @@ final class AppStore: ObservableObject {
         guard let fileURL else { return }
         let snapshot = Snapshot(answers: answers, onboardingStep: onboardingStep,
                                 hasCompletedOnboarding: hasCompletedOnboarding, plan: plan, runs: runs,
-                                messages: messages, settings: settings, account: account)
+                                messages: messages, settings: settings, account: account?.withoutTokens,
+                                syncState: syncState, lastSyncedAt: lastSyncedAt)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         if let data = try? encoder.encode(snapshot) {
             try? data.write(to: fileURL, options: .atomic)
+        }
+    }
+
+    /// Keeps the Keychain in step with the signed-in account.
+    private func persistSession(replacing old: Account?) {
+        guard isPersistent else { return }
+        let session = account?.keychainSession
+        guard session != old?.keychainSession else { return }
+        if let session {
+            AuthKeychain.save(session)
+        } else {
+            AuthKeychain.clear()
         }
     }
 
@@ -92,6 +175,7 @@ final class AppStore: ObservableObject {
     func finishOnboarding() {
         if plan == nil { generatePlan() }
         hasCompletedOnboarding = true
+        syncSchedulePush(after: 0.5)
     }
 
     var allWorkouts: [Workout] { plan?.allWorkouts ?? [] }
@@ -144,7 +228,11 @@ final class AppStore: ObservableObject {
                 changed = true
             }
         }
-        if changed { self.plan = plan }
+        // Derived from the date, the same on every phone: not a change to send to the account
+        // (it would otherwise look more recent than a real edit made on another phone).
+        if changed {
+            syncApplyRemote { self.plan = plan }
+        }
     }
 
     // MARK: Runs
@@ -228,12 +316,24 @@ final class AppStore: ObservableObject {
 
     // MARK: Account
 
+    /// Forgets the account only. `AuthService.signOut(store:)` is what the app uses: it also clears the phone.
     func signOut() {
         account = nil
+        syncState = SyncState()
+        lastSyncedAt = nil
+        syncChoicePending = false
     }
 
     /// Erases everything stored on the phone and returns to the first screen.
     func eraseEverything() {
+        syncTask?.cancel()
+        syncTask = nil
+        syncIsApplyingRemote = true
+        defer { syncIsApplyingRemote = false }
+        syncState = SyncState()
+        lastSyncedAt = nil
+        syncChoicePending = false
+        syncActivity = .idle
         answers = OnboardingAnswers()
         onboardingStep = 0
         plan = nil
@@ -254,39 +354,5 @@ final class AppStore: ObservableObject {
         store.runs = SampleData.runs(for: store.plan)
         store.hasCompletedOnboarding = true
         return store
-    }
-}
-
-enum SampleData {
-    static var answers: OnboardingAnswers {
-        var a = OnboardingAnswers()
-        a.firstName = "Adrien"
-        a.coachID = 1
-        a.gender = .man
-        a.experience = .sixMonthsToTwoYears
-        a.weeklyVolume = .from10to25
-        a.recentResult = RecentResult(distanceKm: 10, seconds: 49 * 60 + 10)
-        a.goal = .half
-        a.hasRace = true
-        a.raceDate = Calendar.plan.date(byAdding: .day, value: 52, to: Date())
-        a.targetSeconds = 105 * 60
-        a.motivation = .prove
-        a.runDays = [1, 2, 4, 7]
-        a.longRunDay = 7
-        a.tone = .kind
-        return a
-    }
-
-    /// A few past runs so that Progress and the history are not empty.
-    static func runs(for plan: TrainingPlan?) -> [RunRecord] {
-        let calendar = Calendar.plan
-        let easy = plan?.paces.easy ?? 350
-        let samples: [(Int, Double, String)] = [(-2, 6.1, "Easy run"), (-4, 8.4, "6 × 800 m"), (-6, 12.2, "Long run"), (-9, 5.6, "Easy run"), (-11, 7.9, "Tempo")]
-        return samples.map { offset, km, title in
-            RunRecord(title: title,
-                      date: calendar.date(byAdding: .day, value: offset, to: Date()) ?? Date(),
-                      source: .gps, distanceM: km * 1000,
-                      durationSec: Int(km * Double(easy - 12)), avgHeartRate: 148, feeling: .good)
-        }
     }
 }

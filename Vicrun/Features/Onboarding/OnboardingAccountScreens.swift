@@ -5,6 +5,8 @@ struct OnboardingSignInScreen: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var nav: OnboardingNavigator
     @State private var showOptions = false
+    @State private var isRestoring = false
+    @State private var signInError: String?
 
     private struct Row: Identifiable {
         let id: String
@@ -48,9 +50,41 @@ struct OnboardingSignInScreen: View {
         }
         .sheet(isPresented: $showOptions) {
             SignInOptionsSheet { account in
-                store.account = account
                 showOptions = false
+                finishSignIn(account)
+            }
+        }
+        .alert("We couldn't open your account", isPresented: signInErrorShown) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(signInError ?? "Please try again.")
+        }
+    }
+
+    private var signInErrorShown: Binding<Bool> {
+        Binding(
+            get: { signInError != nil },
+            set: { shown in
+                if !shown { signInError = nil }
+            }
+        )
+    }
+
+    /// An account that already holds a plan gets it back and opens the app. A new account carries on:
+    /// the plan is built next and saved to the account.
+    private func finishSignIn(_ account: Account) {
+        guard !isRestoring else { return }
+        isRestoring = true
+        Task { @MainActor in
+            let outcome = await AuthSignInFlow.complete(account, store: store, policy: .preferAccount)
+            isRestoring = false
+            switch outcome {
+            case .restored, .needsChoice:
+                break // the root view switches to the app
+            case .continued:
                 nav.next(store)
+            case .failed(let failure):
+                signInError = failure.userMessage
             }
         }
     }

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Detail of one session of the plan, with the actions that fit its state.
 struct WorkoutDetailView: View {
@@ -8,6 +9,7 @@ struct WorkoutDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showRun = false
     @State private var showManualEntry = false
+    @State private var showGuided = false
 
     var body: some View {
         Group {
@@ -30,6 +32,12 @@ struct WorkoutDetailView: View {
             RunFlowView(workout: store.workout(id: workoutID))
                 .environmentObject(store)
         }
+        .fullScreenCover(isPresented: $showGuided) {
+            if let workout = store.workout(id: workoutID) {
+                GuidedSessionView(workout: workout)
+                    .environmentObject(store)
+            }
+        }
         .sheet(isPresented: $showManualEntry) {
             ManualRunEntryView(workout: store.workout(id: workoutID))
                 .environmentObject(store)
@@ -48,7 +56,7 @@ struct WorkoutDetailView: View {
     private func content(_ workout: Workout) -> some View {
         ScrollView {
             ZStack(alignment: .top) {
-                illustration
+                illustration(for: workout.kind)
                 VStack(alignment: .leading, spacing: 18) {
                     summaryPanel(workout)
                     WorkoutDetailSteps(workout: workout)
@@ -72,12 +80,24 @@ struct WorkoutDetailView: View {
         }
     }
 
-    private var illustration: some View {
+    /// Header image: the running track for runs, a dedicated picture for strength and stretching.
+    /// Falls back to the running one when the dedicated image is not in the asset catalog.
+    private func illustrationName(for kind: WorkoutKind) -> String {
+        let wanted: String
+        switch kind {
+        case .strength: wanted = "illu_strength"
+        case .stretching: wanted = "illu_stretching"
+        default: return "illu_session"
+        }
+        return UIImage(named: wanted) != nil ? wanted : "illu_session"
+    }
+
+    private func illustration(for kind: WorkoutKind) -> some View {
         Color.clear
             .frame(maxWidth: .infinity)
             .frame(height: 240)
             .overlay(
-                Image("illu_session")
+                Image(illustrationName(for: kind))
                     .resizable()
                     .scaledToFill()
             )
@@ -201,27 +221,28 @@ struct WorkoutDetailView: View {
 
     @ViewBuilder
     private func actionButtons(_ workout: Workout) -> some View {
-        if workout.status == .missed {
-            Button("I did it") {
-                if workout.kind.isRun {
-                    showManualEntry = true
-                } else {
-                    store.setStatus(.done, for: workout.id)
-                }
+        if !workout.kind.isRun {
+            // Strength and stretching, planned or missed: a guided session, or a simple tick.
+            Button("Mark as done") {
+                store.setStatus(.done, for: workout.id)
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            Button("Start") {
+                showGuided = true
             }
             .buttonStyle(PrimaryButtonStyle())
-        } else if workout.kind.isRun {
+        } else if workout.status == .missed {
+            Button("I did it") {
+                showManualEntry = true
+            }
+            .buttonStyle(PrimaryButtonStyle())
+        } else {
             Button("I already did it") {
                 showManualEntry = true
             }
             .buttonStyle(SecondaryButtonStyle())
             Button("Start") {
                 showRun = true
-            }
-            .buttonStyle(PrimaryButtonStyle())
-        } else {
-            Button("Mark as done") {
-                store.setStatus(.done, for: workout.id)
             }
             .buttonStyle(PrimaryButtonStyle())
         }
@@ -240,10 +261,20 @@ struct WorkoutDetailView: View {
     }
 }
 
-#Preview {
+#Preview("Run") {
     let store = AppStore.preview
     return NavigationStack {
         WorkoutDetailView(workoutID: store.nextRun?.id ?? UUID())
+    }
+    .environmentObject(store)
+    .environmentObject(MainChrome())
+}
+
+#Preview("Stretching") {
+    let store = AppStore.preview
+    let workout = store.allWorkouts.first { $0.kind == .stretching }
+    return NavigationStack {
+        WorkoutDetailView(workoutID: workout?.id ?? UUID())
     }
     .environmentObject(store)
     .environmentObject(MainChrome())

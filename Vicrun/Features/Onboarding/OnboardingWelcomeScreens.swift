@@ -22,6 +22,8 @@ struct OnboardingWelcomeScreen: View {
     @EnvironmentObject private var nav: OnboardingNavigator
     @State private var page: Int? = 0
     @State private var showSignIn = false
+    @State private var isRestoring = false
+    @State private var signInError: String?
 
     var body: some View {
         GeometryReader { geo in
@@ -47,9 +49,41 @@ struct OnboardingWelcomeScreen: View {
         .background(Color.white.ignoresSafeArea())
         .sheet(isPresented: $showSignIn) {
             SignInOptionsSheet { account in
-                store.account = account
                 showSignIn = false
+                finishSignIn(account)
+            }
+        }
+        .alert("We couldn't open your account", isPresented: signInErrorShown) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(signInError ?? "Please try again.")
+        }
+    }
+
+    private var signInErrorShown: Binding<Bool> {
+        Binding(
+            get: { signInError != nil },
+            set: { shown in
+                if !shown { signInError = nil }
+            }
+        )
+    }
+
+    /// Returning user: everything saved in the account comes back and, when a plan is there, the app
+    /// opens straight away. A new account simply carries on with the questions.
+    private func finishSignIn(_ account: Account) {
+        guard !isRestoring else { return }
+        isRestoring = true
+        Task { @MainActor in
+            let outcome = await AuthSignInFlow.complete(account, store: store, policy: .preferAccount)
+            isRestoring = false
+            switch outcome {
+            case .restored, .needsChoice:
+                break // the root view switches to the app
+            case .continued:
                 nav.go(to: .firstName, forward: true, store: store)
+            case .failed(let failure):
+                signInError = failure.userMessage
             }
         }
     }

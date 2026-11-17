@@ -21,10 +21,16 @@ struct PlanTabView: View {
                         .padding(.top, 14)
                         .mainStagedAppear(index: 1)
                     if let plan = store.plan {
-                        PlanTabOverviewPanel(plan: plan, currentWeekID: store.currentWeek?.id)
+                        PlanTabOverviewPanel(plan: plan, currentWeekID: store.mainPositionWeek?.id,
+                                             ended: store.mainPlanEnded)
                             .padding(.horizontal, 12)
                             .padding(.top, -16)
                             .mainStagedAppear(index: 2)
+                        if store.mainPlanEnded {
+                            MainPlanEndedCard()
+                                .padding(.top, 14)
+                                .mainStagedAppear(index: 3)
+                        }
                         weekList(plan)
                             .padding(.top, 12)
                             .mainStagedAppear(index: 3)
@@ -65,7 +71,8 @@ struct PlanTabView: View {
     }
 
     private func weekList(_ plan: TrainingPlan) -> some View {
-        let currentID = store.currentWeek?.id
+        // "Now" only marks a week that really contains today.
+        let currentID = store.mainThisWeek?.id
         return VStack(spacing: 0) {
             ForEach(Array(plan.weeks.enumerated()), id: \.element.id) { index, week in
                 PlanTabWeekSection(
@@ -102,7 +109,7 @@ struct PlanTabView: View {
     }
 
     private func expandCurrentWeek() {
-        guard !didExpandCurrent, let week = store.currentWeek else { return }
+        guard !didExpandCurrent, let week = store.mainPositionWeek else { return }
         didExpandCurrent = true
         expanded.insert(week.id)
     }
@@ -112,12 +119,13 @@ struct PlanTabView: View {
 private struct PlanTabOverviewPanel: View {
     let plan: TrainingPlan
     let currentWeekID: UUID?
+    var ended: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             MainProgressBar(fraction: fraction, label: "Plan progress")
             HStack(alignment: .firstTextBaseline) {
-                Text("Week \(currentNumber) of \(plan.weeks.count)")
+                Text(ended ? "Plan complete" : "Week \(currentNumber) of \(plan.weeks.count)")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                 Spacer(minLength: 8)
@@ -140,11 +148,16 @@ private struct PlanTabOverviewPanel: View {
     private var currentNumber: Int { currentIndex + 1 }
 
     private var fraction: Double {
-        plan.weeks.isEmpty ? 0 : Double(currentNumber) / Double(plan.weeks.count)
+        if ended { return 1 }
+        return plan.weeks.isEmpty ? 0 : Double(currentNumber) / Double(plan.weeks.count)
     }
 
     private var trailingText: String {
         let today = Calendar.plan.startOfDay(for: Date())
+        if ended, plan.raceDate == nil {
+            let done = plan.allWorkouts.filter { $0.status == .done }.count
+            return "\(done) of \(plan.allWorkouts.count) sessions done"
+        }
         if let raceDate = plan.raceDate {
             let race = Calendar.plan.startOfDay(for: raceDate)
             let days = Calendar.plan.dateComponents([.day], from: today, to: race).day ?? 0

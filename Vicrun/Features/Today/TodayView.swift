@@ -25,12 +25,22 @@ struct TodayView: View {
                         .padding(.horizontal, 12)
                         .padding(.top, -56)
                         .mainStagedAppear(index: 3)
-                    if !extras.isEmpty {
-                        TodayExtraSessions(workouts: extras)
-                            .padding(.top, 16)
-                            .mainStagedAppear(index: 4)
+                    Group {
+                        if let pending = store.mainUncountedRunToday {
+                            MainCountRunCard(run: pending.run, session: pending.session)
+                                .padding(.top, 14)
+                        }
+                        if showsEndedCardBelow {
+                            MainPlanEndedCard()
+                                .padding(.top, 14)
+                        }
+                        if !extras.isEmpty {
+                            TodayExtraSessions(workouts: extras)
+                                .padding(.top, 16)
+                        }
                     }
-                    if let week = store.currentWeek {
+                    .mainStagedAppear(index: 4)
+                    if let week = store.mainThisWeek {
                         TodayWeekVolume(week: week)
                             .padding(.top, 18)
                             .mainStagedAppear(index: 5)
@@ -68,14 +78,22 @@ struct TodayView: View {
         store.todayWorkouts.first { $0.kind.isRun }
     }
 
-    /// Today's run, or the next planned one on a rest day.
+    /// Today's run, or the next planned run on a rest day, or whatever session is left in the plan.
     private var featured: Workout? {
-        todayRun ?? store.nextRun
+        if let run = todayRun ?? store.nextRun { return run }
+        let today = Calendar.plan.startOfDay(for: Date())
+        return store.allWorkouts.first { $0.status == .planned && $0.date >= today }
+    }
+
+    /// The plan is over but today's (done) session still holds the main card: the offer goes under it.
+    private var showsEndedCardBelow: Bool {
+        store.mainPlanEnded && featured != nil
     }
 
     /// Strength and stretching sessions of the day.
     private var extras: [Workout] {
-        store.todayWorkouts.filter { !$0.kind.isRun }
+        let featuredID = featured?.id
+        return store.todayWorkouts.filter { !$0.kind.isRun && $0.id != featuredID }
     }
 
     private var upcoming: [Workout] {
@@ -90,8 +108,12 @@ struct TodayView: View {
 
     private var subtitle: String {
         var parts: [String] = [Fmt.day(Date(), "EEEE d MMMM")]
-        if let plan = store.plan, let number = store.mainCurrentWeekNumber {
-            parts.append("Week \(number) of \(plan.weeks.count)")
+        if let plan = store.plan {
+            if let number = store.mainCurrentWeekNumber {
+                parts.append("Week \(number) of \(plan.weeks.count)")
+            } else if store.mainPlanEnded {
+                parts.append("Plan complete")
+            }
         }
         return parts.joined(separator: " · ")
     }
@@ -121,15 +143,12 @@ struct TodayView: View {
                 chrome.showProfile = true
             }
         } else if let workout = featured {
-            TodaySessionCard(workout: workout, isToday: todayRun != nil, restDay: todayRun == nil && extras.isEmpty)
+            TodaySessionCard(workout: workout,
+                             isToday: Calendar.plan.isDateInToday(workout.date),
+                             restDay: store.todayWorkouts.isEmpty)
         } else {
-            TodayMessageCard(
-                title: "Plan complete",
-                message: "You reached the end of your plan. Set a new goal in your profile whenever you are ready.",
-                actionTitle: "Set a new goal"
-            ) {
-                chrome.showProfile = true
-            }
+            // Nothing left from today on: the plan is over.
+            MainPlanEndedCard()
         }
     }
 
@@ -169,11 +188,14 @@ enum TodayCoachLine {
             }
         }
         guard let next else {
-            return "You have done everything on the plan. Tell me what you want to aim for next."
+            if store.mainPlanEnded {
+                return "You have done everything on the plan. Tell me what you want to aim for next."
+            }
+            return "No run left on the plan. Keep up the strength and stretching, they count too."
         }
         let day = Weekday.long(Calendar.plan.mondayIndex(of: next.date))
         var line = "No run today. Rest is when your body gets stronger. Next up: \(next.title) on \(day)."
-        let missedThisWeek = store.currentWeek?.workouts.contains { $0.status == .missed } ?? false
+        let missedThisWeek = store.mainThisWeek?.workouts.contains { $0.status == .missed } ?? false
         if missedThisWeek {
             line += " Don't chase the missed session, just pick the plan up where it is."
         }

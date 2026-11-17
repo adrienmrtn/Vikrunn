@@ -272,9 +272,17 @@ extension AppStore {
             .reduce(0) { $0 + $1.distanceKm }
     }
 
-    /// 1-based position of the current week in the plan.
+    /// Kilometres run since Monday, whether or not a plan week covers these days.
+    var mainKmThisWeek: Double {
+        let start = Calendar.plan.mondayOfWeek(containing: Date())
+        return runs
+            .filter { $0.date >= start }
+            .reduce(0) { $0 + $1.distanceKm }
+    }
+
+    /// 1-based position of this week in the plan. Nil before the plan starts and once it is over.
     var mainCurrentWeekNumber: Int? {
-        guard let plan, let week = currentWeek,
+        guard let plan, let week = mainThisWeek,
               let index = plan.weeks.firstIndex(where: { $0.id == week.id }) else { return nil }
         return index + 1
     }

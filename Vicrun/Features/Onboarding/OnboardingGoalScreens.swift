@@ -145,7 +145,12 @@ struct OnboardingRaceScreen: View {
         let calendar = Calendar.plan
         let fallback = calendar.date(byAdding: .day, value: 42, to: calendar.startOfDay(for: Date())) ?? Date()
         date = clamped(store.answers.raceDate ?? fallback)
-        if store.answers.hasRace { hasRace = true }
+        if store.answers.hasRace {
+            hasRace = true
+            // A date saved on an earlier day can be out of range by now: store the corrected one.
+            let day = Calendar.plan.startOfDay(for: date)
+            if store.answers.raceDate != day { store.answers.raceDate = day }
+        }
     }
 
     private func choose(_ value: Bool) {

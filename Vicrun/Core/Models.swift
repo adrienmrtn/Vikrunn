@@ -265,6 +265,8 @@ struct WorkoutStep: Codable, Identifiable, Equatable {
     /// Target pace range in seconds per kilometre (fast bound first). Nil = free pace.
     var paceFast: Int?
     var paceSlow: Int?
+    /// Identifier of the guided exercise (see `ExerciseCatalog`). Nil for running steps and older plans.
+    var exerciseID: String?
 
     /// Estimated distance in metres.
     func estimatedMeters(fallbackPace: Int) -> Double {
@@ -310,6 +312,8 @@ struct Workout: Codable, Identifiable, Equatable {
     var why: String
     var status: WorkoutStatus = .planned
     var runID: UUID?
+    /// How a guided strength or stretching session felt. Runs keep their feeling on the run record.
+    var feeling: Feeling?
 
     /// Blocks expanded into the flat list of steps followed during the run.
     var flatSteps: [WorkoutStep] {

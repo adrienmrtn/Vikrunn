@@ -20,23 +20,33 @@ struct RunSummaryView: View {
         self.onDone = onDone
     }
 
-    private var fastSplits: [RunSplit] { run.splits.filter { $0.kind == .work } }
+    /// The run as it is in the store now (it can be attached to a session from this screen).
+    /// Falls back to the value it was opened with, e.g. while closing after a deletion.
+    private var shown: RunRecord { store.run(id: run.id) ?? run }
+
+    private var fastSplits: [RunSplit] { shown.splits.filter { $0.kind == .work } }
+
+    private func close() {
+        if let onDone { onDone() } else { dismiss() }
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
                 statsCard
-                if run.route.count >= 2 {
-                    RunRouteMap(route: run.route)
+                if shown.route.count >= 2 {
+                    RunRouteMap(route: shown.route)
                 }
                 if fastSplits.count >= 2 {
                     RunRepsCard(splits: fastSplits)
                 }
                 coachLine
-                if let feeling = run.feeling {
+                if let feeling = shown.feeling {
                     feelingRow(feeling)
                 }
+                RunSummaryActions(run: shown, onClose: { close() })
+                    .padding(.top, 4)
             }
             .padding(.horizontal, Theme.screenPadding)
             .padding(.top, 12)
@@ -46,9 +56,7 @@ struct RunSummaryView: View {
         .background(Color.white.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
             BottomBar {
-                PrimaryButton(title: "Done") {
-                    if let onDone { onDone() } else { dismiss() }
-                }
+                PrimaryButton(title: "Done") { close() }
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -70,8 +78,8 @@ struct RunSummaryView: View {
     }
 
     private var dateLine: String {
-        let day = Fmt.day(run.date)
-        switch run.source {
+        let day = Fmt.day(shown.date)
+        switch shown.source {
         case .gps: return day
         case .manual: return "\(day) · Entered by hand"
         case .health: return "\(day) · From Apple Health"
@@ -79,7 +87,10 @@ struct RunSummaryView: View {
     }
 
     private var titleLine: String {
-        run.workoutID != nil ? "\(run.title), done" : run.title
+        let record = shown
+        let title = record.title.isEmpty ? "Run" : record.title
+        if let id = record.workoutID, store.workout(id: id) != nil { return "\(title), done" }
+        return title
     }
 
     // MARK: Figures
@@ -87,10 +98,10 @@ struct RunSummaryView: View {
     private var statsCard: some View {
         let columns: [GridItem] = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
         return LazyVGrid(columns: columns, alignment: .leading, spacing: 16) {
-            RunSummaryStat(value: RunFormat.distance(run.distanceM), label: "Distance", large: true)
-            RunSummaryStat(value: Fmt.duration(run.durationSec), label: "Duration", large: true)
-            RunSummaryStat(value: "\(Fmt.pace(run.avgPace)) /km", label: "Average pace", large: false)
-            if let heartRate = run.avgHeartRate {
+            RunSummaryStat(value: RunFormat.distance(shown.distanceM), label: "Distance", large: true)
+            RunSummaryStat(value: Fmt.duration(shown.durationSec), label: "Duration", large: true)
+            RunSummaryStat(value: "\(Fmt.pace(shown.avgPace))/km", label: "Average pace", large: false)
+            if let heartRate = shown.avgHeartRate {
                 RunSummaryStat(value: "\(heartRate) bpm", label: "Average heart rate", large: false)
             }
         }
@@ -104,7 +115,7 @@ struct RunSummaryView: View {
     private var coachLine: some View {
         HStack(alignment: .bottom, spacing: 8) {
             CoachAvatar(coach: store.coach, size: 36)
-            Text(RunSummaryCoach.line(for: run))
+            Text(RunSummaryCoach.line(for: shown))
                 .font(.system(size: 15))
                 .foregroundStyle(Theme.ink)
                 .lineSpacing(3)
@@ -180,15 +191,19 @@ enum RunSummaryCoach {
         if reps.count >= 2 {
             return repsLine(reps, feeling: run.feeling)
         }
+        if run.distanceM < 50 {
+            return "No distance was recorded this time (location off, or an indoor run). "
+                + "Your time, \(Fmt.duration(run.durationSec)), still counts."
+        }
         let distance = RunFormat.distance(run.distanceM)
         let pace = Fmt.pace(run.avgPace)
         switch run.feeling {
         case .some(.easy):
-            return "That looked comfortable: \(distance) at \(pace) /km. Exactly how an easy day should feel."
+            return "That looked comfortable: \(distance) at \(pace)/km. Exactly how an easy day should feel."
         case .some(.hard):
             return "A tough one, and you saw it through: \(distance). Sleep well and keep the next run really easy."
         default:
-            return "\(distance) in \(Fmt.duration(run.durationSec)), at \(pace) /km. One more in the bank."
+            return "\(distance) in \(Fmt.duration(run.durationSec)), at \(pace)/km. One more in the bank."
         }
     }
 

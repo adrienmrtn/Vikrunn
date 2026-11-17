@@ -5,7 +5,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>Atala</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Atala reads your runs from Apple Health so your coach can adapt your plan.</string>
+	<string>Atala reads your runs and their heart rate from Apple Health so your coach can adapt your plan.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Atala saves the runs you record to Apple Health.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

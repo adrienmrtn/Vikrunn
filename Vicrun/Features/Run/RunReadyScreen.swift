@@ -83,7 +83,7 @@ struct RunReadyScreen: View {
         if tracker.isSimulating { return "Simulated signal (simulator)" }
         switch tracker.gps {
         case .unknown: return "Looking for satellites…"
-        case .denied: return "Location is off. Distance won't be recorded."
+        case .denied: return "Location is off: only your time will be measured. Turn it on in Settings, or add the run by hand afterwards."
         case .poor: return "Weak\(accuracyText). Move to an open spot."
         case .fair: return "Fair\(accuracyText)"
         case .good: return "Good\(accuracyText)"

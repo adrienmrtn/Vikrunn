@@ -6,7 +6,7 @@ struct ProfileGoalSection: View {
 
     var body: some View {
         Section {
-            Picker("Goal", selection: $draft.goal) {
+            Picker("Goal", selection: goalSelection) {
                 if draft.goal == nil {
                     Text("Choose").tag(Optional<GoalType>.none)
                 }
@@ -33,8 +33,21 @@ struct ProfileGoalSection: View {
         } header: {
             Text("Goal")
         } footer: {
-            Text("Plans cover up to 8 weeks. If your race is further away, the plan builds your base first.")
+            Text("Plans cover up to \(PlanEngine.maxWeeks) weeks. If your race is further away, the plan builds your base first.")
         }
+    }
+
+    /// A target time belongs to one distance: changing the goal clears it instead of carrying
+    /// a 10K time over to a half marathon.
+    private var goalSelection: Binding<GoalType?> {
+        Binding(
+            get: { draft.goal },
+            set: { newGoal in
+                guard newGoal != draft.goal else { return }
+                draft.goal = newGoal
+                draft.targetSeconds = nil
+            }
+        )
     }
 
     private var earliestRace: Date {
@@ -128,6 +141,30 @@ struct ProfileTargetTimeEditor: View {
     @Binding var seconds: Int?
     let goal: GoalType
 
+    @EnvironmentObject private var store: AppStore
+
+    /// What the runner is worth today on this distance, from the saved answers.
+    private var todaySeconds: Int? {
+        PlanEngine.predictedSeconds(vma: PlanEngine.estimateVMA(store.answers), goal: goal)
+    }
+
+    /// Gentle note under the wheels: how the target compares with today's level.
+    private func levelNote(for target: Int) -> String {
+        guard let today = todaySeconds, let km = goal.distanceKm else { return "" }
+        let bounds = OnboardingTimeRules.range(km: km)
+        if target < bounds.lowerBound || target > bounds.upperBound {
+            return "Outside what the plan can work with: it will be brought back between \(Fmt.goalTime(bounds.lowerBound)) and \(Fmt.goalTime(bounds.upperBound))."
+        }
+        let reachable = Int(Double(today) * 0.95)
+        if target < reachable {
+            return "Ambitious from your level today (around \(Fmt.goalTime(today))). It stays your goal, and the plan trains you towards \(Fmt.goalTime(reachable)) first."
+        }
+        if target <= today {
+            return "A real step up from your level today (around \(Fmt.goalTime(today))), and within reach."
+        }
+        return "Comfortable for your level today (around \(Fmt.goalTime(today)))."
+    }
+
     var body: some View {
         Form {
             Section {
@@ -136,7 +173,7 @@ struct ProfileTargetTimeEditor: View {
                 Text("Without a target time, your paces are set from your current level.")
             }
             if let value = seconds {
-                Section("Target for your \(goal.title)") {
+                Section {
                     HStack(spacing: 0) {
                         wheel("Hours", range: 0..<4, suffix: "h", selection: hours)
                         wheel("Minutes", range: 0..<60, suffix: "min", selection: minutes)
@@ -149,6 +186,10 @@ struct ProfileTargetTimeEditor: View {
                         Text(Fmt.goalTime(value))
                             .fontWeight(.semibold)
                     }
+                } header: {
+                    Text("Target for your \(goal.title)")
+                } footer: {
+                    Text(levelNote(for: value))
                 }
             }
         }
@@ -167,13 +208,11 @@ struct ProfileTargetTimeEditor: View {
         .clipped()
     }
 
+    /// Starts from today's level, rounded down to the minute, like the onboarding does.
     private var defaultSeconds: Int {
-        switch goal {
-        case .fiveK: return 30 * 60
-        case .tenK: return 60 * 60
-        case .half: return 2 * 3600
-        case .regular: return 30 * 60
-        }
+        guard let km = goal.distanceKm else { return 30 * 60 }
+        let base = todaySeconds ?? OnboardingTimeRules.defaultSeconds(km: km)
+        return OnboardingTimeRules.clamp(base / 60 * 60, km: km)
     }
 
     private var hasTarget: Binding<Bool> {

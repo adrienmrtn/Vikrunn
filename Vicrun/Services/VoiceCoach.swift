@@ -45,6 +45,13 @@ final class VoiceCoach: NSObject, ObservableObject {
         synthesizer.speak(utterance)
     }
 
+    /// Cuts whatever is being said, then speaks. For short timed cues that must not queue up
+    /// (guided strength and stretching sessions).
+    func sayNow(_ speech: String, display: String, settings: VoiceSettings) {
+        if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
+        say(speech, display: display, settings: settings)
+    }
+
     /// Stops talking right away (end of the run, flow closed).
     func stop() {
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }

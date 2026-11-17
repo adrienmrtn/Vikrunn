@@ -43,7 +43,7 @@ struct CoachChatProposalCard: View {
 
             if proposal.status == .pending {
                 if lines.isEmpty {
-                    Text("This change no longer matches your plan.")
+                    Text("This suggestion has expired: your plan has changed since.")
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.muted)
                 } else {
@@ -207,14 +207,20 @@ struct CoachChatProposalCard: View {
             store.coachApply(proposalIn: messageID)
         }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
+        let id = messageID
         Task {
             await SyncService.pushAll(store: store)
+            await CoachService.reportProposal(messageID: id, applied: true, store: store)
         }
     }
 
     private func keep() {
         withAnimation(.easeInOut(duration: 0.25)) {
             store.decline(proposalIn: messageID)
+        }
+        let id = messageID
+        Task {
+            await CoachService.reportProposal(messageID: id, applied: false, store: store)
         }
     }
 
