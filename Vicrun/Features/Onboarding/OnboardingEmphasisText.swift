@@ -105,7 +105,7 @@ struct OnboardingEmphasisText: View {
 }
 
 #Preview {
-    OnboardingEmphasisText(text: "We want you to try Vicrun for free for 3 days",
+    OnboardingEmphasisText(text: "We want you to try Atala for free for 3 days",
                            size: 32, highlight: "for free")
         .padding(24)
 }

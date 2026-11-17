@@ -30,7 +30,7 @@ struct OnboardingTrialScreen: View {
         let list = benefits
         return OnboardingScaffold(buttonsVisible: stage >= Self.stageDelays.count) {
             CoachAvatar(coach: store.coach, size: 96)
-            OnboardingEmphasisText(text: "We want you to try Vicrun for free for \(OnboardingPaywallOffer.trialDays) days",
+            OnboardingEmphasisText(text: "We want you to try Atala for free for \(OnboardingPaywallOffer.trialDays) days",
                                    size: 32,
                                    lineSpacing: 5,
                                    highlight: "for free",
@@ -88,7 +88,7 @@ struct OnboardingTimelineScreen: View {
             OnboardingTimelineItem(id: 1, symbol: "bell.fill", color: Theme.yellow, title: "In \(days - 1) days",
                                    text: "We remind you that your trial ends the next day."),
             OnboardingTimelineItem(id: 2, symbol: "star.fill", color: Theme.orange, title: "In \(days) days",
-                                   text: "Your subscription starts and you carry on with Vicrun. Cancel before and you pay nothing."),
+                                   text: "Your subscription starts and you carry on with Atala. Cancel before and you pay nothing."),
         ]
     }
 

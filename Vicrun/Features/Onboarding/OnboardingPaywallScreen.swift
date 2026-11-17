@@ -19,6 +19,9 @@ struct OnboardingPaywallScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
+                BrandLogo(style: .full, height: 20)
+                    .foregroundStyle(Theme.forest)
+                    .padding(.leading, 12)
                 Spacer()
                 Button(action: { nav.next(store) }) {
                     Image(systemName: "xmark")

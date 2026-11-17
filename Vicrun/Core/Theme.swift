@@ -34,12 +34,33 @@ enum Theme {
     static let yellowDeep = Color(hex: 0x9A7412)
     static let yellowTint = Color(hex: 0xFBF1D3)
     static let locked = Color(hex: 0xE9E9E6)
+    /// Brand colours of the Atala logo.
+    static let forest = Color(hex: 0x143228)
+    static let cream = Color(hex: 0xF1F1EF)
 
     static let screenPadding: CGFloat = 20
     static let cardRadius: CGFloat = 20
     static let buttonHeight: CGFloat = 54
 
     static func title(_ size: CGFloat = 28) -> Font { .system(size: size, weight: .bold) }
+}
+
+// MARK: - Brand
+
+/// The Atala logo. Tint it with `.foregroundStyle`: forest green on light backgrounds, cream on dark or coloured ones.
+struct BrandLogo: View {
+    enum Style { case full, mark }
+    var style: Style = .full
+    var height: CGFloat = 24
+
+    var body: some View {
+        Image(style == .full ? "logo_atala" : "logo_atala_mark")
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(height: height)
+            .accessibilityLabel("Atala")
+    }
 }
 
 // MARK: - Buttons

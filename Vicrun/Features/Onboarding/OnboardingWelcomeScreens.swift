@@ -7,7 +7,7 @@ private struct OnboardingWelcomeSlide: Identifiable {
     let text: String
 
     static let all: [OnboardingWelcomeSlide] = [
-        OnboardingWelcomeSlide(id: 0, image: "welcome_1", title: "Welcome to Vicrun",
+        OnboardingWelcomeSlide(id: 0, image: "welcome_1", title: "Welcome to Atala",
                                text: "Your running coach, from your first 5K to the half marathon."),
         OnboardingWelcomeSlide(id: 1, image: "welcome_2", title: "A plan that fits your life",
                                text: "Pick the days you can run. Your plan is built around them."),
@@ -34,6 +34,14 @@ struct OnboardingWelcomeScreen: View {
                 Spacer(minLength: 8)
                 buttons
             }
+        }
+        .overlay(alignment: .topLeading) {
+            BrandLogo(style: .full, height: 26)
+                .foregroundStyle(Theme.cream)
+                .shadow(color: .black.opacity(0.18), radius: 6, x: 0, y: 2)
+                .padding(.leading, 24)
+                .padding(.top, 66)
+                .allowsHitTesting(false)
         }
         .ignoresSafeArea(edges: .top)
         .background(Color.white.ignoresSafeArea())

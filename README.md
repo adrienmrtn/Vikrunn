@@ -1,6 +1,6 @@
-# Vicrun
+# Atala
 
-Running-coach app for iPhone (SwiftUI, iOS 17+).
+Running-coach app for iPhone (project and target are still named `Vicrun`) (SwiftUI, iOS 17+).
 
 ## Open and run
 

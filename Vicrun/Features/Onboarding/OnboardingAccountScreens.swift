@@ -120,6 +120,8 @@ struct OnboardingLoadingScreen: View {
 
     var body: some View {
         VStack(spacing: 26) {
+            BrandLogo(style: .full, height: 22)
+                .foregroundStyle(Theme.forest)
             ring
             VStack(spacing: 6) {
                 Text("\(Int((progress * 100).rounded())) %")

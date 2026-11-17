@@ -93,7 +93,7 @@ struct ProfileHealthSection: View {
             let granted = await HealthKitService.shared.requestAuthorization()
             guard granted else {
                 store.settings.healthImportEnabled = false
-                message = "Vicrun could not read Apple Health. You can allow it in the Health app, under Sharing."
+                message = "Atala could not read Apple Health. You can allow it in the Health app, under Sharing."
                 return
             }
             let added = await HealthKitService.shared.importRecentRuns(into: store)
@@ -114,7 +114,7 @@ struct ProfileSubscriptionSection: View {
                 showSheet = true
             } label: {
                 HStack {
-                    Text("Vicrun Premium")
+                    Text("Atala Premium")
                         .foregroundStyle(Theme.ink)
                     Spacer()
                     Text("Free trial (demo)")
