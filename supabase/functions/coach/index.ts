@@ -3,11 +3,18 @@
 import Anthropic from "npm:@anthropic-ai/sdk@^1.10.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const MODEL = "claude-sonnet-5-5";
+// Claude Opus 5.5 by default; set the COACH_MODEL secret to use another model without redeploying code.
+const MODEL = (Deno.env.get("COACH_MODEL") ?? "").trim() || "claude-opus-5-5";
 const DAILY_CAP = 150;
 const MAX_HISTORY = 30;
 const MAX_MESSAGE_CHARS = 4000;
 const MAX_TOOL_ROUNDS = 3;
+const MAX_BODY_CHARS = 120_000;
+const MAX_WORKOUTS = 80;
+const MAX_RECENT_RUNS = 12;
+/** Whole budget for the model, all rounds included. The app waits 45 s. */
+const DEADLINE_MS = 40_000;
+const REQUEST_TIMEOUT_MS = 30_000;
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -18,8 +25,13 @@ const corsHeaders: Record<string, string> = {
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
   });
+}
+
+/** Every failure is `{ "error": "<code>" }` (plus `message` when it helps), never a bare status. */
+function fail(code: string, status: number, message?: string): Response {
+  return json(message ? { error: code, message } : { error: code }, status);
 }
 
 // ---------- Input ----------
@@ -32,6 +44,7 @@ interface ContextWorkout {
   distanceKm?: number;
   durationMin?: number;
   status?: string;
+  weekday?: string;
 }
 
 interface CoachContext {
@@ -43,6 +56,7 @@ interface CoachContext {
   targetSeconds?: number | null;
   paces?: Record<string, unknown>;
   today?: string;
+  weekday?: string;
   workouts?: ContextWorkout[];
   recentRuns?: unknown[];
 }
@@ -74,6 +88,71 @@ function isIsoDate(value: unknown): value is string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function shortText(value: unknown, max: number): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const text = value.trim();
+  return text ? text.slice(0, max) : undefined;
+}
+
+function finiteNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+/** Keeps only the fields the coach uses, with bounded sizes: the context comes from the phone. */
+function cleanContext(raw: unknown): CoachContext {
+  const input = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const workouts: ContextWorkout[] = [];
+  if (Array.isArray(input.workouts)) {
+    for (const item of input.workouts.slice(0, MAX_WORKOUTS)) {
+      const id = shortText(item?.id, 64);
+      const date = item?.date;
+      const kind = shortText(item?.kind, 24);
+      if (!id || !isIsoDate(date) || !kind) continue;
+      workouts.push({
+        id,
+        date,
+        kind,
+        title: shortText(item?.title, 80) ?? kind,
+        distanceKm: finiteNumber(item?.distanceKm),
+        durationMin: finiteNumber(item?.durationMin),
+        status: shortText(item?.status, 16),
+        weekday: shortText(item?.weekday, 12),
+      });
+    }
+  }
+  const recentRuns: unknown[] = [];
+  if (Array.isArray(input.recentRuns)) {
+    for (const item of input.recentRuns.slice(0, MAX_RECENT_RUNS)) {
+      if (!item || typeof item !== "object") continue;
+      const run: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(item as Record<string, unknown>).slice(0, 12)) {
+        if (typeof value === "string") run[key.slice(0, 24)] = value.slice(0, 80);
+        else if (typeof value === "number" && Number.isFinite(value)) run[key.slice(0, 24)] = value;
+      }
+      recentRuns.push(run);
+    }
+  }
+  const paces: Record<string, unknown> = {};
+  if (input.paces && typeof input.paces === "object") {
+    for (const [key, value] of Object.entries(input.paces as Record<string, unknown>).slice(0, 8)) {
+      if (typeof value === "string") paces[key.slice(0, 16)] = value.slice(0, 16);
+    }
+  }
+  return {
+    firstName: shortText(input.firstName, 40),
+    coachName: shortText(input.coachName, 40),
+    tone: shortText(input.tone, 16),
+    goal: shortText(input.goal, 60),
+    raceDate: isIsoDate(input.raceDate) ? input.raceDate : null,
+    targetSeconds: finiteNumber(input.targetSeconds) ?? null,
+    paces,
+    today: isIsoDate(input.today) ? input.today : new Date().toISOString().slice(0, 10),
+    weekday: shortText(input.weekday, 12),
+    workouts,
+    recentRuns,
+  };
 }
 
 function buildMessages(raw: unknown): Anthropic.Beta.BetaMessageParam[] | string {
@@ -126,6 +205,7 @@ You talk about running, training, recovery, motivation around running, and how t
 
   const data = {
     today: context.today ?? null,
+    weekday: context.weekday ?? null,
     runner: firstName,
     goal: context.goal ?? null,
     raceDate: context.raceDate ?? null,
@@ -136,11 +216,11 @@ You talk about running, training, recovery, motivation around running, and how t
   };
 
   return [
-    { type: "text", text: role },
+    // The stable part first (cacheable), the data that changes with every message after it.
+    { type: "text", text: role, cache_control: { type: "ephemeral" } },
     {
       type: "text",
-      text: `Training data (JSON). "workouts" covers the last two sessions and roughly the next three weeks; use the "id" of a workout when you propose a change.\n${JSON.stringify(data)}`,
-      cache_control: { type: "ephemeral" },
+      text: `Training data (JSON). "today" and "weekday" are the runner's current day. "workouts" covers the last two weeks and roughly the next three; each has its date and weekday. Use the "id" of a workout when you propose a change, and work out dates from "today" rather than guessing.\n${JSON.stringify(data)}`,
     },
   ];
 }
@@ -252,6 +332,7 @@ async function askCoach(
   client: Anthropic,
   messages: Anthropic.Beta.BetaMessageParam[],
   context: CoachContext,
+  signal: AbortSignal,
 ): Promise<{ reply: string; proposal?: Proposal }> {
   const conversation = [...messages];
   const system = systemPrompt(context);
@@ -269,7 +350,7 @@ async function askCoach(
       system,
       tools: [proposeTool],
       messages: conversation,
-    });
+    }, { signal, timeout: REQUEST_TIMEOUT_MS, maxRetries: 1 });
 
     if (response.stop_reason === "refusal") {
       return { reply: "That's outside what I can help with here. Tell me about your running and I'm all yours." };
@@ -325,78 +406,121 @@ async function askCoach(
 
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+  if (req.method !== "POST") return fail("method_not_allowed", 405);
+
+  // Without the Anthropic key the app silently uses its on-phone replies.
+  const anthropicKey = (Deno.env.get("ANTHROPIC_API_KEY") ?? "").trim();
+  if (!anthropicKey) return fail("coach_not_configured", 503);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!supabaseUrl || !serviceKey || !anthropicKey) {
-    console.error("coach: missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY or ANTHROPIC_API_KEY");
-    return json({ error: "not_configured" }, 500);
+  if (!supabaseUrl || !serviceKey) {
+    console.error("coach: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    return fail("server_not_configured", 500);
   }
 
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-  if (!token) return json({ error: "unauthorized" }, 401);
+  const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+  if (!token) return fail("unauthorized", 401);
 
+  try {
+    return await handle(req, token, supabaseUrl, serviceKey, anthropicKey);
+  } catch (error) {
+    console.error("coach: unexpected error", error instanceof Error ? error.message : "unknown");
+    return fail("server_error", 500);
+  }
+});
+
+async function handle(
+  req: Request,
+  token: string,
+  supabaseUrl: string,
+  serviceKey: string,
+  anthropicKey: string,
+): Promise<Response> {
   const admin = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const { data: userData, error: userError } = await admin.auth.getUser(token);
   const user = userData?.user;
-  if (userError || !user) return json({ error: "unauthorized" }, 401);
+  if (userError || !user) return fail("unauthorized", 401);
 
-  let payload: { messages?: unknown; context?: CoachContext };
+  const declared = Number(req.headers.get("content-length") ?? "0");
+  if (Number.isFinite(declared) && declared > MAX_BODY_CHARS * 4) return fail("payload_too_large", 413);
+  const rawBody = await req.text();
+  if (rawBody.length > MAX_BODY_CHARS) return fail("payload_too_large", 413);
+
+  let payload: { messages?: unknown; context?: unknown };
   try {
-    payload = await req.json();
+    payload = JSON.parse(rawBody);
   } catch {
-    return json({ error: "invalid_json" }, 400);
+    return fail("invalid_json", 400);
   }
-  const messages = buildMessages(payload?.messages);
-  if (typeof messages === "string") return json({ error: "invalid_request", message: messages }, 400);
-  const context: CoachContext = payload?.context && typeof payload.context === "object" ? payload.context : {};
-  if (!Array.isArray(context.workouts)) context.workouts = [];
-  if (JSON.stringify(context).length > 60000) return json({ error: "invalid_request", message: "context is too large" }, 400);
+  if (!payload || typeof payload !== "object") return fail("invalid_request", 400, "the body must be a JSON object");
+  const messages = buildMessages(payload.messages);
+  if (typeof messages === "string") return fail("invalid_request", 400, messages);
+  const context = cleanContext(payload.context);
 
   // Daily cap, counted atomically in the database.
   const day = new Date().toISOString().slice(0, 10);
   const { data: used, error: usageError } = await admin.rpc("increment_coach_usage", { p_user_id: user.id, p_day: day });
   if (usageError) {
     console.error("coach: usage counter failed", usageError.message);
-    return json({ error: "server_error" }, 500);
+    return fail("server_error", 500);
   }
-  if (typeof used === "number" && used > DAILY_CAP) return json({ error: "daily_limit" }, 429);
+  if (typeof used === "number" && used > DAILY_CAP) return fail("daily_limit", 429);
 
+  const deadline = new AbortController();
+  const timer = setTimeout(() => deadline.abort(), DEADLINE_MS);
   let result: { reply: string; proposal?: Proposal };
   try {
     const client = new Anthropic({ apiKey: anthropicKey });
-    result = await askCoach(client, messages, context);
+    result = await askCoach(client, messages, context, deadline.signal);
   } catch (error) {
+    if (deadline.signal.aborted) {
+      console.error("coach: model took too long");
+      return fail("timeout", 504);
+    }
     if (error instanceof Anthropic.RateLimitError) {
       console.error("coach: model rate limited");
-      return json({ error: "busy" }, 503);
+      return fail("busy", 503);
     }
     if (error instanceof Anthropic.APIConnectionError) {
-      console.error("coach: model unreachable", error.message);
-      return json({ error: "upstream_unreachable" }, 502);
+      console.error("coach: model unreachable");
+      return fail("upstream_unreachable", 502);
     }
     if (error instanceof Anthropic.APIError) {
-      console.error("coach: model error", error.status, error.message);
-      return json({ error: "upstream_error" }, 502);
+      // 401/403: the key is wrong or revoked. Same answer as a missing key, so the app falls back.
+      if (error.status === 401 || error.status === 403) {
+        console.error("coach: the Anthropic key was refused", error.status);
+        return fail("coach_not_configured", 503);
+      }
+      console.error("coach: model error", error.status, error.type ?? "");
+      return fail("upstream_error", 502);
     }
-    console.error("coach: unexpected error", error);
-    return json({ error: "server_error" }, 500);
+    console.error("coach: unexpected model error", error instanceof Error ? error.name : "unknown");
+    return fail("server_error", 500);
+  } finally {
+    clearTimeout(timer);
   }
 
-  if (!result.reply) return json({ error: "empty_reply" }, 502);
+  if (!result.reply) return fail("empty_reply", 502);
 
+  // Keep the exchange so the conversation can be restored on another phone.
   const lastUser = messages[messages.length - 1];
   const userText = typeof lastUser.content === "string" ? lastUser.content : "";
-  const { error: storeError } = await admin.from("coach_messages").insert([
-    { user_id: user.id, role: "user", body: userText },
-    { user_id: user.id, role: "coach", body: result.reply, proposal: result.proposal ?? null },
-  ]);
+  let messageId: string | undefined;
+  const { data: stored, error: storeError } = await admin
+    .from("coach_messages")
+    .insert([
+      { user_id: user.id, role: "user", body: userText, proposal: null },
+      { user_id: user.id, role: "coach", body: result.reply, proposal: result.proposal ?? null },
+    ])
+    .select("id, role");
   if (storeError) console.error("coach: could not store messages", storeError.message);
+  else messageId = stored?.find((row: { id: string; role: string }) => row.role === "coach")?.id;
 
-  return json(result.proposal ? { reply: result.reply, proposal: result.proposal } : { reply: result.reply });
-});
+  const body: Record<string, unknown> = { reply: result.reply };
+  if (result.proposal) body.proposal = result.proposal;
+  if (messageId) body.messageId = messageId;
+  return json(body);
+}

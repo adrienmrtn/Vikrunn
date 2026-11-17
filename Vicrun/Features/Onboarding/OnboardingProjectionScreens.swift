@@ -212,69 +212,74 @@ struct OnboardingProjectionScreen: View {
     }
 }
 
-struct OnboardingReview: Identifiable {
+/// One thing the runner can count on, shown on the screen that used to hold sample reviews.
+struct OnboardingPromise: Identifiable {
     let id: Int
+    let symbol: String
+    let title: String
     let text: String
-    let author: String
 }
 
-// SAMPLE REVIEWS — replace with real ones before release
-enum OnboardingSampleReviews {
-    static let rating = "4.8"
-    static let ratingCaption = "Sample rating, not a real App Store score"
-    static let reviews: [OnboardingReview] = [
-        OnboardingReview(id: 1,
-                         text: "Sample review. A runner explains in two or three lines what the plan changed for them.",
-                         author: "Sample Runner A · placeholder"),
-        OnboardingReview(id: 2,
-                         text: "Sample review. A runner tells how the coach helped during a difficult week.",
-                         author: "Sample Runner B · placeholder"),
-        OnboardingReview(id: 3,
-                         text: "Sample review. A runner says what they liked about the coach's explanations.",
-                         author: "Sample Runner C · placeholder"),
+/// Facts about how Atala works, in place of user reviews: the app has none to quote yet.
+/// When real reviews exist, this is the screen to put them on.
+enum OnboardingPromises {
+    static let all: [OnboardingPromise] = [
+        OnboardingPromise(id: 1, symbol: "calendar",
+                          title: "A plan you can hold",
+                          text: "Eight weeks at most, one session per day you ticked, strength and stretching included."),
+        OnboardingPromise(id: 2, symbol: "arrow.uturn.backward",
+                          title: "A missed session breaks nothing",
+                          text: "It is marked as missed and the rest stays in place. You can still count it afterwards."),
+        OnboardingPromise(id: 3, symbol: "hand.raised.fill",
+                          title: "Nothing moves without your yes",
+                          text: "Your coach proposes a change, you apply it or keep your plan."),
+        OnboardingPromise(id: 4, symbol: "cross.case.fill",
+                          title: "A coach, not a doctor",
+                          text: "No diagnosis, ever. If something hurts, the advice is to see a health professional."),
     ]
 }
 
-/// Screen 23: what runners say (placeholders for now).
+/// Screen 23: what the runner can count on (no reviews are shown until there are real ones).
 struct OnboardingReviewsScreen: View {
+    @EnvironmentObject private var store: AppStore
+
     var body: some View {
-        OnboardingScaffold(title: "What runners say") {
-            ratingCard
+        OnboardingScaffold(title: "What you can count on") {
+            coachCard
             VStack(spacing: 10) {
-                ForEach(OnboardingSampleReviews.reviews) { review in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(review.text)
-                            .font(.system(size: 15))
-                            .foregroundStyle(Theme.ink)
-                            .lineSpacing(3)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(review.author)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Theme.muted)
+                ForEach(OnboardingPromises.all) { promise in
+                    HStack(alignment: .top, spacing: 14) {
+                        IconTile(systemName: promise.symbol)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(promise.title)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(Theme.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(promise.text)
+                                .font(.system(size: 14))
+                                .foregroundStyle(Theme.muted)
+                                .lineSpacing(3)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .card()
+                    .accessibilityElement(children: .combine)
                 }
             }
         }
     }
 
-    private var ratingCard: some View {
+    private var coachCard: some View {
         HStack(spacing: 16) {
-            Text(OnboardingSampleReviews.rating)
-                .font(.system(size: 40, weight: .bold))
-                .foregroundStyle(Theme.ink)
+            CoachAvatar(coach: store.coach, size: 56)
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 3) {
-                    ForEach(0..<5, id: \.self) { _ in
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 15))
-                            .foregroundStyle(Theme.yellow)
-                    }
-                }
-                .accessibilityHidden(true)
-                Text(OnboardingSampleReviews.ratingCaption)
+                Text("\(store.coach.name)'s method")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+                Text("The same rules for every runner, whatever the coach you chose.")
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)

@@ -154,9 +154,9 @@ enum PlanEngine {
             let strengthDay = restDays.first ?? easyDays.first ?? longDay
             let stretchDay = restDays.dropFirst().first ?? longDay
             if phase != .taper {
-                workouts.append(strength(date: date(strengthDay), week: w))
+                workouts.append(strength(date: date(strengthDay), week: w, phase: phase))
             }
-            workouts.append(stretching(date: date(stretchDay), week: w))
+            workouts.append(stretching(date: date(stretchDay), week: w, phase: phase))
 
             // Drop what is before today, and replace race-day sessions by the race itself.
             workouts = workouts.filter { $0.date >= today }
@@ -309,21 +309,25 @@ enum PlanEngine {
         }
     }
 
-    private static func strength(date: Date, week: Int) -> Workout {
-        let names = ["Squats, 3 × 12", "Lunges, 3 × 10 each side", "Glute bridge, 3 × 15", "Plank, 3 × 40 s", "Calf raises, 3 × 15"]
-        let steps = names.map { WorkoutStep(kind: .exercise, label: $0, durationSec: 4 * 60) }
-        return workout(date: date, week: week, kind: .strength, title: "Strength", subtitle: "Bodyweight, 20 min",
+    /// Strength and stretching are built from `ExerciseCatalog`, with a light progression by phase.
+    /// One step per exercise: its label carries the sets and reps, its duration includes the rests.
+    private static func strength(date: Date, week: Int, phase: PlanPhase) -> Workout {
+        let exercises = GuidedPrescription.strengthSession(phase: phase)
+        let steps = exercises.map { $0.workoutStep }
+        let minutes = GuidedPrescription.totalMinutes(exercises)
+        return workout(date: date, week: week, kind: .strength, title: "Strength", subtitle: "Bodyweight, \(minutes) min",
                        effort: 4, blocks: [WorkoutBlock(steps: steps)],
-                       why: "Stronger legs and core protect you from injury and keep your stride efficient when you tire.",
+                       why: "Stronger legs and core help you hold your form and keep your stride efficient when you tire.",
                        pace: nil, fallbackPace: 360)
     }
 
-    private static func stretching(date: Date, week: Int) -> Workout {
-        let names = ["Calves", "Hamstrings", "Quadriceps", "Hip flexors", "Glutes"]
-        let steps = names.map { WorkoutStep(kind: .exercise, label: "\($0), 1 min each side", durationSec: 2 * 60) }
-        return workout(date: date, week: week, kind: .stretching, title: "Stretching", subtitle: "Gentle, 10 min",
+    private static func stretching(date: Date, week: Int, phase: PlanPhase) -> Workout {
+        let exercises = GuidedPrescription.stretchingSession(phase: phase)
+        let steps = exercises.map { $0.workoutStep }
+        let minutes = GuidedPrescription.totalMinutes(exercises)
+        return workout(date: date, week: week, kind: .stretching, title: "Stretching", subtitle: "Gentle, \(minutes) min",
                        effort: 1, blocks: [WorkoutBlock(steps: steps)],
-                       why: "Ten gentle minutes help you recover and keep your range of motion.",
+                       why: "A few gentle minutes help you unwind after your runs and keep your range of motion.",
                        pace: nil, fallbackPace: 360)
     }
 

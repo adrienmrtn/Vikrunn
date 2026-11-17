@@ -1,9 +1,10 @@
 import SwiftUI
+import UIKit
 
-/// Screen 32: permissions. Location now, notifications in a later version.
+/// Screen 32: the location permission. Push notifications are not part of this version, so none is asked.
 struct OnboardingPermissionsScreen: View {
     @EnvironmentObject private var store: AppStore
-    @State private var locationRequested = false
+    @ObservedObject private var location = LocationPermission.shared
 
     var body: some View {
         OnboardingScaffold {
@@ -11,9 +12,10 @@ struct OnboardingPermissionsScreen: View {
                 Text("Welcome, \(store.firstName)")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.green)
-                Text("Two last settings")
+                Text("One setting before your first run")
                     .font(Theme.title(28))
                     .foregroundStyle(Theme.ink)
+                    .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
                 Text("You can say no: your plan still works, and you log your runs by hand.")
                     .font(.system(size: 15))
@@ -22,8 +24,22 @@ struct OnboardingPermissionsScreen: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             locationCard
-            notificationsCard
+            remindersNote
         }
+        .onAppear { location.refresh() }
+    }
+
+    private var locationButtonTitle: String {
+        if location.isAllowed { return "Location allowed" }
+        if location.isRefused { return "Open Settings" }
+        return "Allow location"
+    }
+
+    private var locationFootnote: String? {
+        if location.isRefused {
+            return "Location is off for Atala. You can turn it on in Settings, or log your runs by hand."
+        }
+        return nil
     }
 
     private var locationCard: some View {
@@ -42,49 +58,61 @@ struct OnboardingPermissionsScreen: View {
                 }
                 Spacer(minLength: 0)
             }
-            Button(action: {
-                LocationPermission.shared.request()
-                locationRequested = true
-            }) {
-                Text(locationRequested ? "Requested" : "Allow location")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(locationRequested ? Theme.greenSoft : Theme.ink, in: Capsule())
+            Button(action: locationTapped) {
+                HStack(spacing: 8) {
+                    if location.isAllowed {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14, weight: .bold))
+                    }
+                    Text(locationButtonTitle)
+                        .font(.system(size: 15, weight: .semibold))
+                }
+                .foregroundStyle(Color.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(location.isAllowed ? Theme.greenSoft : Theme.ink, in: Capsule())
             }
             .buttonStyle(.plain)
-            .disabled(locationRequested)
+            .disabled(location.isAllowed)
+            if let locationFootnote {
+                Text(locationFootnote)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(18)
         .card(radius: 22)
     }
 
-    private var notificationsCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 14) {
-                IconTile(systemName: "bell.fill")
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Notifications")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Theme.ink)
-                    Text("A reminder the day before each session, and nothing else. They arrive in a coming update.")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Theme.muted)
-                        .lineSpacing(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
+    /// Honest about what exists: no reminder is sent in this version.
+    private var remindersNote: some View {
+        HStack(alignment: .top, spacing: 14) {
+            IconTile(systemName: "bell.slash.fill", tint: Theme.muted, background: Theme.surface)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("No notifications")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Theme.ink)
+                Text("Atala sends you nothing in this version. Your sessions wait for you in the Today tab, and \(store.coach.name) only writes when you do.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Theme.muted)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Text("Later")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Theme.muted)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(Theme.surface, in: Capsule())
+            Spacer(minLength: 0)
         }
         .padding(18)
         .card(radius: 22)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func locationTapped() {
+        if location.isRefused {
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+            UIApplication.shared.open(url)
+        } else {
+            location.request()
+        }
     }
 }
 
@@ -93,6 +121,8 @@ struct OnboardingHealthConnectScreen: View {
     @EnvironmentObject private var store: AppStore
     @State private var isAsking = false
     @State private var wasRefused = false
+    /// Number of runs brought in from Health, once the import has run.
+    @State private var importedCount: Int?
 
     private var connected: Bool { store.settings.healthImportEnabled }
     private var available: Bool { HealthKitService.shared.isAvailable }
@@ -100,13 +130,25 @@ struct OnboardingHealthConnectScreen: View {
     private var connectTitle: String {
         if connected { return "Connected" }
         if !available { return "Not available on this device" }
-        return isAsking ? "Asking…" : "Connect Apple Health"
+        return isAsking ? "Connecting…" : "Connect Apple Health"
+    }
+
+    private var footnote: String {
+        if wasRefused { return "Access was not granted. You can turn it on later in your profile." }
+        if let importedCount {
+            if importedCount == 0 {
+                return "Connected. No run found in the last 60 days: your history starts with your first session."
+            }
+            return "\(importedCount) \(importedCount == 1 ? "run" : "runs") from the last 60 days added to your history."
+        }
+        return "You can turn the import off at any time in your profile."
     }
 
     var body: some View {
         OnboardingScaffold(title: "Connect Apple Health",
                            subtitle: "Optional. I read your past runs, so your history starts full instead of empty.",
                            buttonTitle: "Start",
+                           canContinue: !isAsking,
                            onContinue: { store.finishOnboarding() }) {
             healthCard
             if let workout = store.nextRun {
@@ -137,9 +179,7 @@ struct OnboardingHealthConnectScreen: View {
             }
             .buttonStyle(.plain)
             .disabled(connected || !available || isAsking)
-            Text(wasRefused
-                 ? "Access was not granted. You can turn it on later in your profile."
-                 : "You can remove the access at any time in your profile.")
+            Text(footnote)
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -208,10 +248,13 @@ struct OnboardingHealthConnectScreen: View {
     private func connect() {
         guard available, !connected, !isAsking else { return }
         isAsking = true
-        Task {
+        Task { @MainActor in
             let granted = await HealthKitService.shared.requestAuthorization()
             store.settings.healthImportEnabled = granted
             wasRefused = !granted
+            if granted {
+                importedCount = await HealthKitService.shared.importRecentRuns(into: store)
+            }
             isAsking = false
         }
     }

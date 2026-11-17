@@ -10,23 +10,35 @@ struct WorkoutDetailSteps: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Theme.ink)
                 .padding(.bottom, 4)
-            if workout.blocks.isEmpty {
-                Text("Run as you feel, with no set structure.")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Theme.muted)
-                    .padding(.vertical, 10)
-            }
-            ForEach(workout.blocks) { block in
-                if block.repeats > 1 {
-                    WorkoutDetailRepeatBlock(block: block)
-                } else {
-                    ForEach(block.steps) { step in
-                        WorkoutDetailStepRow(step: step)
-                    }
-                }
+            if workout.kind.isRun {
+                runSteps
+            } else {
+                // Strength and stretching: picture, name and amount. A tap shows how to do it.
+                GuidedExerciseList(exercises: GuidedPrescription.session(for: workout))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private extension WorkoutDetailSteps {
+    @ViewBuilder
+    var runSteps: some View {
+        if workout.blocks.isEmpty {
+            Text("Run as you feel, with no set structure.")
+                .font(.system(size: 14))
+                .foregroundStyle(Theme.muted)
+                .padding(.vertical, 10)
+        }
+        ForEach(workout.blocks) { block in
+            if block.repeats > 1 {
+                WorkoutDetailRepeatBlock(block: block)
+            } else {
+                ForEach(block.steps) { step in
+                    WorkoutDetailStepRow(step: step)
+                }
+            }
+        }
     }
 }
 

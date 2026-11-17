@@ -46,7 +46,7 @@ struct ProfileView: View {
                 Button("Update my plan") { applyDraft() }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("Your plan will be rebuilt from this week with your new goal and training days. The sessions of your current plan are replaced. The runs you already did stay in your history.")
+                Text("Your plan will be rebuilt from today with your new goal and training days. The sessions still to come are replaced. What you already did this week stays done, and your runs stay in your history.")
             }
         }
         .tint(Theme.green)
@@ -66,12 +66,20 @@ struct ProfileView: View {
                      ? "Your plan is built from your goal and your training days."
                      : "Choose a goal and at least one training day to build your plan.")
             }
+        } else if store.mainPlanEnded && !hasPlanChanges {
+            Section {
+                Button("Build my next plan") { applyDraft() }
+                    .fontWeight(.semibold)
+                    .disabled(!canBuild)
+            } footer: {
+                Text("Your plan is finished. The next one starts this week, from your level today. Change the goal or the days above first if you want to.")
+            }
         } else if hasPlanChanges {
             Section {
                 Button("Update my plan") { confirmUpdate = true }
                     .fontWeight(.semibold)
                     .disabled(!canBuild)
-                Button("Discard changes", role: .cancel) { draft = store.answers }
+                Button("Discard changes", role: .cancel) { draft = Self.withoutPastRace(store.answers) }
             } footer: {
                 Text(canBuild
                      ? "Your changes to the goal and training days apply once you update your plan."
@@ -90,7 +98,7 @@ struct ProfileView: View {
     }
 
     private var hasPlanChanges: Bool {
-        let saved = store.answers
+        let saved = Self.withoutPastRace(store.answers)
         if draft.goal != saved.goal { return true }
         if draft.runDays.sorted() != saved.runDays.sorted() { return true }
         if draft.longRunDay != saved.longRunDay { return true }
@@ -113,7 +121,18 @@ struct ProfileView: View {
     private func loadDraft() {
         guard !loaded else { return }
         loaded = true
-        draft = store.answers
+        draft = Self.withoutPastRace(store.answers)
+    }
+
+    /// A race date that is already behind us is no longer a race to prepare.
+    private static func withoutPastRace(_ answers: OnboardingAnswers) -> OnboardingAnswers {
+        var result = answers
+        let today = Calendar.plan.startOfDay(for: Date())
+        if result.hasRace, let date = result.raceDate, Calendar.plan.startOfDay(for: date) < today {
+            result.hasRace = false
+            result.raceDate = nil
+        }
+        return result
     }
 
     private func applyDraft() {
@@ -121,15 +140,26 @@ struct ProfileView: View {
         let isRace = draft.goal != nil && draft.goal != .regular
         answers.goal = draft.goal
         answers.hasRace = isRace && draft.hasRace && draft.raceDate != nil
-        answers.raceDate = answers.hasRace ? draft.raceDate : nil
-        answers.targetSeconds = isRace ? draft.targetSeconds : nil
+        answers.raceDate = answers.hasRace ? draft.raceDate.map { Calendar.plan.startOfDay(for: $0) } : nil
+        if let goal = draft.goal, let km = goal.distanceKm, let target = draft.targetSeconds {
+            answers.targetSeconds = OnboardingTimeRules.clamp(target, km: km)
+        } else {
+            answers.targetSeconds = nil
+        }
         answers.runDays = draft.runDays.sorted()
-        answers.longRunDay = draft.longRunDay
+        let longDay = draft.longRunDay
+        answers.longRunDay = longDay.flatMap { answers.runDays.contains($0) ? $0 : nil }
         store.answers = answers
-        store.generatePlan()
-        store.refreshMissed()
-        draft = store.answers
+        if store.plan != nil, store.mainPlanEnded {
+            // A finished plan: the next one also takes the level reached into account.
+            store.mainBuildNextPlan()
+        } else {
+            // Keeps what was done this week and never marks earlier days as missed.
+            store.mainRebuildPlan()
+        }
+        draft = Self.withoutPastRace(store.answers)
         planUpdated = true
+        Task { await SyncService.pushAll(store: store) }
     }
 }
 

@@ -6,7 +6,7 @@ struct OnboardingGenderScreen: View {
 
     var body: some View {
         OnboardingScaffold(title: "You are…",
-                           subtitle: "It helps me estimate your paces and adapt your plan.",
+                           subtitle: "So I know who I'm talking to. Your paces come from your running, not from this answer.",
                            canContinue: store.answers.gender != nil) {
             VStack(spacing: 10) {
                 ForEach(Gender.allCases) { gender in

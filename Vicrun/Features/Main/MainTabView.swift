@@ -13,6 +13,7 @@ enum MainPlusAction {
 struct MainTabView: View {
     @EnvironmentObject private var store: AppStore
     @StateObject private var chrome = MainChrome()
+    @Environment(\.scenePhase) private var scenePhase
     @State private var tab: MainTab = .today
     @State private var showPlus = false
     @State private var pendingAction: MainPlusAction?
@@ -37,6 +38,17 @@ struct MainTabView: View {
         .onAppear {
             store.refreshMissed()
             revealTabBar()
+        }
+        .task {
+            await importFromHealth()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            store.refreshMissed()
+            Task { await importFromHealth() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .mainOpenCoachTab)) { _ in
+            openCoachTab()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             keyboardVisible = true
@@ -88,6 +100,23 @@ struct MainTabView: View {
             try? await Task.sleep(nanoseconds: 120_000_000)
             tabBarRevealed = true
         }
+    }
+
+    /// Brings in the runs recorded elsewhere, when the user turned the Apple Health import on.
+    /// Runs already in the history are skipped, so calling it often is harmless.
+    @MainActor
+    private func importFromHealth() async {
+        guard store.settings.healthImportEnabled else { return }
+        _ = await HealthKitService.shared.importIfDue(into: store)
+    }
+
+    /// "Talk to my coach": closes whatever is presented by the shell and shows the Coach tab.
+    private func openCoachTab() {
+        showPlus = false
+        showFreeRun = false
+        showManualEntry = false
+        chrome.showProfile = false
+        tab = .coach
     }
 
     /// Opens the chosen flow once the "+" sheet is fully dismissed.
