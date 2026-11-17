@@ -24,26 +24,13 @@ struct SignInOptionsSheet: View {
     @State private var email: String = ""
     @State private var code: String = ""
     @FocusState private var focus: AuthSheetField?
-    @State private var typingSelection: PresentationDetent = .large
+    /// Height of the options content, measured on screen; the sheet is exactly that tall.
+    @State private var fittedHeight: CGFloat = 380
 
-    /// Just tall enough for the title, the three buttons, the guest link and the terms line.
-    private static let compactDetent = PresentationDetent.height(440)
-    /// Used only while the e-mail or the code is being typed, so the keyboard does not hide the field.
-    private static let typingDetent = PresentationDetent.large
-
-    /// One fitted detent for the options; the taller one exists only in the e-mail and code steps.
+    /// The options step is as tall as its content. Only the e-mail and code steps use the tall
+    /// detent, so the keyboard does not hide the field.
     private var detents: Set<PresentationDetent> {
-        mode == .options ? [Self.compactDetent] : [Self.compactDetent, Self.typingDetent]
-    }
-
-    /// Always a member of `detents`, whatever the step.
-    private var detentSelection: Binding<PresentationDetent> {
-        Binding(
-            get: { mode == .options ? Self.compactDetent : typingSelection },
-            set: { newValue in
-                if mode != .options { typingSelection = newValue }
-            }
-        )
+        mode == .options ? [.height(fittedHeight)] : [.large]
     }
 
     init(onSignedIn: @escaping (Account) -> Void) {
@@ -51,30 +38,63 @@ struct SignInOptionsSheet: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                header
-                switch mode {
-                case .options: optionsSection
-                case .email: emailSection
-                case .code: codeSection
-                }
-                messages
-                terms
+        // The frame only pins the content to the top of the sheet: it is measured before it.
+        container
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(Color.white)
+            .presentationDetents(detents)
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
+            .interactiveDismissDisabled(busy != nil)
+    }
+
+    /// No scroll view around the options: nothing may stretch them. The typing steps keep one,
+    /// in case the keyboard leaves less room than the content needs on a small phone.
+    @ViewBuilder
+    private var container: some View {
+        if mode == .options {
+            content
+        } else {
+            ScrollView {
+                content
             }
-            .padding(.horizontal, Theme.screenPadding)
-            .padding(.top, 26)
-            .padding(.bottom, 16)
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .scrollBounceBehavior(.basedOnSize)
-        .background(Color.white)
-        .presentationDetents(detents, selection: detentSelection)
-        .presentationDragIndicator(.visible)
-        .presentationCornerRadius(28)
-        .interactiveDismissDisabled(busy != nil)
-        .onChange(of: mode) { _, newMode in
-            // Entering the e-mail or code step always opens the taller detent again.
-            if newMode != .options { typingSelection = Self.typingDetent }
+    }
+
+    /// Everything the sheet shows, at its natural height, with a reader behind it.
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            header
+            switch mode {
+            case .options: optionsSection
+            case .email: emailSection
+            case .code: codeSection
+            }
+            messages
+            terms
+        }
+        .padding(.horizontal, Theme.screenPadding)
+        .padding(.top, 26)
+        .padding(.bottom, 12)
+        .fixedSize(horizontal: false, vertical: true)
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear { fit(geo.size.height) }
+                    .onChange(of: geo.size.height) { _, newHeight in
+                        fit(newHeight)
+                    }
+            }
+        )
+    }
+
+    /// Only the options step drives the height of the sheet.
+    private func fit(_ height: CGFloat) {
+        guard mode == .options, height > 100 else { return }
+        let rounded = height.rounded(.up)
+        if abs(rounded - fittedHeight) >= 1 {
+            fittedHeight = rounded
         }
     }
 
