@@ -11,47 +11,44 @@ struct PlanTabView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    header
+                    Text(headerCaption)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.muted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .mainStagedAppear(index: 0)
                     MainHeroImage(name: "illu_plan", height: 170)
-                        .padding(.top, 16)
+                        .padding(.top, 14)
+                        .mainStagedAppear(index: 1)
                     if let plan = store.plan {
                         PlanTabOverviewPanel(plan: plan, currentWeekID: store.currentWeek?.id)
                             .padding(.horizontal, 12)
                             .padding(.top, -16)
+                            .mainStagedAppear(index: 2)
                         weekList(plan)
                             .padding(.top, 12)
+                            .mainStagedAppear(index: 3)
                     } else {
                         emptyPanel
                             .padding(.horizontal, 12)
                             .padding(.top, -16)
+                            .mainStagedAppear(index: 2)
                     }
                 }
                 .padding(.horizontal, Theme.screenPadding)
-                .padding(.top, 12)
+                .padding(.top, 4)
                 .padding(.bottom, 28)
+                .mainStagedEntrance(.plan)
             }
             .background(Color.white)
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle("Plan")
+            .navigationBarTitleDisplayMode(.large)
             .onAppear(perform: expandCurrentWeek)
             .onChange(of: store.plan?.id) { _, _ in
                 didExpandCurrent = false
                 expanded = []
                 expandCurrentWeek()
             }
-        }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(headerCaption)
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.muted)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Text("Plan")
-                .font(.system(size: 28, weight: .bold))
-                .tracking(-0.6)
-                .foregroundStyle(Theme.ink)
         }
     }
 

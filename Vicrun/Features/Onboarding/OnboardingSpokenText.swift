@@ -4,9 +4,13 @@ import SwiftUI
 struct OnboardingWordFlowLayout: Layout {
     var wordSpacing: CGFloat
     var lineSpacing: CGFloat
+    /// Centres every line instead of aligning it on the leading edge.
+    var centered: Bool = false
 
     private func arrange(width: CGFloat, subviews: Subviews) -> (points: [CGPoint], size: CGSize) {
         var points: [CGPoint] = []
+        var lineOfWord: [Int] = []
+        var lineWidths: [CGFloat] = [0]
         var x: CGFloat = 0
         var y: CGFloat = 0
         var lineHeight: CGFloat = 0
@@ -17,11 +21,19 @@ struct OnboardingWordFlowLayout: Layout {
                 x = 0
                 y += lineHeight + lineSpacing
                 lineHeight = 0
+                lineWidths.append(0)
             }
             points.append(CGPoint(x: x, y: y))
+            lineOfWord.append(lineWidths.count - 1)
+            lineWidths[lineWidths.count - 1] = x + size.width
             widest = max(widest, x + size.width)
             x += size.width + wordSpacing
             lineHeight = max(lineHeight, size.height)
+        }
+        if centered {
+            for index in points.indices {
+                points[index].x += (widest - lineWidths[lineOfWord[index]]) / 2
+            }
         }
         return (points, CGSize(width: widest, height: y + lineHeight))
     }

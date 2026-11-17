@@ -147,7 +147,6 @@ struct OnboardingCoachCarouselView: View {
 struct OnboardingCoachScreen: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var nav: OnboardingNavigator
-    @Environment(\.onboardingStep) private var step
     @State private var index = 0
     @State private var restored = false
 
@@ -157,8 +156,7 @@ struct OnboardingCoachScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ProgressHeader(progress: nav.progress(for: step, store: store), onBack: { nav.back(store) })
-                .padding(.horizontal, Theme.screenPadding)
+            OnboardingHeaderSpace()
             Text("Choose your coach")
                 .font(Theme.title(28))
                 .foregroundStyle(Theme.ink)

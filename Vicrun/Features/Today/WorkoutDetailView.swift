@@ -18,7 +18,13 @@ struct WorkoutDetailView: View {
             }
         }
         .background(Color.white)
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationTitle(barTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                moreMenu
+            }
+        }
         .modifier(MainHidesTabBar())
         .fullScreenCover(isPresented: $showRun) {
             RunFlowView(workout: store.workout(id: workoutID))
@@ -32,29 +38,32 @@ struct WorkoutDetailView: View {
 
     // MARK: Content
 
+    /// Inline title of the system bar: the kind of session.
+    private var barTitle: String {
+        store.workout(id: workoutID)?.kind.title ?? "Session"
+    }
+
+    /// The illustration is the first element of the scroll content, right under the system bar,
+    /// and scrolls away under it like everything else.
     private func content(_ workout: Workout) -> some View {
-        ZStack(alignment: .top) {
-            ScrollView {
-                ZStack(alignment: .top) {
-                    illustration
-                    VStack(alignment: .leading, spacing: 18) {
-                        summaryPanel(workout)
-                        WorkoutDetailSteps(workout: workout)
+        ScrollView {
+            ZStack(alignment: .top) {
+                illustration
+                VStack(alignment: .leading, spacing: 18) {
+                    summaryPanel(workout)
+                    WorkoutDetailSteps(workout: workout)
+                        .padding(.horizontal, 4)
+                    whySection(workout)
+                        .padding(.horizontal, 4)
+                    if workout.status == .done, let run = store.run(id: workout.runID) {
+                        linkedRun(run)
                             .padding(.horizontal, 4)
-                        whySection(workout)
-                            .padding(.horizontal, 4)
-                        if workout.status == .done, let run = store.run(id: workout.runID) {
-                            linkedRun(run)
-                                .padding(.horizontal, 4)
-                        }
                     }
-                    .padding(.horizontal, Theme.screenPadding)
-                    .padding(.top, 210)
-                    .padding(.bottom, 24)
                 }
+                .padding(.horizontal, Theme.screenPadding)
+                .padding(.top, 150)
+                .padding(.bottom, 24)
             }
-            .ignoresSafeArea(edges: .top)
-            topButtons(workout)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if workout.status != .done {
@@ -66,7 +75,7 @@ struct WorkoutDetailView: View {
     private var illustration: some View {
         Color.clear
             .frame(maxWidth: .infinity)
-            .frame(height: 300)
+            .frame(height: 240)
             .overlay(
                 Image("illu_session")
                     .resizable()
@@ -81,37 +90,20 @@ struct WorkoutDetailView: View {
             .accessibilityHidden(true)
     }
 
-    private func topButtons(_ workout: Workout) -> some View {
-        HStack {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Theme.ink)
-                    .frame(width: 44, height: 44)
-                    .background(Color.white.opacity(0.9), in: Circle())
-            }
-            .accessibilityLabel("Back")
-            Spacer()
-            if workout.status == .done && !workout.kind.isRun {
-                Menu {
-                    Button("Mark as not done") {
-                        store.setStatus(.planned, for: workout.id)
-                        store.refreshMissed()
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(Theme.ink)
-                        .frame(width: 44, height: 44)
-                        .background(Color.white.opacity(0.9), in: Circle())
+    /// "More" menu of the system bar, only for a strength or stretching session already marked as done.
+    @ViewBuilder
+    private var moreMenu: some View {
+        if let workout = store.workout(id: workoutID), workout.status == .done, !workout.kind.isRun {
+            Menu {
+                Button("Mark as not done") {
+                    store.setStatus(.planned, for: workout.id)
+                    store.refreshMissed()
                 }
-                .accessibilityLabel("More options")
+            } label: {
+                Image(systemName: "ellipsis.circle")
             }
+            .accessibilityLabel("More options")
         }
-        .padding(.horizontal, Theme.screenPadding)
-        .padding(.top, 4)
     }
 
     private func summaryPanel(_ workout: Workout) -> some View {
@@ -166,8 +158,7 @@ struct WorkoutDetailView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Theme.ink)
             NavigationLink {
-                RunSummaryView(run: run)
-                    .modifier(MainHidesTabBar())
+                MainRunSummaryHost(run: run)
             } label: {
                 HStack(spacing: 12) {
                     IconTile(systemName: "checkmark", size: 40)

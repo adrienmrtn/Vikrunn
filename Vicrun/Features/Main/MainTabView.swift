@@ -19,6 +19,8 @@ struct MainTabView: View {
     @State private var showFreeRun = false
     @State private var showManualEntry = false
     @State private var keyboardVisible = false
+    /// Drives the entrance of the tab bar, last block of the opening animation.
+    @State private var tabBarRevealed = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,11 +28,16 @@ struct MainTabView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             if !chrome.tabBarHidden && !keyboardVisible {
                 MainTabBar(selection: $tab) { showPlus = true }
+                    .mainStagedAppear(index: 9)
+                    .environment(\.mainStagedRevealed, tabBarRevealed)
             }
         }
         .background(Color.white)
         .environmentObject(chrome)
-        .onAppear { store.refreshMissed() }
+        .onAppear {
+            store.refreshMissed()
+            revealTabBar()
+        }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             keyboardVisible = true
         }
@@ -52,6 +59,7 @@ struct MainTabView: View {
         .sheet(isPresented: $chrome.showProfile) {
             ProfileView()
                 .environmentObject(store)
+                .environmentObject(chrome)
         }
         .fullScreenCover(isPresented: $showFreeRun) {
             RunFlowView(workout: nil)
@@ -70,6 +78,15 @@ struct MainTabView: View {
             CoachChatView()
         case .progress:
             ProgressTabView()
+        }
+    }
+
+    /// The tab bar comes in once, after the blocks of the first screen (same delay as `MainStagedEntrance`).
+    private func revealTabBar() {
+        guard !tabBarRevealed else { return }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 120_000_000)
+            tabBarRevealed = true
         }
     }
 

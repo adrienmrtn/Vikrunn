@@ -22,11 +22,17 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
             && !isTapScreen
     }
 
+    /// The paywall cannot be left backwards: no back button there, and `back` does nothing.
     var allowsBack: Bool {
         switch self {
-        case .welcome, .loading, .planReady, .permissions, .healthConnect: return false
+        case .welcome, .loading, .planReady, .paywall, .permissions, .healthConnect: return false
         default: return true
         }
+    }
+
+    /// The flow's fixed header shows its back chevron (explainer screens draw their own, in white).
+    var showsHeaderBack: Bool {
+        allowsBack && !isTapScreen
     }
 }
 
@@ -116,6 +122,20 @@ final class OnboardingNavigator: ObservableObject {
         guard bar.count > 1, let index = bar.firstIndex(of: candidate) else { return 0.05 }
         return 0.05 + 0.95 * Double(index) / Double(bar.count - 1)
     }
+
+    /// Value held by the fixed bar on any step: screens without a bar keep the value of the last
+    /// step that had one, so the bar never runs backwards while it is hidden.
+    func barProgress(for candidate: OnboardingStep, store: AppStore) -> Double {
+        var raw = candidate.rawValue
+        while let item = OnboardingStep(rawValue: raw) {
+            let counts = item == candidate || !isSkipped(item, store: store)
+            if item.showsProgress, counts {
+                return progress(for: item, store: store) ?? 0.05
+            }
+            raw -= 1
+        }
+        return 0.05
+    }
 }
 
 private struct OnboardingStepKey: EnvironmentKey {
@@ -130,6 +150,65 @@ extension EnvironmentValues {
     }
 }
 
+/// Back chevron + progress bar, owned by the flow: it stays still while the screens cross-fade
+/// underneath. Screens leave an empty `OnboardingHeaderSpace` where it sits.
+struct OnboardingFlowHeader: View {
+    /// 0...1. Animates from one step to the next.
+    let progress: Double
+    let showsBar: Bool
+    let showsBack: Bool
+    let onBack: () -> Void
+
+    static let height: CGFloat = 44
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button(action: onBack) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Theme.ink)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Back")
+            .padding(.leading, -12)
+            .opacity(showsBack ? 1 : 0)
+            .allowsHitTesting(showsBack)
+            .accessibilityHidden(!showsBack)
+            bar
+                .opacity(showsBar ? 1 : 0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            Color.clear.frame(width: 32, height: 44)
+        }
+        .frame(height: Self.height)
+        .animation(.easeOut(duration: 0.22), value: showsBar)
+        .animation(.easeOut(duration: 0.22), value: showsBack)
+    }
+
+    private var bar: some View {
+        let clamped = CGFloat(min(max(progress, 0), 1))
+        return GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Theme.hairline)
+                Capsule().fill(Theme.ink)
+                    .frame(width: max(4, geo.size.width * clamped))
+            }
+            .animation(.easeInOut(duration: 0.4), value: clamped)
+        }
+        .frame(height: 4)
+    }
+}
+
+/// Empty room a screen leaves at its top for the flow's fixed header.
+struct OnboardingHeaderSpace: View {
+    var body: some View {
+        Color.clear
+            .frame(height: OnboardingFlowHeader.height)
+            .accessibilityHidden(true)
+    }
+}
+
 /// The whole entry flow, from the welcome carousel to the first day in the app.
 struct OnboardingFlowView: View {
     @EnvironmentObject private var store: AppStore
@@ -139,10 +218,19 @@ struct OnboardingFlowView: View {
         ZStack {
             Color.white.ignoresSafeArea()
             if nav.isReady {
+                // Only the screen takes part in the transition.
                 OnboardingStepHost(step: nav.step)
                     .id(nav.step)
                     .transition(.onboardingScreen(nav.transition, reveals: nav.step.isTapScreen))
                     .zIndex(nav.step.isTapScreen ? 1 : 0)
+                // Fixed header, above every screen: never inserted or removed on a step change.
+                OnboardingFlowHeader(progress: nav.barProgress(for: nav.step, store: store),
+                                     showsBar: nav.step.showsProgress,
+                                     showsBack: nav.step.showsHeaderBack,
+                                     onBack: { nav.back(store) })
+                    .padding(.horizontal, Theme.screenPadding)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .zIndex(2)
             }
         }
         .environmentObject(nav)

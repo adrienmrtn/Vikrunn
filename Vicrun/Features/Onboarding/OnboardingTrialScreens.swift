@@ -7,9 +7,15 @@ enum OnboardingPaywallOffer {
     static let yearlyPrice = "€99.99"
 }
 
-/// Screen 28: invitation to the free trial.
+/// Screen 28: invitation to the free trial. The headline is there from the start in light grey
+/// and turns bold word by word; then the rest settles and the button comes last.
 struct OnboardingTrialScreen: View {
     @EnvironmentObject private var store: AppStore
+    @State private var emphasised = false
+    /// 1 subtitle, 2-4 benefits, 5 button.
+    @State private var stage = 0
+
+    private static let stageDelays: [Double] = [0.15, 0.35, 0.18, 0.18, 0.45]
 
     private var benefits: [String] {
         let weeks = store.plan?.weeks.count ?? PlanEngine.maxWeeks
@@ -20,42 +26,40 @@ struct OnboardingTrialScreen: View {
         ]
     }
 
-    private var headline: Text {
-        Text("We want you to try Vicrun ")
-            + Text("for free").foregroundColor(Theme.green)
-            + Text(" for \(OnboardingPaywallOffer.trialDays) days")
-    }
-
     var body: some View {
-        OnboardingScaffold {
+        let list = benefits
+        return OnboardingScaffold(buttonsVisible: stage >= Self.stageDelays.count) {
             CoachAvatar(coach: store.coach, size: 96)
-            headline
-                .font(.system(size: 32, weight: .bold))
-                .foregroundColor(Theme.ink)
-                .lineSpacing(3)
-                .fixedSize(horizontal: false, vertical: true)
+            OnboardingEmphasisText(text: "We want you to try Vicrun for free for \(OnboardingPaywallOffer.trialDays) days",
+                                   size: 32,
+                                   lineSpacing: 5,
+                                   highlight: "for free",
+                                   onFinished: { emphasised = true })
                 .accessibilityAddTraits(.isHeader)
             Text("Your plan, your coach, every feature. You pay nothing today.")
                 .font(.system(size: 17))
                 .foregroundStyle(Color(hex: 0x5A5A5A))
                 .lineSpacing(5)
                 .fixedSize(horizontal: false, vertical: true)
+                .onboardingStaged(0, stage: stage)
             VStack(alignment: .leading, spacing: 14) {
-                ForEach(benefits, id: \.self) { benefit in
+                ForEach(list.indices, id: \.self) { index in
                     HStack(alignment: .top, spacing: 12) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 20))
                             .foregroundStyle(Theme.green)
                             .accessibilityHidden(true)
-                        Text(benefit)
+                        Text(list[index])
                             .font(.system(size: 16))
                             .foregroundStyle(Theme.ink)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    .onboardingStaged(index + 1, stage: stage)
                 }
             }
             .padding(.top, 6)
         }
+        .onboardingStageSequence($stage, delays: Self.stageDelays, isActive: emphasised)
     }
 }
 
@@ -67,9 +71,14 @@ private struct OnboardingTimelineItem: Identifiable {
     let text: String
 }
 
-/// Screen 29: how the free trial goes.
+/// Screen 29: how the free trial goes. The timeline builds itself: a node and its text, the line
+/// grows down to the next node, and so on; the button comes last.
 struct OnboardingTimelineScreen: View {
-    @EnvironmentObject private var store: AppStore
+    /// Odd stages bring a node and its text, even stages grow the line under it; the last one
+    /// shows the button.
+    @State private var stage = 0
+
+    private static let stageDelays: [Double] = [0.45, 0.4, 0.5, 0.4, 0.5, 0.55]
 
     private var items: [OnboardingTimelineItem] {
         let days = OnboardingPaywallOffer.trialDays
@@ -84,18 +93,23 @@ struct OnboardingTimelineScreen: View {
     }
 
     var body: some View {
-        OnboardingScaffold(title: "How your free trial works") {
+        let list = items
+        return OnboardingScaffold(title: "How your free trial works",
+                                  buttonsVisible: stage >= Self.stageDelays.count) {
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(items) { item in
-                    row(item, isLast: item.id == items.count - 1)
+                ForEach(list) { item in
+                    row(item, isLast: item.id == list.count - 1)
                 }
             }
             .padding(.top, 8)
         }
+        .onboardingStageSequence($stage, delays: Self.stageDelays)
     }
 
     private func row(_ item: OnboardingTimelineItem, isLast: Bool) -> some View {
-        HStack(alignment: .top, spacing: 16) {
+        let shown = stage > item.id * 2
+        let lineGrown = stage > item.id * 2 + 1
+        return HStack(alignment: .top, spacing: 16) {
             VStack(spacing: 0) {
                 Circle()
                     .fill(item.color)
@@ -105,11 +119,14 @@ struct OnboardingTimelineScreen: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(Color.white)
                     )
+                    .scaleEffect(shown ? 1 : 0.5)
+                    .opacity(shown ? 1 : 0)
                 if !isLast {
                     Rectangle()
                         .fill(item.color.opacity(0.4))
                         .frame(width: 4)
                         .frame(maxHeight: .infinity)
+                        .scaleEffect(x: 1, y: lineGrown ? 1 : 0, anchor: .top)
                 }
             }
             .frame(width: 44)
@@ -126,18 +143,27 @@ struct OnboardingTimelineScreen: View {
             }
             .padding(.top, 2)
             .padding(.bottom, isLast ? 0 : 34)
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown ? 0 : 10)
             Spacer(minLength: 0)
         }
         .fixedSize(horizontal: false, vertical: true)
     }
 }
 
-/// Screen 30: the reminder before the end of the trial, with a ringing bell.
+/// Screen 30: the reminder before the end of the trial, with a ringing bell. The title turns bold
+/// word by word, then the subtitle fades in, then the button.
 struct OnboardingReminderScreen: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var ringing = false
+    @State private var emphasised = false
+    /// 1 subtitle, 2 button.
+    @State private var stage = 0
+
+    private static let stageDelays: [Double] = [0.2, 0.6]
 
     var body: some View {
-        OnboardingScaffold {
+        OnboardingScaffold(buttonsVisible: stage >= Self.stageDelays.count) {
             VStack(spacing: 28) {
                 Circle()
                     .fill(Theme.greenTint)
@@ -146,104 +172,28 @@ struct OnboardingReminderScreen: View {
                         Image(systemName: "bell.fill")
                             .font(.system(size: 68, weight: .semibold))
                             .foregroundStyle(Theme.green)
-                            .rotationEffect(.degrees(ringing ? 16 : -16), anchor: .top)
+                            .rotationEffect(.degrees(reduceMotion ? 0 : (ringing ? 16 : -16)), anchor: .top)
                             .animation(.easeInOut(duration: 0.16).repeatForever(autoreverses: true), value: ringing)
                     )
                     .accessibilityHidden(true)
-                Text("We'll tell you before your trial ends")
-                    .font(Theme.title(28))
-                    .foregroundStyle(Theme.ink)
-                    .fixedSize(horizontal: false, vertical: true)
+                OnboardingEmphasisText(text: "We'll tell you before your trial ends",
+                                       size: 28,
+                                       centered: true,
+                                       onFinished: { emphasised = true })
                     .accessibilityAddTraits(.isHeader)
                 Text("You get a reminder the day before. You have time to decide, with no surprise on your account.")
                     .font(.system(size: 17))
                     .foregroundStyle(Color(hex: 0x5A5A5A))
                     .lineSpacing(5)
                     .fixedSize(horizontal: false, vertical: true)
+                    .onboardingStaged(0, stage: stage)
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
             .padding(.top, 56)
         }
+        .onboardingStageSequence($stage, delays: Self.stageDelays, isActive: emphasised)
         .onAppear { ringing = true }
-    }
-}
-
-/// Screen 31: the paywall. Fake and non-blocking: the close button and the main button both move on.
-struct OnboardingPaywallScreen: View {
-    @EnvironmentObject private var store: AppStore
-    @EnvironmentObject private var nav: OnboardingNavigator
-
-    private var offer: Text {
-        Text("Try \(OnboardingPaywallOffer.trialDays) days for free,").foregroundColor(Theme.green).bold()
-            + Text(" then \(OnboardingPaywallOffer.monthlyPrice) a month (\(OnboardingPaywallOffer.yearlyPrice) billed yearly)")
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Button(action: { nav.back(store) }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(Theme.ink)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel("Back")
-                Spacer()
-                Button(action: { nav.next(store) }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Theme.muted)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel("Close")
-            }
-            .padding(.horizontal, 8)
-            Spacer(minLength: 12)
-            VStack(spacing: 24) {
-                CoachAvatar(coach: store.coach, size: 72)
-                offer
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundColor(Theme.ink)
-                    .lineSpacing(6)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("Prices shown as an example. Nothing is charged in this version.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.muted)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, 28)
-            Spacer(minLength: 12)
-            HStack(spacing: 8) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 13))
-                Text("Secured by the App Store")
-                    .font(.system(size: 14))
-            }
-            .foregroundStyle(Theme.muted)
-            .padding(.bottom, 14)
-            Button(action: { nav.next(store) }) {
-                VStack(spacing: 2) {
-                    Text("Start my free trial")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(Color.white)
-                    Text("Easy to cancel, at any time")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Theme.greenTint)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 68)
-                .background(Theme.green, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background(Theme.greenTint)
-        }
-        .background(Color.white.ignoresSafeArea())
     }
 }
 
@@ -253,8 +203,14 @@ struct OnboardingPaywallScreen: View {
         .environmentObject(OnboardingNavigator())
 }
 
-#Preview("Paywall") {
-    OnboardingPaywallScreen()
+#Preview("Timeline") {
+    OnboardingTimelineScreen()
+        .environmentObject(AppStore.preview)
+        .environmentObject(OnboardingNavigator())
+}
+
+#Preview("Reminder") {
+    OnboardingReminderScreen()
         .environmentObject(AppStore.preview)
         .environmentObject(OnboardingNavigator())
 }

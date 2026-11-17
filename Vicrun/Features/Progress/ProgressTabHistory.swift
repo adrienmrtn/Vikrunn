@@ -20,8 +20,7 @@ struct ProgressTabHistory: View {
             }
             ForEach(visibleRuns) { run in
                 NavigationLink {
-                    RunSummaryView(run: run)
-                        .modifier(MainHidesTabBar())
+                    MainRunSummaryHost(run: run)
                 } label: {
                     ProgressTabRunRow(run: run)
                 }
