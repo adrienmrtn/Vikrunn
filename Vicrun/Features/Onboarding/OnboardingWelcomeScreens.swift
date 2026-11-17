@@ -43,8 +43,6 @@ struct OnboardingWelcomeScreen: View {
                 showSignIn = false
                 nav.go(to: .firstName, forward: true, store: store)
             }
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
         }
     }
 

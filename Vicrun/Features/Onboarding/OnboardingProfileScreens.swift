@@ -91,10 +91,10 @@ private struct OnboardingHealthOption: Identifiable {
     let tint: Color
     let background: Color
 
-    static let none = "none"
+    static let nothingID = "none"
 
     static let all: [OnboardingHealthOption] = [
-        OnboardingHealthOption(id: none, title: "Nothing to report", subtitle: "I feel fine to start",
+        OnboardingHealthOption(id: nothingID, title: "Nothing to report", subtitle: "I feel fine to start",
                                symbol: "checkmark", tint: Theme.green, background: Theme.greenTint),
         OnboardingHealthOption(id: "pain", title: "A pain or an injury right now",
                                subtitle: "See a professional first, we start gently",
@@ -114,10 +114,10 @@ struct OnboardingHealthScreen: View {
 
     private func toggle(_ id: String) {
         var flags = store.answers.healthFlags
-        if id == OnboardingHealthOption.none {
+        if id == OnboardingHealthOption.nothingID {
             flags = flags.contains(id) ? [] : [id]
         } else {
-            flags.removeAll { $0 == OnboardingHealthOption.none }
+            flags.removeAll { $0 == OnboardingHealthOption.nothingID }
             if flags.contains(id) {
                 flags.removeAll { $0 == id }
             } else {

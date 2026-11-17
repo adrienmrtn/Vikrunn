@@ -77,6 +77,7 @@ final class OnboardingNavigator: ObservableObject {
     @Published private(set) var step: OnboardingStep = .welcome
     @Published private(set) var isReady = false
     let direction = OnboardingDirection()
+    private var lastMove = Date.distantPast
 
     /// Resumes where the user left (answers and step are saved on the phone).
     func restore(from store: AppStore) {
@@ -128,6 +129,10 @@ final class OnboardingNavigator: ObservableObject {
 
     func go(to target: OnboardingStep, forward: Bool, store: AppStore) {
         guard target != step else { return }
+        // Ignore a second tap while the previous transition is still starting.
+        let now = Date()
+        guard now.timeIntervalSince(lastMove) > 0.3 else { return }
+        lastMove = now
         direction.forward = forward
         withAnimation(.spring(response: 0.45, dampingFraction: 0.88)) {
             step = target
@@ -188,6 +193,7 @@ struct OnboardingFlowView: View {
 }
 
 /// Maps a step to its screen.
+@MainActor
 struct OnboardingStepHost: View {
     let step: OnboardingStep
 

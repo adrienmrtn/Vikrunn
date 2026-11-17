@@ -52,8 +52,6 @@ struct OnboardingSignInScreen: View {
                 showOptions = false
                 nav.next(store)
             }
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
         }
     }
 
