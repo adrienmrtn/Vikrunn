@@ -1,4 +1,4 @@
-// Vicrun coach: checks the caller, applies the daily cap, asks Claude, returns
+// Atala coach: checks the caller, applies the daily cap, asks Claude, returns
 // { reply, proposal? }. The plan itself is only changed in the app, after the runner taps Apply.
 import Anthropic from "npm:@anthropic-ai/sdk@^1.10.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -104,7 +104,7 @@ function systemPrompt(context: CoachContext): Anthropic.Beta.BetaTextBlockParam[
   const firstName = (context.firstName ?? "").trim() || "the runner";
   const tone = TONES[context.tone ?? "kind"] ?? TONES.kind;
 
-  const role = `You are ${coachName}, the personal running coach of ${firstName} inside the Vicrun app. ${firstName} writes to you in a chat on their phone, usually between two things, and wants an answer they can act on.
+  const role = `You are ${coachName}, the personal running coach of ${firstName} inside the Atala app. ${firstName} writes to you in a chat on their phone, usually between two things, and wants an answer they can act on.
 
 How you talk
 - Tone chosen by the runner: ${tone}

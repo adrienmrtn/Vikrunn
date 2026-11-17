@@ -95,7 +95,7 @@ struct ProgressTabHistory: View {
             }
             importing = false
             if !granted {
-                importMessage = "Vicrun could not read Apple Health. You can allow it in the Health app, under Sharing."
+                importMessage = "Atala could not read Apple Health. You can allow it in the Health app, under Sharing."
             } else if added == 0 {
                 importMessage = "No new runs found in Apple Health."
             } else {

@@ -113,9 +113,13 @@ struct ProfileFooterSection: View {
             }
             #endif
         } footer: {
-            Text(versionText)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.top, 8)
+            VStack(spacing: 8) {
+                BrandLogo(style: .full, height: 18)
+                    .foregroundStyle(Theme.forest)
+                Text(versionText)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.top, 12)
         }
     }
 
@@ -123,7 +127,7 @@ struct ProfileFooterSection: View {
         let info = Bundle.main.infoDictionary
         let version = info?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = info?["CFBundleVersion"] as? String
-        if let build, build != version { return "Vicrun \(version) (\(build))" }
-        return "Vicrun \(version)"
+        if let build, build != version { return "Version \(version) (\(build))" }
+        return "Version \(version)"
     }
 }
