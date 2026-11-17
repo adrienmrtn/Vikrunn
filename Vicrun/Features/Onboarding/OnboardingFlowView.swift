@@ -10,7 +10,7 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
     case signIn, loading, planReady, commitment, trial, timeline, reminder, paywall
     case permissions, healthConnect
 
-    /// Full-screen "tap to continue" screens: no progress bar.
+    /// Full-screen coach "explainer" screens (tap to continue, circular reveal): no progress bar.
     var isTapScreen: Bool {
         self == .hello || self == .goalIntro || self == .coachReply
     }
@@ -30,53 +30,12 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
     }
 }
 
-/// Shared between the navigator and the slide transition so that a screen leaving the stage
-/// always slides the right way, even when the direction changed after it was drawn.
-final class OnboardingDirection {
-    var forward = true
-    var width: CGFloat = 400
-}
-
-struct OnboardingSlideModifier: ViewModifier {
-    let direction: OnboardingDirection
-    let isRemoval: Bool
-    let isActive: Bool
-
-    private var offset: CGFloat {
-        guard isActive else { return 0 }
-        let towardsTrailing = direction.forward != isRemoval
-        return towardsTrailing ? direction.width : -direction.width
-    }
-
-    func body(content: Content) -> some View {
-        content
-            .offset(x: offset)
-            .opacity(isActive ? 0 : 1)
-    }
-}
-
-extension AnyTransition {
-    /// Forward: the new screen comes from the right and the old one leaves to the left. Back: the reverse.
-    static func onboardingSlide(_ direction: OnboardingDirection) -> AnyTransition {
-        .asymmetric(
-            insertion: .modifier(
-                active: OnboardingSlideModifier(direction: direction, isRemoval: false, isActive: true),
-                identity: OnboardingSlideModifier(direction: direction, isRemoval: false, isActive: false)
-            ),
-            removal: .modifier(
-                active: OnboardingSlideModifier(direction: direction, isRemoval: true, isActive: true),
-                identity: OnboardingSlideModifier(direction: direction, isRemoval: true, isActive: false)
-            )
-        )
-    }
-}
-
 /// Owns the current step: navigation, skipping rules and the progress value.
 @MainActor
 final class OnboardingNavigator: ObservableObject {
     @Published private(set) var step: OnboardingStep = .welcome
     @Published private(set) var isReady = false
-    let direction = OnboardingDirection()
+    let transition = OnboardingTransitionContext()
     private var lastMove = Date.distantPast
 
     /// Resumes where the user left (answers and step are saved on the phone).
@@ -127,14 +86,19 @@ final class OnboardingNavigator: ObservableObject {
         }
     }
 
+    /// `forward` is kept for the call sites; the transition is the same both ways.
     func go(to target: OnboardingStep, forward: Bool, store: AppStore) {
         guard target != step else { return }
         // Ignore a second tap while the previous transition is still starting.
         let now = Date()
         guard now.timeIntervalSince(lastMove) > 0.3 else { return }
         lastMove = now
-        direction.forward = forward
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.88)) {
+        // Explainer screens draw their own circular reveal: the screen underneath waits for it.
+        transition.holdsOutgoing = target.isTapScreen
+        let animation: Animation = target.isTapScreen
+            ? .easeInOut(duration: OnboardingRevealTiming.hold)
+            : .easeOut(duration: 0.3)
+        withAnimation(animation) {
             step = target
         }
         store.onboardingStep = target.rawValue
@@ -159,7 +123,7 @@ private struct OnboardingStepKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// The step a screen belongs to (stays the same while the screen slides out).
+    /// The step a screen belongs to (stays the same while the screen fades out).
     var onboardingStep: OnboardingStep {
         get { self[OnboardingStepKey.self] }
         set { self[OnboardingStepKey.self] = newValue }
@@ -172,19 +136,13 @@ struct OnboardingFlowView: View {
     @StateObject private var nav = OnboardingNavigator()
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                Color.white.ignoresSafeArea()
-                if nav.isReady {
-                    OnboardingStepHost(step: nav.step)
-                        .id(nav.step)
-                        .transition(.onboardingSlide(nav.direction))
-                }
-            }
-            .frame(width: geo.size.width, height: geo.size.height)
-            .onAppear { nav.direction.width = geo.size.width }
-            .onChange(of: geo.size.width) { _, width in
-                nav.direction.width = width
+        ZStack {
+            Color.white.ignoresSafeArea()
+            if nav.isReady {
+                OnboardingStepHost(step: nav.step)
+                    .id(nav.step)
+                    .transition(.onboardingScreen(nav.transition, reveals: nav.step.isTapScreen))
+                    .zIndex(nav.step.isTapScreen ? 1 : 0)
             }
         }
         .environmentObject(nav)

@@ -154,6 +154,7 @@ struct OnboardingHealthScreen: View {
 struct OnboardingMirrorScreen: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var nav: OnboardingNavigator
+    @State private var stage = 0
 
     private var vma: Double { PlanEngine.estimateVMA(store.answers) }
 
@@ -186,8 +187,15 @@ struct OnboardingMirrorScreen: View {
         ]
     }
 
+    /// One stage per block (header, estimate, each row), then one more for the buttons.
+    private var stageDelays: [Double] {
+        [0.35, 0.3] + Array(repeating: 0.2, count: rows.count) + [0.4]
+    }
+
     var body: some View {
+        let rows = self.rows
         OnboardingScaffold(buttonTitle: "That's me",
+                           buttonsVisible: stage >= rows.count + 3,
                            secondaryTitle: "Change something",
                            onSecondary: { nav.go(to: .experience, forward: false, store: store) }) {
             HStack(spacing: 12) {
@@ -202,24 +210,32 @@ struct OnboardingMirrorScreen: View {
                         .foregroundStyle(Theme.green)
                 }
             }
+            .onboardingStaged(0, stage: stage)
             estimateCard
+                .onboardingStaged(1, stage: stage)
             VStack(spacing: 0) {
-                ForEach(rows, id: \.0) { row in
-                    Divider().overlay(Theme.hairline)
-                    HStack {
-                        Text(row.0)
-                            .font(.system(size: 15))
-                            .foregroundStyle(Theme.muted)
-                        Spacer(minLength: 12)
-                        Text(row.1)
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Theme.ink)
+                ForEach(rows.indices, id: \.self) { index in
+                    VStack(spacing: 0) {
+                        Divider().overlay(Theme.hairline)
+                        HStack {
+                            Text(rows[index].0)
+                                .font(.system(size: 15))
+                                .foregroundStyle(Theme.muted)
+                            Spacer(minLength: 12)
+                            Text(rows[index].1)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(Theme.ink)
+                        }
+                        .frame(height: 52)
+                        if index == rows.count - 1 {
+                            Divider().overlay(Theme.hairline)
+                        }
                     }
-                    .frame(height: 52)
+                    .onboardingStaged(index + 2, stage: stage)
                 }
-                Divider().overlay(Theme.hairline)
             }
         }
+        .onboardingStageSequence($stage, delays: stageDelays)
     }
 
     private var estimateCard: some View {

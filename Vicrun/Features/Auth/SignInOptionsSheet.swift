@@ -24,6 +24,27 @@ struct SignInOptionsSheet: View {
     @State private var email: String = ""
     @State private var code: String = ""
     @FocusState private var focus: AuthSheetField?
+    @State private var typingSelection: PresentationDetent = .large
+
+    /// Just tall enough for the title, the three buttons, the guest link and the terms line.
+    private static let compactDetent = PresentationDetent.height(440)
+    /// Used only while the e-mail or the code is being typed, so the keyboard does not hide the field.
+    private static let typingDetent = PresentationDetent.large
+
+    /// One fitted detent for the options; the taller one exists only in the e-mail and code steps.
+    private var detents: Set<PresentationDetent> {
+        mode == .options ? [Self.compactDetent] : [Self.compactDetent, Self.typingDetent]
+    }
+
+    /// Always a member of `detents`, whatever the step.
+    private var detentSelection: Binding<PresentationDetent> {
+        Binding(
+            get: { mode == .options ? Self.compactDetent : typingSelection },
+            set: { newValue in
+                if mode != .options { typingSelection = newValue }
+            }
+        )
+    }
 
     init(onSignedIn: @escaping (Account) -> Void) {
         self.onSignedIn = onSignedIn
@@ -47,10 +68,14 @@ struct SignInOptionsSheet: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .background(Color.white)
-        .presentationDetents([.height(480), .large])
+        .presentationDetents(detents, selection: detentSelection)
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
         .interactiveDismissDisabled(busy != nil)
+        .onChange(of: mode) { _, newMode in
+            // Entering the e-mail or code step always opens the taller detent again.
+            if newMode != .options { typingSelection = Self.typingDetent }
+        }
     }
 
     // MARK: Sections
