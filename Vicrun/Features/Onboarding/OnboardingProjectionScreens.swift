@@ -3,14 +3,22 @@ import SwiftUI
 /// Screen 22: where the plan takes the user, computed by `PlanEngine` from the real answers.
 struct OnboardingProjectionScreen: View {
     @EnvironmentObject private var store: AppStore
+    /// 1 hero card, 2 times count and the line draws, 3 verdict, 4-6 stat tiles, 7 coach note, 8 button.
+    @State private var stage = 0
+
+    private static let stageDelays: [Double] = [0.35, 0.4, 1.15, 0.35, 0.16, 0.16, 0.45, 0.5]
+    private static let counting = Animation.easeInOut(duration: 1.1)
 
     var body: some View {
         let plan = PlanEngine.generate(answers: store.answers)
-        OnboardingScaffold(title: title(plan)) {
+        OnboardingScaffold(title: title(plan), buttonsVisible: stage >= Self.stageDelays.count) {
             heroCard(plan)
+                .onboardingStaged(0, stage: stage)
             stats(plan)
             CoachNote(coach: store.coach, text: note(plan))
+                .onboardingStaged(6, stage: stage)
         }
+        .onboardingStageSequence($stage, delays: Self.stageDelays)
     }
 
     // MARK: Wording
@@ -68,17 +76,25 @@ struct OnboardingProjectionScreen: View {
     private func heroCard(_ plan: TrainingPlan) -> some View {
         let firstKm = plan.weeks.first?.plannedKm ?? 0
         let usesTimes = plan.goal != .regular && plan.currentSeconds != nil
-        let todayValue = usesTimes ? Fmt.goalTime(plan.currentSeconds ?? 0) : Fmt.km(firstKm, decimals: 0)
-        let endValue = usesTimes
-            ? Fmt.goalTime(plan.predictedSeconds ?? plan.currentSeconds ?? 0)
-            : Fmt.km(plan.peakKm, decimals: 0)
-        return VStack(alignment: .leading, spacing: 18) {
+        // The big number starts from today's value and travels to where the plan leads.
+        let startValue: Double = usesTimes ? Double(plan.currentSeconds ?? 0) : firstKm
+        let endValue: Double = usesTimes
+            ? Double(plan.predictedSeconds ?? plan.currentSeconds ?? 0)
+            : plan.peakKm
+        let format: (Int) -> String
+        if usesTimes {
+            format = { seconds in Fmt.goalTime(seconds) }
+        } else {
+            format = { km in Fmt.km(Double(km), decimals: 0) }
+        }
+        let counted = stage >= 2
+        return VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(usesTimes ? "Today" : "First week")
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.greenOnDark)
-                    Text(todayValue)
+                    Text(format(Int(startValue.rounded())))
                         .font(.system(size: 26, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(Theme.greenOnDark)
@@ -88,20 +104,25 @@ struct OnboardingProjectionScreen: View {
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(Theme.greenOnDark)
                     .padding(.bottom, 8)
+                    .opacity(counted ? 1 : 0)
+                    .offset(x: counted ? 0 : -14)
+                    .animation(.easeOut(duration: 0.6), value: counted)
                     .accessibilityHidden(true)
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(usesTimes ? endLabel(plan) : "Biggest week")
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.greenOnDark)
-                    Text(endValue)
+                    OnboardingCountingValue(value: counted ? endValue : startValue, format: format)
                         .font(.system(size: 42, weight: .bold))
                         .monospacedDigit()
                         .minimumScaleFactor(0.6)
                         .lineLimit(1)
                         .foregroundStyle(Color.white)
+                        .animation(Self.counting, value: counted)
                 }
             }
+            progressLine(drawn: counted)
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 16))
@@ -115,36 +136,70 @@ struct OnboardingProjectionScreen: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(Color.white.opacity(0.14), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .onboardingStaged(2, stage: stage)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 22)
         .background(Theme.green, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
     }
 
+    /// Thin line from today to the goal that draws itself while the number counts.
+    private func progressLine(drawn: Bool) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(Theme.greenOnDark)
+                .frame(width: 8, height: 8)
+            ZStack {
+                Capsule()
+                    .fill(Color.white.opacity(0.18))
+                Capsule()
+                    .fill(Color.white)
+                    .scaleEffect(x: drawn ? 1 : 0, y: 1, anchor: .leading)
+                    .animation(Self.counting, value: drawn)
+            }
+            .frame(height: 4)
+            Circle()
+                .fill(Color.white)
+                .frame(width: 10, height: 10)
+                .scaleEffect(drawn ? 1 : 0.2)
+                .opacity(drawn ? 1 : 0)
+                .animation(.spring(response: 0.4, dampingFraction: 0.6).delay(1.0), value: drawn)
+        }
+        .accessibilityHidden(true)
+    }
+
     private func stats(_ plan: TrainingPlan) -> some View {
         let sessions = OnboardingCopy.sessionsPerWeek(store.answers)
         return HStack(spacing: 10) {
-            statTile(symbol: "calendar", value: "\(plan.weeks.count)",
+            statTile(index: 3, symbol: "calendar", target: Double(plan.weeks.count),
+                     format: { "\($0)" },
                      label: plan.weeks.count == 1 ? "week of plan" : "weeks of plan")
-            statTile(symbol: "figure.run", value: "\(sessions)",
+            statTile(index: 4, symbol: "figure.run", target: Double(sessions),
+                     format: { "\($0)" },
                      label: sessions == 1 ? "session a week" : "sessions a week")
-            statTile(symbol: "chart.bar.fill", value: Fmt.km(plan.peakKm, decimals: 0),
+            statTile(index: 5, symbol: "chart.bar.fill", target: plan.peakKm,
+                     format: { Fmt.km(Double($0), decimals: 0) },
                      label: "the biggest week")
         }
     }
 
-    private func statTile(symbol: String, value: String, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+    /// The tile rises in at its stage and its number counts up from zero.
+    private func statTile(index: Int, symbol: String, target: Double,
+                          format: @escaping (Int) -> String, label: String) -> some View {
+        let shown = stage > index
+        return VStack(alignment: .leading, spacing: 8) {
             Image(systemName: symbol)
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Theme.green)
                 .frame(height: 22)
                 .accessibilityHidden(true)
-            Text(value)
+            OnboardingCountingValue(value: shown ? target : 0, format: format)
                 .font(.system(size: 20, weight: .bold))
+                .monospacedDigit()
                 .foregroundStyle(Theme.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
+                .animation(.easeOut(duration: 0.7), value: shown)
             Text(label)
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.muted)
@@ -155,6 +210,7 @@ struct OnboardingProjectionScreen: View {
         .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
         .card()
         .accessibilityElement(children: .combine)
+        .onboardingStaged(index, stage: stage)
     }
 }
 
