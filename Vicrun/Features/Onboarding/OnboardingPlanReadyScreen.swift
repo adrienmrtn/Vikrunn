@@ -66,7 +66,7 @@ struct OnboardingPathLine: Shape {
         var path = Path()
         guard count > 0 else { return path }
         path.move(to: OnboardingPathLayout.nodeCenter(0))
-        for index in 1..<max(1, count) + 1 {
+        for index in 1...count {
             let previous = OnboardingPathLayout.nodeCenter(index - 1)
             let next = index < count
                 ? OnboardingPathLayout.nodeCenter(index)
