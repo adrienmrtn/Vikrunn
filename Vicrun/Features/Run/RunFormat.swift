@@ -118,7 +118,7 @@ enum RunFormat {
         let step = steps[index]
         var text = "\(step.kind.title), \(amount(step))."
         if step.kind == .work, let pace = targetPace(step) {
-            text += " Target \(Fmt.pace(pace)) /km."
+            text += " Target \(Fmt.pace(pace))/km."
         } else if step.kind != .work, !step.label.isEmpty {
             text += " \(step.label)."
         }

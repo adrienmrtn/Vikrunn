@@ -146,9 +146,13 @@ struct ProfileView: View {
         } else {
             answers.targetSeconds = nil
         }
-        answers.runDays = draft.runDays.sorted()
-        let longDay = draft.longRunDay
-        answers.longRunDay = longDay.flatMap { answers.runDays.contains($0) ? $0 : nil }
+        let days: [Int] = draft.runDays.sorted()
+        answers.runDays = days
+        if let longDay = draft.longRunDay, days.contains(longDay) {
+            answers.longRunDay = longDay
+        } else {
+            answers.longRunDay = nil
+        }
         store.answers = answers
         if store.plan != nil, store.mainPlanEnded {
             // A finished plan: the next one also takes the level reached into account.
@@ -159,7 +163,6 @@ struct ProfileView: View {
         }
         draft = Self.withoutPastRace(store.answers)
         planUpdated = true
-        Task { await SyncService.pushAll(store: store) }
     }
 }
 

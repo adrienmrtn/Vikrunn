@@ -22,24 +22,47 @@ enum CoachService {
 
     // MARK: Server
 
+    /// When the server said the AI coach is not available (no key yet, daily limit), the app answers
+    /// from the phone until this date instead of asking again for every message.
+    private static var remotePausedUntil: Date?
+
+    /// The answer of the `coach` edge function, or nil to answer from the phone
+    /// (guest, offline, coach not configured, daily limit, any server error).
     private static func remoteReply(to text: String, store: AppStore) async -> ChatMessage? {
-        guard SupabaseConfig.isConfigured,
-              let token = await AuthService.shared.validAccessToken(store: store) else { return nil }
+        guard SupabaseConfig.isConfigured, store.isPersistent, store.hasRealAccount else { return nil }
+        if let pausedUntil = remotePausedUntil, pausedUntil > Date() { return nil }
 
         let payload: [String: Any] = [
             "messages": history(endingWith: text, store: store),
             "context": context(store: store),
         ]
         guard let body = SupabaseClient.encode(payload),
-              let response = try? await SupabaseClient.send(path: "/functions/v1/coach", method: "POST",
-                                                            body: body, accessToken: token, timeout: 60),
-              response.isSuccess else { return nil }
+              let response = try? await AuthService.shared.authorizedSend(
+                store: store, path: "/functions/v1/coach", method: "POST", body: body, timeout: 45)
+        else { return nil }
+
+        guard response.isSuccess else {
+            switch response.errorCode {
+            case "coach_not_configured":
+                remotePausedUntil = Date().addingTimeInterval(10 * 60)
+            case "daily_limit":
+                remotePausedUntil = Date().addingTimeInterval(60 * 60)
+            default:
+                break
+            }
+            return nil
+        }
+        remotePausedUntil = nil
 
         let json = response.json
         let reply = (json["reply"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !reply.isEmpty else { return nil }
 
         var message = ChatMessage(role: .coach, text: reply)
+        // Same id as the row kept in the account, so the answer to a proposal can be saved there.
+        if let idString = json["messageId"] as? String, let id = UUID(uuidString: idString) {
+            message.id = id
+        }
         if let rawProposal = json["proposal"] as? [String: Any] {
             message.proposal = proposal(from: rawProposal, store: store)
         }
@@ -82,19 +105,26 @@ enum CoachService {
         return formatter
     }()
 
+    static func weekdayName(_ date: Date) -> String {
+        Weekday.long(Calendar.plan.mondayIndex(of: date))
+    }
+
+    /// What the coach knows: today, the last two weeks and the next three of the plan, the recent runs,
+    /// the paces, the goal, the tone and the coach's name.
     private static func context(store: AppStore) -> [String: Any] {
         let calendar = Calendar.plan
         let today = calendar.startOfDay(for: Date())
+        let from = calendar.date(byAdding: .day, value: -14, to: today) ?? today
         let horizon = calendar.date(byAdding: .day, value: 22, to: today) ?? today
         let all = store.allWorkouts
-        let past = Array(all.filter { $0.date < today }.suffix(2))
-        let upcoming = all.filter { $0.date >= today && $0.date < horizon }
+        let window = all.filter { $0.date >= from && $0.date < horizon }
 
         var workouts: [[String: Any]] = []
-        for workout in past + upcoming {
+        for workout in window.prefix(70) {
             workouts.append([
                 "id": workout.id.uuidString,
                 "date": dayString(workout.date),
+                "weekday": weekdayName(workout.date),
                 "kind": workout.kind.rawValue,
                 "title": workout.title,
                 "distanceKm": rounded(workout.distanceKm),
@@ -104,9 +134,10 @@ enum CoachService {
         }
 
         var recentRuns: [[String: Any]] = []
-        for run in store.runs.sorted(by: { $0.date > $1.date }).prefix(6) {
+        for run in store.runs.sorted(by: { $0.date > $1.date }).prefix(8) {
             var item: [String: Any] = [
                 "date": dayString(run.date),
+                "weekday": weekdayName(run.date),
                 "title": run.title,
                 "distanceKm": rounded(run.distanceKm),
                 "durationMin": run.durationSec / 60,
@@ -122,6 +153,7 @@ enum CoachService {
             "coachName": store.coach.name,
             "tone": store.answers.tone.rawValue,
             "today": dayString(today),
+            "weekday": weekdayName(today),
             "workouts": workouts,
             "recentRuns": recentRuns,
         ]
@@ -151,14 +183,18 @@ enum CoachService {
     // MARK: Proposal parsing
 
     /// Maps the server proposal to real workouts of the plan. Unknown ids and empty changes are dropped.
-    private static func proposal(from raw: [String: Any], store: AppStore) -> PlanProposal? {
+    static func proposal(from raw: [String: Any], store: AppStore, keepUnknown: Bool = false) -> PlanProposal? {
         guard let rawChanges = raw["changes"] as? [[String: Any]] else { return nil }
         var changes: [PlanChange] = []
         for item in rawChanges {
             guard let idString = item["workoutId"] as? String,
-                  let workoutID = UUID(uuidString: idString),
-                  let workout = store.workout(id: workoutID),
-                  workout.kind != .race else { continue }
+                  let workoutID = UUID(uuidString: idString) else { continue }
+            if let workout = store.workout(id: workoutID) {
+                if workout.kind == .race { continue }
+            } else if !keepUnknown {
+                // A fresh proposal only ever touches sessions of the current plan.
+                continue
+            }
             var change = PlanChange(workoutID: workoutID)
             if (item["remove"] as? Bool) == true {
                 change.remove = true

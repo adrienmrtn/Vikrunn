@@ -117,15 +117,20 @@ extension AuthService {
                                          body: SupabaseClient.encode(payload))
         guard var account = Self.account(fromSession: json) else { throw AuthError.appleFailed }
         if account.email == nil { account.email = credential.email }
+        noteSignedIn()
         return account
     }
 
     /// Google through the Supabase hosted page, in the system web sign-in sheet.
+    /// Uses the PKCE flow: the callback carries a one-time code, exchanged here for the session.
     func signInWithGoogle() async throws -> Account {
+        let verifier = Self.randomNonce(length: 64)
         guard SupabaseConfig.isConfigured,
               let url = SupabaseClient.url(path: "/auth/v1/authorize", query: [
                 URLQueryItem(name: "provider", value: "google"),
                 URLQueryItem(name: "redirect_to", value: SupabaseConfig.redirectURL),
+                URLQueryItem(name: "code_challenge", value: Self.pkceChallenge(for: verifier)),
+                URLQueryItem(name: "code_challenge_method", value: "s256"),
               ]) else { throw AuthError.notConfigured }
 
         // Only one web sign-in at a time.
@@ -165,7 +170,9 @@ extension AuthService {
             }
         }
 
-        return try await account(fromCallback: callbackURL)
+        let account = try await account(fromCallback: callbackURL, verifier: verifier)
+        noteSignedIn()
+        return account
     }
 
     /// Called from `.onOpenURL`: finishes a web sign-in if the app was opened with `vicrun://auth-callback`.
@@ -186,13 +193,31 @@ extension AuthService {
         pending.resume(with: result)
     }
 
-    /// Reads the session from the callback fragment, then loads the user.
-    private func account(fromCallback url: URL) async throws -> Account {
+    /// Turns the callback into an account: exchanges the one-time code (PKCE), or reads the tokens
+    /// from the fragment when the server answered with the implicit flow.
+    private func account(fromCallback url: URL, verifier: String) async throws -> Account {
         let values = Self.callbackValues(url)
-        guard let token = values["access_token"], !token.isEmpty else {
-            if let description = values["error_description"], !description.isEmpty {
-                throw AuthError.server(description.replacingOccurrences(of: "+", with: " "))
+        if let code = values["code"], !code.isEmpty {
+            let payload: [String: Any] = ["auth_code": code, "code_verifier": verifier]
+            let json: [String: Any]
+            do {
+                json = try await authRequest(path: "/auth/v1/token", method: "POST",
+                                             query: [URLQueryItem(name: "grant_type", value: "pkce")],
+                                             body: SupabaseClient.encode(payload))
+            } catch let error as AuthError {
+                if case .server = error { throw AuthError.googleFailed }
+                throw error
             }
+            guard let account = Self.account(fromSession: json) else { throw AuthError.googleFailed }
+            return account
+        }
+        guard let token = values["access_token"], !token.isEmpty else {
+            let failure = (values["error_code"] ?? "") + " " + (values["error_description"] ?? "")
+            let text = failure.replacingOccurrences(of: "+", with: " ").lowercased()
+            if text.contains("provider") && (text.contains("not enabled") || text.contains("unsupported")) {
+                throw AuthError.providerUnavailable
+            }
+            if values["error"] == "access_denied" { throw AuthError.cancelled }
             throw AuthError.googleFailed
         }
         let user = try await authRequest(path: "/auth/v1/user", method: "GET", accessToken: token)
@@ -229,6 +254,15 @@ extension AuthService {
             result.append(charset[index])
         }
         return result
+    }
+
+    /// PKCE challenge: SHA-256 of the verifier, base64url without padding.
+    static func pkceChallenge(for verifier: String) -> String {
+        let digest = SHA256.hash(data: Data(verifier.utf8))
+        return Data(digest).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
     }
 
     static func sha256(_ input: String) -> String {

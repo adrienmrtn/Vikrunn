@@ -25,21 +25,21 @@ struct TodayView: View {
                         .padding(.horizontal, 12)
                         .padding(.top, -56)
                         .mainStagedAppear(index: 3)
-                    if let pending = store.mainUncountedRunToday {
-                        MainCountRunCard(run: pending.run, session: pending.session)
-                            .padding(.top, 14)
-                            .mainStagedAppear(index: 4)
+                    Group {
+                        if let pending = store.mainUncountedRunToday {
+                            MainCountRunCard(run: pending.run, session: pending.session)
+                                .padding(.top, 14)
+                        }
+                        if showsEndedCardBelow {
+                            MainPlanEndedCard()
+                                .padding(.top, 14)
+                        }
+                        if !extras.isEmpty {
+                            TodayExtraSessions(workouts: extras)
+                                .padding(.top, 16)
+                        }
                     }
-                    if showsEndedCardBelow {
-                        MainPlanEndedCard()
-                            .padding(.top, 14)
-                            .mainStagedAppear(index: 4)
-                    }
-                    if !extras.isEmpty {
-                        TodayExtraSessions(workouts: extras)
-                            .padding(.top, 16)
-                            .mainStagedAppear(index: 4)
-                    }
+                    .mainStagedAppear(index: 4)
                     if let week = store.mainThisWeek {
                         TodayWeekVolume(week: week)
                             .padding(.top, 18)

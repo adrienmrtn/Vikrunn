@@ -13,6 +13,7 @@ struct ManualRunEntryView: View {
     @State private var minutes: Int
     @State private var seconds: Int
     @State private var feeling: Feeling?
+    @FocusState private var distanceFocused: Bool
 
     init(workout: Workout?) {
         self.workout = workout
@@ -42,11 +43,26 @@ struct ManualRunEntryView: View {
 
     private var durationSec: Int { hours * 3600 + minutes * 60 + seconds }
 
-    private var isValid: Bool { distanceKm > 0 && distanceKm < 300 && durationSec > 0 }
+    /// Seconds per kilometre of what was typed. 0 when it cannot be computed yet.
+    private var pace: Int {
+        guard distanceKm > 0, durationSec > 0 else { return 0 }
+        return Int(Double(durationSec) / distanceKm)
+    }
+
+    /// Faster than 2:00 per km or slower than 30:00 per km is a typing mistake, not a run.
+    private var paceIsPlausible: Bool { pace >= 120 && pace <= 1800 }
+
+    private var isValid: Bool {
+        distanceKm >= 0.1 && distanceKm <= 100 && durationSec >= 60 && paceIsPlausible && date <= Date()
+    }
 
     private var pacePreview: String {
-        guard isValid else { return "Enter a distance and a duration." }
-        let pace = Int(Double(durationSec) / distanceKm)
+        if distanceKm <= 0 || durationSec <= 0 { return "Enter a distance and a duration." }
+        if distanceKm < 0.1 { return "The distance is too short to be saved." }
+        if distanceKm > 100 { return "That is more than 100 km. Check the distance." }
+        if durationSec < 60 { return "The duration must be at least one minute." }
+        if pace < 120 { return "That is \(Fmt.pace(pace)) per km, faster than anyone runs. Check the distance and the duration." }
+        if pace > 1800 { return "That is \(Fmt.pace(pace)) per km. Check the distance and the duration." }
         return "That is \(Fmt.pace(pace)) per km."
     }
 
@@ -62,6 +78,7 @@ struct ManualRunEntryView: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .frame(maxWidth: 110)
+                            .focused($distanceFocused)
                             .accessibilityLabel("Distance in kilometres")
                         Text("km")
                             .foregroundStyle(Theme.muted)
@@ -102,7 +119,14 @@ struct ManualRunEntryView: View {
                         .fontWeight(.semibold)
                         .disabled(!isValid)
                 }
+                // The decimal pad has no return key.
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { distanceFocused = false }
+                        .fontWeight(.semibold)
+                }
             }
+            .scrollDismissesKeyboard(.interactively)
         }
     }
 
@@ -128,7 +152,13 @@ struct ManualRunEntryView: View {
 
     private func save() {
         guard isValid else { return }
-        let run = RunRecord(workoutID: workout?.id,
+        distanceFocused = false
+        // A session already done keeps its run: this one is saved as a plain run.
+        var workoutID: UUID? = workout?.id
+        if let id = workoutID, let current = store.workout(id: id), current.status == .done {
+            workoutID = nil
+        }
+        let run = RunRecord(workoutID: workoutID,
                             title: workout?.title ?? "Run",
                             date: date,
                             source: .manual,

@@ -31,12 +31,12 @@ struct RunFlowView: View {
                 // Never cut a recording here: only clean up when nothing is being recorded.
                 if tracker.state == .idle || tracker.state == .finished { teardown() }
             }
-            .confirmationDialog("This session is very short", isPresented: $confirmShortRun, titleVisibility: .visible) {
-                Button("Save it anyway") { finishRun(save: true) }
+            .confirmationDialog(shortRunTitle, isPresented: $confirmShortRun, titleVisibility: .visible) {
+                Button(noDistance ? "Save the time only" : "Save it anyway") { finishRun(save: true) }
                 Button("Discard it", role: .destructive) { finishRun(save: false) }
                 Button("Keep going", role: .cancel) {}
             } message: {
-                Text("Less than a minute or 100 metres were recorded.")
+                Text(shortRunMessage)
             }
     }
 
@@ -76,6 +76,24 @@ struct RunFlowView: View {
     }
 
     // MARK: Wording
+
+    /// A real effort in time, but no distance: location refused, or no signal (indoors).
+    private var noDistance: Bool {
+        tracker.elapsed >= 60 && tracker.distance < 100
+    }
+
+    private var shortRunTitle: String {
+        noDistance ? "No distance was recorded" : "This session is very short"
+    }
+
+    private var shortRunMessage: String {
+        if noDistance {
+            return tracker.gps == .denied
+                ? "Location is off for Atala, so only your time was measured. You can save it as it is, or discard it and add the run by hand with its distance."
+                : "The GPS signal never came through, so only your time was measured. You can save it as it is, or discard it and add the run by hand with its distance."
+        }
+        return "Less than a minute or 100 metres were recorded."
+    }
 
     private var firstStep: WorkoutStep? { tracker.steps.first }
 

@@ -76,6 +76,8 @@ enum PlanEngine {
         let vma = estimateVMA(answers)
         let paces = Self.paces(vma: vma, goal: goal, targetSeconds: answers.targetSeconds)
         let beginner = (answers.experience ?? .starting) == .starting
+        // Pain, a heart condition or a long break reported in the questionnaire: start gently.
+        let cautious = answers.healthFlags.contains { ["pain", "heart", "break"].contains($0) }
 
         // Number of weeks: up to the race, capped at two months.
         var raceDay: Date?
@@ -102,6 +104,7 @@ enum PlanEngine {
         case .from10to25: baseKm = 18
         case .over25: baseKm = 32
         }
+        if cautious { baseKm *= 0.8 }
         baseKm = max(baseKm, Double(runDays.count) * 2.5)
 
         let weeklyCap: Double
@@ -125,7 +128,7 @@ enum PlanEngine {
             func date(_ day: Int) -> Date { calendar.date(byAdding: .day, value: day - 1, to: monday) ?? monday }
 
             let qualityCount: Int
-            if beginner && phase == .base { qualityCount = 0 }
+            if (beginner && phase == .base) || (cautious && w < 2) { qualityCount = 0 }
             else if otherDays.count >= 4 { qualityCount = 2 }
             else if otherDays.count >= 2 { qualityCount = 1 }
             else { qualityCount = 0 }
