@@ -17,7 +17,10 @@ struct VicrunApp: App {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { store.refreshMissed() }
-            if phase == .background { store.save() }
+            if phase == .background {
+                store.save()
+                Task { await SyncService.pushAll(store: store) }
+            }
         }
     }
 }

@@ -57,7 +57,7 @@ enum SupabaseClient {
                      accessToken: String? = nil,
                      prefer: String? = nil,
                      timeout: TimeInterval = 30) async throws -> SupabaseResponse {
-        guard SupabaseConfig.isConfigured, let url = url(path: path, query: query) else {
+        guard SupabaseConfig.isConfigured, let url = Self.url(path: path, query: query) else {
             throw SupabaseError.notConfigured
         }
         var request = URLRequest(url: url)

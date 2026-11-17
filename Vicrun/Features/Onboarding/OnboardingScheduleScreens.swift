@@ -140,10 +140,10 @@ struct OnboardingConstraintsScreen: View {
 
     private func subtitle(_ constraint: Constraint) -> String {
         switch constraint {
-        case .pastInjury: return "We build up more gradually"
+        case .pastInjury: return "Your coach keeps it in mind"
         case .travel: return "Tell your coach, sessions can move"
         case .treadmill: return "You can log those runs by hand"
-        case .strength: return "I count it in your weekly load"
+        case .strength: return "Good news: it protects you from injury"
         case .irregularSleep: return "Easy runs stay truly easy"
         }
     }
