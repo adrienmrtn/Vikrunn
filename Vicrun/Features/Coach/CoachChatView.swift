@@ -9,24 +9,29 @@ struct CoachChatView: View {
     @FocusState private var inputFocused: Bool
 
     private static let bottomID = "coach-chat-bottom"
-    private static let prompts: [String] = [
-        "What's my next session?",
-        "I'm tired today, can we move my run?",
-        "What pace should my easy runs be?",
-    ]
 
     init() {}
 
+    /// Suggestions built from the current plan: the first ones lead to a plan change the user can apply.
+    private var prompts: [String] {
+        CoachLocalProposals.suggestedPrompts(store: store)
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            CoachChatHeader(coach: store.coach, runCount: store.runs.count, tone: $store.answers.tone)
-                .padding(.horizontal, Theme.screenPadding)
-                .padding(.top, 12)
-                .padding(.bottom, 10)
+        NavigationStack {
             messageList
-            inputBar
+                .background(Color.white)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    bottomBar
+                }
+                .navigationTitle(store.coach.name)
+                .navigationBarTitleDisplayMode(.large)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        CoachChatToneMenu(tone: $store.answers.tone)
+                    }
+                }
         }
-        .background(Color.white)
     }
 
     // MARK: Messages
@@ -35,9 +40,10 @@ struct CoachChatView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 10) {
+                    CoachChatHeader(coach: store.coach, runCount: store.runs.count)
                     banner
                     if store.messages.isEmpty {
-                        CoachChatEmptyState(coachName: store.coach.name, prompts: Self.prompts) { prompt in
+                        CoachChatEmptyState(coachName: store.coach.name, prompts: prompts) { prompt in
                             send(prompt)
                         }
                     }
@@ -99,6 +105,19 @@ struct CoachChatView: View {
         !isSending && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    /// Quick suggestions (once the conversation has started) above the input field, pinned at the bottom.
+    private var bottomBar: some View {
+        VStack(spacing: 0) {
+            if !store.messages.isEmpty && !isSending && draft.isEmpty {
+                CoachChatQuickPrompts(prompts: prompts) { prompt in
+                    send(prompt)
+                }
+            }
+            inputBar
+        }
+        .background(Color.white)
+    }
+
     private var inputBar: some View {
         HStack(alignment: .bottom, spacing: 8) {
             TextField("Write to your coach", text: $draft, axis: .vertical)
@@ -149,25 +168,24 @@ struct CoachChatView: View {
 
 // MARK: - Header
 
-/// Coach avatar with the online dot, name, and the tone picker.
+/// First row of the conversation, under the navigation title: avatar with the online dot and a caption.
 struct CoachChatHeader: View {
     let coach: Coach
     let runCount: Int
-    @Binding var tone: CoachTone
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 12) {
-            CoachAvatar(coach: coach, size: 52)
+        HStack(alignment: .center, spacing: 12) {
+            CoachAvatar(coach: coach, size: 44)
                 .overlay(alignment: .bottomTrailing) {
                     Circle()
                         .fill(Theme.greenSoft)
-                        .frame(width: 14, height: 14)
+                        .frame(width: 13, height: 13)
                         .overlay(Circle().stroke(Color.white, lineWidth: 2.5))
                         .accessibilityLabel("Online")
                 }
             VStack(alignment: .leading, spacing: 2) {
-                Text(coach.name)
-                    .font(.system(size: 28, weight: .bold))
+                Text(coach.trait)
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                     .lineLimit(1)
                 Text(subtitle)
@@ -176,9 +194,10 @@ struct CoachChatHeader: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
-            Spacer(minLength: 8)
-            toneMenu
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, 4)
     }
 
     private var subtitle: String {
@@ -186,8 +205,13 @@ struct CoachChatHeader: View {
         if runCount > 1 { return "Your coach · knows your \(runCount) runs" }
         return "Your coach"
     }
+}
 
-    private var toneMenu: some View {
+/// Tone picker shown in the navigation bar.
+struct CoachChatToneMenu: View {
+    @Binding var tone: CoachTone
+
+    var body: some View {
         Menu {
             ForEach(CoachTone.allCases) { option in
                 Button {
@@ -202,14 +226,8 @@ struct CoachChatHeader: View {
             }
         } label: {
             Text("Tone: \(tone.title)")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Theme.ink)
-                .lineLimit(1)
-                .fixedSize()
-                .padding(.horizontal, 14)
-                .frame(height: 44)
-                .background(Color.white, in: Capsule())
-                .overlay(Capsule().stroke(Color(hex: 0xCFCFCF), lineWidth: 1))
         }
         .accessibilityLabel("Coach tone: \(tone.title)")
     }

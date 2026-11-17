@@ -75,7 +75,7 @@ struct CoachChatTypingRow: View {
     }
 }
 
-/// Shown before the first message: a short invitation and three suggested questions.
+/// Shown before the first message: a short invitation and suggested messages, sent as soon as they are tapped.
 struct CoachChatEmptyState: View {
     let coachName: String
     let prompts: [String]
@@ -91,6 +91,22 @@ struct CoachChatEmptyState: View {
                 .foregroundStyle(Theme.muted)
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.green)
+                    .accessibilityHidden(true)
+                Text("\(coachName) can suggest a change to your plan. Nothing moves until you tap Apply.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Theme.green)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.greenTint, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(.top, 2)
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(prompts, id: \.self) { prompt in
                     Button(action: { onPick(prompt) }) {
@@ -117,6 +133,34 @@ struct CoachChatEmptyState: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 8)
         .padding(.bottom, 4)
+    }
+}
+
+/// Suggested messages kept within reach above the input field. Tapping one sends it.
+struct CoachChatQuickPrompts: View {
+    let prompts: [String]
+    let onPick: (String) -> Void
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(prompts, id: \.self) { prompt in
+                    Button(action: { onPick(prompt) }) {
+                        Text(prompt)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Theme.ink)
+                            .lineLimit(1)
+                            .padding(.horizontal, 14)
+                            .frame(height: 40)
+                            .background(Theme.surface, in: Capsule())
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, Theme.screenPadding)
+        }
+        .padding(.top, 8)
     }
 }
 

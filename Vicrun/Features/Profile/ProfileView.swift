@@ -31,8 +31,10 @@ struct ProfileView: View {
                     ProfileFooterSection()
                 }
             }
+            .mainStagedAppear(index: 0)
+            .mainStagedEntrance(.profile)
             .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -209,4 +211,5 @@ private struct ProfileCoachSection: View {
 #Preview {
     ProfileView()
         .environmentObject(AppStore.preview)
+        .environmentObject(MainChrome())
 }

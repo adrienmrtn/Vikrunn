@@ -6,6 +6,9 @@ final class MainChrome: ObservableObject {
     /// Number of visible screens asking for the tab bar to be hidden (pushed details).
     @Published var hideCount: Int = 0
     @Published var showProfile: Bool = false
+    /// Screens whose staged entrance already played in this shell (see `MainStagedEntrance`).
+    /// Not published: recording it must not redraw anything.
+    var stagedScreens: Set<MainStagedScreen> = []
 
     var tabBarHidden: Bool { hideCount > 0 }
 }
@@ -18,6 +21,18 @@ struct MainHidesTabBar: ViewModifier {
         content
             .onAppear { chrome.hideCount += 1 }
             .onDisappear { chrome.hideCount = max(0, chrome.hideCount - 1) }
+    }
+}
+
+/// A run summary pushed on a navigation stack: inline title in the system bar, tab bar hidden.
+struct MainRunSummaryHost: View {
+    let run: RunRecord
+
+    var body: some View {
+        RunSummaryView(run: run)
+            .navigationTitle("Run summary")
+            .navigationBarTitleDisplayMode(.inline)
+            .modifier(MainHidesTabBar())
     }
 }
 

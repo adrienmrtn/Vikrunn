@@ -8,34 +8,38 @@ struct ProgressTabView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Progress")
-                        .font(.system(size: 28, weight: .bold))
-                        .tracking(-0.6)
-                        .foregroundStyle(Theme.ink)
                     MainHeroImage(name: "illu_progress", height: 170)
-                        .padding(.top, 16)
+                        .mainStagedAppear(index: 0)
                     ProgressTabPredictionPanel(plan: store.plan)
                         .padding(.horizontal, 12)
                         .padding(.top, -16)
+                        .mainStagedAppear(index: 1)
                     if let plan = store.plan {
                         ProgressTabVolumeChart(plan: plan)
                             .padding(.top, 18)
+                            .mainStagedAppear(index: 2)
                         consistencyRow(plan)
                             .padding(.top, 14)
+                            .mainStagedAppear(index: 3)
                     }
                     totalsRow
                         .padding(.top, 16)
+                        .mainStagedAppear(index: 4)
                     ProgressTabBestsList(bests: ProgressTabStats.bests(store.runs))
                         .padding(.top, 18)
+                        .mainStagedAppear(index: 5)
                     ProgressTabHistory()
                         .padding(.top, 18)
+                        .mainStagedAppear(index: 6)
                 }
                 .padding(.horizontal, Theme.screenPadding)
-                .padding(.top, 12)
+                .padding(.top, 4)
                 .padding(.bottom, 28)
+                .mainStagedEntrance(.progress)
             }
             .background(Color.white)
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle("Progress")
+            .navigationBarTitleDisplayMode(.large)
         }
     }
 

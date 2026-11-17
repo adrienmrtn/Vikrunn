@@ -9,36 +9,56 @@ struct TodayView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    header
+                    Text(subtitle)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.muted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .mainStagedAppear(index: 0)
                     TodayWeekStrip()
-                        .padding(.top, 16)
+                        .padding(.top, 14)
+                        .mainStagedAppear(index: 1)
                     MainHeroImage(name: "illu_today", height: 190)
                         .padding(.top, 16)
+                        .mainStagedAppear(index: 2)
                     heroCard
                         .padding(.horizontal, 12)
                         .padding(.top, -56)
+                        .mainStagedAppear(index: 3)
                     if !extras.isEmpty {
                         TodayExtraSessions(workouts: extras)
                             .padding(.top, 16)
+                            .mainStagedAppear(index: 4)
                     }
                     if let week = store.currentWeek {
                         TodayWeekVolume(week: week)
                             .padding(.top, 18)
+                            .mainStagedAppear(index: 5)
                     }
                     TodayRaceCountdown()
+                        .mainStagedAppear(index: 6)
                     coachLine
                         .padding(.top, 16)
+                        .mainStagedAppear(index: 7)
                     if !upcoming.isEmpty {
                         TodayUpcomingList(workouts: upcoming)
                             .padding(.top, 12)
+                            .mainStagedAppear(index: 8)
                     }
                 }
                 .padding(.horizontal, Theme.screenPadding)
-                .padding(.top, 12)
+                .padding(.top, 4)
                 .padding(.bottom, 28)
+                .mainStagedEntrance(.today)
             }
             .background(Color.white)
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle("Hello, \(store.firstName)")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    profileButton
+                }
+            }
         }
     }
 
@@ -78,31 +98,16 @@ struct TodayView: View {
 
     // MARK: Sections
 
-    private var header: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(subtitle)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.muted)
-                Text("Hello, \(store.firstName)")
-                    .font(.system(size: 28, weight: .bold))
-                    .tracking(-0.6)
-                    .foregroundStyle(Theme.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-            Spacer(minLength: 0)
-            Button {
-                chrome.showProfile = true
-            } label: {
-                CoachAvatar(coach: store.coach, size: 40)
-                    .overlay(Circle().stroke(Theme.hairline, lineWidth: 1))
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Profile and settings")
+    /// Opens the profile, from the navigation bar.
+    private var profileButton: some View {
+        Button {
+            chrome.showProfile = true
+        } label: {
+            CoachAvatar(coach: store.coach, size: 32)
+                .overlay(Circle().stroke(Theme.hairline, lineWidth: 1))
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Profile and settings")
     }
 
     @ViewBuilder
