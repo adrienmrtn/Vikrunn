@@ -22,17 +22,49 @@ private struct OnboardingThreadLine: Identifiable {
     ]
 }
 
-/// Screen 20: the coach explains missed sessions, as a message thread.
+/// Three breathing dots in a coach bubble, shown while the coach "types".
+struct OnboardingTypingBubble: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
+            let time = context.date.timeIntervalSinceReferenceDate
+            HStack(spacing: 5) {
+                ForEach(0..<3, id: \.self) { dot in
+                    Circle()
+                        .fill(Theme.muted)
+                        .frame(width: 8, height: 8)
+                        .opacity(0.3 + 0.6 * max(0, sin(time * 5.5 - Double(dot) * 0.9)))
+                }
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 38)
+        .background(Color(hex: 0xE9E9EB), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .accessibilityLabel("Typing")
+    }
+}
+
+/// Screen 20: the coach explains missed sessions, as a message thread that plays like a real conversation.
 struct OnboardingMessageScreen: View {
     @EnvironmentObject private var store: AppStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var visibleCount = 0
+    @State private var typing = false
+    @State private var finished = false
 
     private var timeLabel: String {
         "Today \(Fmt.day(Date(), "HH:mm"))"
     }
 
+    /// The avatar follows the typing dots when the message they announce carries it.
+    private var typingShowsAvatar: Bool {
+        let lines = OnboardingThreadLine.all
+        return visibleCount < lines.count && lines[visibleCount].showsAvatar
+    }
+
     var body: some View {
-        OnboardingScaffold(buttonTitle: "Got it, let's go") {
+        OnboardingScaffold(buttonTitle: "Got it, let's go", buttonsVisible: finished) {
             VStack(spacing: 4) {
                 CoachAvatar(coach: store.coach, size: 52)
                 Text("\(store.coach.name), your coach")
@@ -52,14 +84,14 @@ struct OnboardingMessageScreen: View {
                 ForEach(OnboardingThreadLine.all) { line in
                     if line.id < visibleCount {
                         bubble(line)
-                            .transition(.asymmetric(
-                                insertion: .scale(scale: 0.85, anchor: line.fromUser ? .bottomTrailing : .bottomLeading)
-                                    .combined(with: .opacity),
-                                removal: .opacity
-                            ))
+                            .transition(line.fromUser ? Self.userEntrance : Self.coachEntrance)
                     }
                 }
-                if visibleCount >= OnboardingThreadLine.all.count {
+                if typing {
+                    typingRow
+                        .transition(Self.coachEntrance)
+                }
+                if finished {
                     Text("Read")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.muted)
@@ -70,16 +102,80 @@ struct OnboardingMessageScreen: View {
             .frame(maxWidth: .infinity)
         }
         .task {
-            guard visibleCount == 0 else { return }
-            for index in OnboardingThreadLine.all.indices {
-                let pause: UInt64 = index == 0 ? 450_000_000 : 850_000_000
-                try? await Task.sleep(nanoseconds: pause)
+            await play()
+        }
+    }
+
+    /// User messages pop in from the right, coach messages grow from their tail.
+    private static var userEntrance: AnyTransition {
+        AnyTransition.asymmetric(
+            insertion: AnyTransition.move(edge: .trailing).combined(with: .opacity),
+            removal: AnyTransition.opacity
+        )
+    }
+
+    private static var coachEntrance: AnyTransition {
+        AnyTransition.asymmetric(
+            insertion: AnyTransition.scale(scale: 0.85, anchor: .bottomLeading).combined(with: .opacity),
+            removal: AnyTransition.opacity
+        )
+    }
+
+    private static let pop = Animation.spring(response: 0.4, dampingFraction: 0.78)
+
+    private static func wait(_ seconds: Double) async {
+        try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+    }
+
+    /// Plays the conversation once; cancelled with the view (`.task`).
+    @MainActor
+    private func play() async {
+        let lines = OnboardingThreadLine.all
+        guard !finished else { return }
+        if reduceMotion {
+            visibleCount = lines.count
+            finished = true
+            return
+        }
+        for index in lines.indices where index >= visibleCount {
+            let line = lines[index]
+            if line.fromUser {
+                await Self.wait(index == 0 ? 0.6 : 1.0)
                 if Task.isCancelled { return }
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
-                    visibleCount = index + 1
+            } else {
+                await Self.wait(0.45)
+                if Task.isCancelled { return }
+                withAnimation(Self.pop) { typing = true }
+                // The longer the message, the longer the coach "types".
+                await Self.wait(min(1.6, 0.7 + Double(line.text.count) * 0.009))
+                if Task.isCancelled {
+                    typing = false
+                    return
                 }
             }
+            withAnimation(Self.pop) {
+                typing = false
+                visibleCount = index + 1
+            }
         }
+        await Self.wait(0.5)
+        if Task.isCancelled { return }
+        withAnimation(.easeOut(duration: 0.3)) {
+            finished = true
+        }
+    }
+
+    private var typingRow: some View {
+        HStack(alignment: .bottom, spacing: 8) {
+            if typingShowsAvatar {
+                CoachAvatar(coach: store.coach, size: 30)
+            } else {
+                Color.clear.frame(width: 30, height: 30)
+            }
+            OnboardingTypingBubble()
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder private func bubble(_ line: OnboardingThreadLine) -> some View {

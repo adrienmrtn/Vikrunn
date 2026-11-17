@@ -55,6 +55,7 @@ struct OnboardingScaffold<Content: View>: View {
     private let buttonTitle: String
     private let canContinue: Bool
     private let tinted: Bool
+    private let buttonsVisible: Bool
     private let secondaryTitle: String?
     private let onSecondary: (() -> Void)?
     private let onContinue: (() -> Void)?
@@ -65,6 +66,7 @@ struct OnboardingScaffold<Content: View>: View {
          buttonTitle: String = "Continue",
          canContinue: Bool = true,
          tinted: Bool = false,
+         buttonsVisible: Bool = true,
          secondaryTitle: String? = nil,
          onSecondary: (() -> Void)? = nil,
          onContinue: (() -> Void)? = nil,
@@ -74,6 +76,7 @@ struct OnboardingScaffold<Content: View>: View {
         self.buttonTitle = buttonTitle
         self.canContinue = canContinue
         self.tinted = tinted
+        self.buttonsVisible = buttonsVisible
         self.secondaryTitle = secondaryTitle
         self.onSecondary = onSecondary
         self.onContinue = onContinue
@@ -96,7 +99,12 @@ struct OnboardingScaffold<Content: View>: View {
             }
             .scrollBounceBehavior(.basedOnSize)
             .scrollIndicators(.hidden)
+            // Screens that stage their content only show the buttons once everything is there.
             bottom
+                .opacity(buttonsVisible ? 1 : 0)
+                .allowsHitTesting(buttonsVisible)
+                .accessibilityHidden(!buttonsVisible)
+                .animation(.easeOut(duration: 0.35), value: buttonsVisible)
         }
         .background((tinted ? Theme.surface : Color.white).ignoresSafeArea())
     }
@@ -184,93 +192,6 @@ struct OnboardingPlainOptionRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
-struct OnboardingTapButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .opacity(configuration.isPressed ? 0.94 : 1)
-    }
-}
-
-/// Full-screen moment with the coach: the whole screen is one button that moves on.
-struct OnboardingTapScreen<Backdrop: View, Top: View>: View {
-    @EnvironmentObject private var store: AppStore
-    @EnvironmentObject private var nav: OnboardingNavigator
-    @Environment(\.onboardingStep) private var step
-
-    private let lightContent: Bool
-    private let backdrop: Backdrop
-    private let top: Top
-
-    /// `lightContent`: white chevron and translucent pill, for dark backgrounds.
-    init(lightContent: Bool = false,
-         @ViewBuilder backdrop: () -> Backdrop,
-         @ViewBuilder top: () -> Top) {
-        self.lightContent = lightContent
-        self.backdrop = backdrop()
-        self.top = top()
-    }
-
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            Button(action: { nav.next(store) }) {
-                VStack(spacing: 0) {
-                    top
-                        .padding(.horizontal, 24)
-                        .padding(.top, 56)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Spacer(minLength: 12)
-                    figure
-                        .layoutPriority(1)
-                    pill
-                        .padding(.top, 14)
-                        .padding(.bottom, 12)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background { backdrop }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(OnboardingTapButtonStyle())
-            .accessibilityHint("Tap to continue")
-            backButton
-        }
-    }
-
-    private var figure: some View {
-        CoachAnimationView(coach: store.coach, animated: true)
-            .frame(maxWidth: 320, maxHeight: 500)
-            .background(alignment: .bottom) {
-                Ellipse()
-                    .fill(Color.black.opacity(0.3))
-                    .frame(width: 180, height: 20)
-                    .blur(radius: 9)
-                    .offset(y: 4)
-            }
-    }
-
-    private var pill: some View {
-        Text("Tap to continue")
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(lightContent ? Color.white : Theme.ink)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 9)
-            .background(lightContent ? Color.white.opacity(0.16) : Color.white.opacity(0.9), in: Capsule())
-    }
-
-    @ViewBuilder private var backButton: some View {
-        if step.allowsBack {
-            Button(action: { nav.back(store) }) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(lightContent ? Color.white : Theme.ink)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .accessibilityLabel("Back")
-            .padding(.leading, 8)
-        }
     }
 }
 
