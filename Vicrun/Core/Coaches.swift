@@ -21,80 +21,150 @@ struct Coach: Identifiable, Hashable {
     static func by(id: Int) -> Coach { all.first { $0.id == id } ?? all[0] }
 }
 
-/// Loads the 61 transparent idle frames of a coach (coachN_000.webp ... coachN_060.webp).
-final class CoachFrameLoader: ObservableObject {
-    @Published var frames: [UIImage] = []
-    @Published var still: UIImage?
-    private var loadedID: Int?
-    static let frameCount = 61
+/// Plays the transparent idle frames of a coach (coachN_000.webp ... coachN_120.webp, 24 frames per second).
+/// Frames stay compressed in memory and are decoded one at a time off the main thread,
+/// so the animation is smooth and light.
+final class CoachFramePlayer: ObservableObject {
+    @Published private(set) var image: UIImage?
 
-    static func frame(_ coachID: Int, _ index: Int) -> UIImage? {
-        let name = String(format: "coach%d_%03d", coachID, index)
-        guard let url = Bundle.main.url(forResource: name, withExtension: "webp") else { return nil }
-        return UIImage(contentsOfFile: url.path)
+    static let frameCount = 121
+    static let framesPerSecond = 24.0
+
+    private var coachID: Int?
+    private var frames: [Data] = []
+    private var timer: Timer?
+    private var tick = 0
+    private var decoding = false
+    private var generation = 0
+    private let queue = DispatchQueue(label: "vicrun.coach.frames", qos: .userInitiated)
+
+    deinit { timer?.invalidate() }
+
+    private static func url(_ coachID: Int, _ index: Int) -> URL? {
+        Bundle.main.url(forResource: String(format: "coach%d_%03d", coachID, index), withExtension: "webp")
     }
 
-    func loadStill(coachID: Int) {
-        if still == nil { still = Self.frame(coachID, 0) }
+    private static func decode(_ data: Data) -> UIImage? {
+        guard let image = UIImage(data: data) else { return nil }
+        return image.preparingForDisplay() ?? image
     }
 
-    func load(coachID: Int) {
-        guard loadedID != coachID else { return }
-        loadedID = coachID
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            var images: [UIImage] = []
-            for i in 0..<Self.frameCount {
-                if let image = Self.frame(coachID, i) { images.append(image) }
-            }
+    /// Shows the first frame of the coach, without animating.
+    func showStill(coachID: Int) {
+        if self.coachID == coachID, image != nil {
+            // Same coach, already on screen: just freeze on the current frame.
+            stop()
+            return
+        }
+        stop()
+        image = nil
+        self.coachID = coachID
+        generation += 1
+        let current = generation
+        queue.async { [weak self] in
+            guard let url = Self.url(coachID, 0), let data = try? Data(contentsOf: url),
+                  let still = Self.decode(data) else { return }
             DispatchQueue.main.async {
-                guard let self, self.loadedID == coachID else { return }
-                self.frames = images
+                guard let self, self.generation == current else { return }
+                self.image = still
             }
         }
     }
 
-    func unload() {
-        loadedID = nil
+    /// Starts (or restarts for another coach) the looping animation.
+    func play(coachID: Int) {
+        if self.coachID == coachID, timer != nil { return }
+        stop()
+        if self.coachID != coachID { image = nil }
+        self.coachID = coachID
+        generation += 1
+        let current = generation
+        queue.async { [weak self] in
+            var loaded: [Data] = []
+            for index in 0..<Self.frameCount {
+                guard let url = Self.url(coachID, index), let data = try? Data(contentsOf: url) else { break }
+                loaded.append(data)
+            }
+            let first = loaded.first.flatMap { Self.decode($0) }
+            DispatchQueue.main.async {
+                guard let self, self.generation == current else { return }
+                self.frames = loaded
+                if let first { self.image = first }
+                self.startTimer()
+            }
+        }
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
         frames = []
+        tick = 0
+        decoding = false
+        generation += 1
+    }
+
+    private func startTimer() {
+        timer?.invalidate()
+        guard frames.count > 1 else { return }
+        let newTimer = Timer(timeInterval: 1.0 / Self.framesPerSecond, repeats: true) { [weak self] _ in
+            self?.advance()
+        }
+        RunLoop.main.add(newTimer, forMode: .common)
+        timer = newTimer
+    }
+
+    private func advance() {
+        let count = frames.count
+        guard count > 1, !decoding else { return }
+        // Ping-pong: forward then backward, so the loop has no visible jump.
+        let period = 2 * (count - 1)
+        tick = (tick + 1) % period
+        let index = tick < count ? tick : period - tick
+        guard index >= 0, index < count else { return }
+        let data = frames[index]
+        let current = generation
+        decoding = true
+        queue.async { [weak self] in
+            let decoded = Self.decode(data)
+            DispatchQueue.main.async {
+                guard let self, self.generation == current else { return }
+                self.decoding = false
+                if let decoded { self.image = decoded }
+            }
+        }
     }
 }
 
-/// Full-body coach, breathing and waving in a ping-pong loop when `animated` is true.
+/// Full-body coach, breathing and waving in a loop when `animated` is true.
 struct CoachAnimationView: View {
     let coach: Coach
     var animated: Bool = true
-    @StateObject private var loader = CoachFrameLoader()
+    @StateObject private var player = CoachFramePlayer()
 
     var body: some View {
         Group {
-            if animated, loader.frames.count > 1 {
-                TimelineView(.periodic(from: .now, by: 1.0 / 12.0)) { context in
-                    Image(uiImage: loader.frames[frameIndex(at: context.date)])
-                        .resizable()
-                        .scaledToFit()
-                }
-            } else if let still = loader.still {
-                Image(uiImage: still).resizable().scaledToFit()
+            if let image = player.image {
+                Image(uiImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
             } else {
-                Image(coach.fullAsset).resizable().scaledToFit()
+                Image(coach.fullAsset).resizable().scaledToFit().opacity(0.001)
             }
         }
         .accessibilityLabel(coach.name)
-        .onAppear {
-            loader.loadStill(coachID: coach.id)
-            if animated { loader.load(coachID: coach.id) }
-        }
-        .onChange(of: animated) { _, isAnimated in
-            if isAnimated { loader.load(coachID: coach.id) } else { loader.unload() }
-        }
-        .onDisappear { loader.unload() }
+        .onAppear { refresh() }
+        .onChange(of: animated) { _, _ in refresh() }
+        .onChange(of: coach.id) { _, _ in refresh() }
+        .onDisappear { player.stop() }
     }
 
-    private func frameIndex(at date: Date) -> Int {
-        let count = loader.frames.count
-        guard count > 1 else { return 0 }
-        let period = 2 * (count - 1)
-        let tick = Int(date.timeIntervalSinceReferenceDate * 12) % period
-        return tick < count ? tick : period - tick
+    private func refresh() {
+        if animated {
+            player.play(coachID: coach.id)
+        } else {
+            player.showStill(coachID: coach.id)
+        }
     }
 }
