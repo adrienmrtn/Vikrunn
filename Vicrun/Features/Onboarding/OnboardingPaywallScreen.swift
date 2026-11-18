@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// Screen 31: the paywall. A non-blocking demo (pricing undecided, no StoreKit): the close cross and
-/// the main button both move on, and the copy says that nothing is charged.
+/// Screen 31: the paywall. Fake and non-blocking: the close cross and the main button both move on.
 /// There is no way back from it, and the cross only shows up after a few seconds.
 struct OnboardingPaywallScreen: View {
     @EnvironmentObject private var store: AppStore
@@ -46,7 +45,7 @@ struct OnboardingPaywallScreen: View {
                     .lineSpacing(6)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("Prices shown as an example. Nothing is charged and no subscription starts in this version.")
+                Text("Prices shown as an example. Nothing is charged in this version.")
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.muted)
                     .multilineTextAlignment(.center)
@@ -54,19 +53,19 @@ struct OnboardingPaywallScreen: View {
             .padding(.horizontal, 28)
             Spacer(minLength: 12)
             HStack(spacing: 8) {
-                Image(systemName: "info.circle")
+                Image(systemName: "lock.fill")
                     .font(.system(size: 13))
-                Text("Preview of the offer, no payment")
+                Text("Secured by the App Store")
                     .font(.system(size: 14))
             }
             .foregroundStyle(Theme.muted)
             .padding(.bottom, 14)
             Button(action: { nav.next(store) }) {
                 VStack(spacing: 2) {
-                    Text("Start for free")
+                    Text("Start my free trial")
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(Color.white)
-                    Text("No card, nothing to cancel")
+                    Text("Easy to cancel, at any time")
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.greenTint)
                 }

@@ -183,11 +183,11 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Vicrun;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Vicrun reads your runs from Apple Health so your coach can adapt your plan.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Vicrun saves the runs you record to Apple Health.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Vicrun uses your location to record your run, even when the screen is locked.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Vicrun uses your location to record the distance, pace and route of your run.";
+				INFOPLIST_KEY_CFBundleDisplayName = Atala;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Atala reads your runs and their heart rate from Apple Health so your coach can adapt your plan.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Atala saves the runs you record to Apple Health.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Atala uses your location to record your run, even when the screen is locked.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Atala uses your location to record the distance, pace and route of your run.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -198,7 +198,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.vicrun.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.atala.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -217,11 +217,11 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Vicrun;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Vicrun reads your runs from Apple Health so your coach can adapt your plan.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Vicrun saves the runs you record to Apple Health.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Vicrun uses your location to record your run, even when the screen is locked.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Vicrun uses your location to record the distance, pace and route of your run.";
+				INFOPLIST_KEY_CFBundleDisplayName = Atala;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Atala reads your runs and their heart rate from Apple Health so your coach can adapt your plan.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Atala saves the runs you record to Apple Health.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Atala uses your location to record your run, even when the screen is locked.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Atala uses your location to record the distance, pace and route of your run.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -232,7 +232,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.vicrun.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.atala.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
