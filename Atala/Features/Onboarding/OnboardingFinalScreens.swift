@@ -1,30 +1,115 @@
 import SwiftUI
 import UIKit
 
-/// Screen 32: the location permission. Push notifications are not part of this version, so none is asked.
+/// Atala on the left, the service it connects to on the right, and dots travelling between them.
+struct OnboardingLinkGraphic: View {
+    let symbol: String
+    let tint: Color
+    /// True once the connection is made: the dots turn into a solid green link with a check.
+    var linked: Bool = false
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulsing = false
+
+    private static let tileSize: CGFloat = 84
+
+    var body: some View {
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Theme.forest)
+                .frame(width: Self.tileSize, height: Self.tileSize)
+                .overlay(
+                    BrandLogo(style: .mark, height: 40)
+                        .foregroundStyle(Theme.cream)
+                )
+                .shadow(color: Theme.forest.opacity(0.25), radius: 12, x: 0, y: 8)
+            link
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color.white)
+                .frame(width: Self.tileSize, height: Self.tileSize)
+                .overlay(
+                    Image(systemName: symbol)
+                        .font(.system(size: 38, weight: .semibold))
+                        .foregroundStyle(tint)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Theme.cardBorder, lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 8)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 26)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .accessibilityHidden(true)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                pulsing = true
+            }
+        }
+    }
+
+    @ViewBuilder private var link: some View {
+        if linked {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 30))
+                .foregroundStyle(Theme.green)
+                .frame(width: 64)
+                .transition(.scale.combined(with: .opacity))
+        } else {
+            HStack(spacing: 7) {
+                ForEach(0..<4, id: \.self) { index in
+                    Circle()
+                        .fill(Theme.green)
+                        .frame(width: 7, height: 7)
+                        .opacity(pulsing ? (index % 2 == 0 ? 1 : 0.25) : (index % 2 == 0 ? 0.25 : 1))
+                }
+            }
+            .frame(width: 64)
+        }
+    }
+}
+
+/// One short benefit with a green check.
+private struct OnboardingBenefitRow: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 20))
+                .foregroundStyle(Theme.green)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.system(size: 16))
+                .foregroundStyle(Theme.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+/// Screen 32: the location permission.
 struct OnboardingPermissionsScreen: View {
     @EnvironmentObject private var store: AppStore
     @ObservedObject private var location = LocationPermission.shared
 
     var body: some View {
-        OnboardingScaffold {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Welcome, \(store.firstName)")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Theme.green)
-                Text("One setting before your first run")
-                    .font(Theme.title(28))
-                    .foregroundStyle(Theme.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityAddTraits(.isHeader)
-                Text("You can say no: your plan still works, and you log your runs by hand.")
-                    .font(.system(size: 15))
-                    .foregroundStyle(Theme.muted)
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
+        OnboardingScaffold(title: "Let Atala follow your runs") {
+            OnboardingLinkGraphic(symbol: "location.fill", tint: Theme.orange, linked: location.isAllowed)
+                .animation(.spring(response: 0.45, dampingFraction: 0.7), value: location.isAllowed)
+            VStack(alignment: .leading, spacing: 12) {
+                OnboardingBenefitRow(text: "Your distance and pace, live")
+                OnboardingBenefitRow(text: "\(store.coach.name)'s voice when you're too fast or too slow")
+                OnboardingBenefitRow(text: "Your route on a map after every run")
             }
-            locationCard
-            remindersNote
+            locationButton
+            Text(locationFootnote)
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.muted)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .onAppear { location.refresh() }
     }
@@ -35,75 +120,28 @@ struct OnboardingPermissionsScreen: View {
         return "Allow location"
     }
 
-    private var locationFootnote: String? {
+    private var locationFootnote: String {
         if location.isRefused {
-            return "Location is off for Atala. You can turn it on in Settings, or log your runs by hand."
+            return "Location is off for Atala. Turn it on in Settings, or log your runs by hand."
         }
-        return nil
+        return "Only while you're running with the app. You can say no and log your runs by hand."
     }
 
-    private var locationCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 14) {
-                IconTile(systemName: "location.fill", tint: Theme.orangeDeep, background: Theme.orangeTint)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Location during your runs")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Theme.ink)
-                    Text("To measure your distance and your pace. Only while you are running with the app.")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Theme.muted)
-                        .lineSpacing(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-            }
-            Button(action: locationTapped) {
-                HStack(spacing: 8) {
-                    if location.isAllowed {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .bold))
-                    }
-                    Text(locationButtonTitle)
-                        .font(.system(size: 15, weight: .semibold))
-                }
-                .foregroundStyle(Color.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(location.isAllowed ? Theme.greenSoft : Theme.ink, in: Capsule())
-            }
-            .buttonStyle(.plain)
-            .disabled(location.isAllowed)
-            if let locationFootnote {
-                Text(locationFootnote)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(18)
-        .card(radius: 22)
-    }
-
-    /// Honest about what exists: no reminder is sent in this version.
-    private var remindersNote: some View {
-        HStack(alignment: .top, spacing: 14) {
-            IconTile(systemName: "bell.slash.fill", tint: Theme.muted, background: Theme.surface)
-            VStack(alignment: .leading, spacing: 3) {
-                Text("No notifications")
+    private var locationButton: some View {
+        Button(action: locationTapped) {
+            HStack(spacing: 8) {
+                Image(systemName: location.isAllowed ? "checkmark" : "location.fill")
+                    .font(.system(size: 14, weight: .bold))
+                Text(locationButtonTitle)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Theme.ink)
-                Text("Atala sends you nothing in this version. Your sessions wait for you in the Today tab, and \(store.coach.name) only writes when you do.")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Theme.muted)
-                    .lineSpacing(2)
-                    .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer(minLength: 0)
+            .foregroundStyle(location.isAllowed ? Theme.green : Color.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(location.isAllowed ? Theme.greenTint : Theme.orange, in: Capsule())
         }
-        .padding(18)
-        .card(radius: 22)
-        .accessibilityElement(children: .combine)
+        .buttonStyle(.plain)
+        .disabled(location.isAllowed)
     }
 
     private func locationTapped() {
@@ -141,72 +179,52 @@ struct OnboardingHealthConnectScreen: View {
             }
             return "\(importedCount) \(importedCount == 1 ? "run" : "runs") from the last 60 days added to your history."
         }
-        return "You can turn the import off at any time in your profile."
+        return "Optional. You can turn it off at any time in your profile."
     }
 
     var body: some View {
         OnboardingScaffold(title: "Connect Apple Health",
-                           subtitle: "Optional. I read your past runs, so your history starts full instead of empty.",
                            buttonTitle: "Start",
                            canContinue: !isAsking,
                            onContinue: { store.finishOnboarding() }) {
-            healthCard
+            OnboardingLinkGraphic(symbol: "heart.fill", tint: Color(hex: 0xFF2D55), linked: connected)
+                .animation(.spring(response: 0.45, dampingFraction: 0.7), value: connected)
+            VStack(alignment: .leading, spacing: 12) {
+                OnboardingBenefitRow(text: "Your past runs fill your history from day one")
+                OnboardingBenefitRow(text: "Runs from your watch count in your plan")
+                OnboardingBenefitRow(text: "Your heart rate on every run summary")
+            }
+            connectButton
+            Text(footnote)
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
             if let workout = store.nextRun {
                 firstSessionCard(workout)
             }
         }
     }
 
-    private var healthCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            infoRow(symbol: "figure.run", tint: Theme.green, background: Theme.greenTint,
-                    title: "Runs and distances", text: "The runs recorded by your iPhone or your watch")
-            infoRow(symbol: "heart.fill", tint: Theme.orangeDeep, background: Theme.orangeTint,
-                    title: "Heart rate", text: "The average of each run, when there is one")
-            Button(action: connect) {
-                HStack(spacing: 8) {
-                    if connected {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .bold))
-                    }
-                    Text(connectTitle)
-                        .font(.system(size: 15, weight: .semibold))
-                }
-                .foregroundStyle(Color.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(buttonColor, in: Capsule())
+    private var connectButton: some View {
+        Button(action: connect) {
+            HStack(spacing: 8) {
+                Image(systemName: connected ? "checkmark" : "heart.fill")
+                    .font(.system(size: 14, weight: .bold))
+                Text(connectTitle)
+                    .font(.system(size: 16, weight: .semibold))
             }
-            .buttonStyle(.plain)
-            .disabled(connected || !available || isAsking)
-            Text(footnote)
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.muted)
-                .fixedSize(horizontal: false, vertical: true)
+            .foregroundStyle(connected ? Theme.green : Color.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(buttonColor, in: Capsule())
         }
-        .padding(18)
-        .card(radius: 22)
+        .buttonStyle(.plain)
+        .disabled(connected || !available || isAsking)
     }
 
     private var buttonColor: Color {
-        if connected { return Theme.greenSoft }
+        if connected { return Theme.greenTint }
         return available && !isAsking ? Theme.ink : Theme.faint
-    }
-
-    private func infoRow(symbol: String, tint: Color, background: Color, title: String, text: String) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            IconTile(systemName: symbol, tint: tint, background: background)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Theme.ink)
-                Text(text)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-        }
     }
 
     private func firstSessionCard(_ workout: Workout) -> some View {

@@ -201,7 +201,7 @@ struct MainSectionTitle: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(Theme.ink)
             Spacer(minLength: 8)
             if let trailing {

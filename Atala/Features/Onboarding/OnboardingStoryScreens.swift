@@ -113,12 +113,24 @@ struct OnboardingCommunityScreen: View {
                 .accessibilityLabel("\(Self.grouped(OnboardingCommunityFigure.value)) \(OnboardingCommunityFigure.caption)")
             }
             .onboardingStaged(1, stage: stage)
-            Text("You're not doing this alone. Every day, runners like you lace up with their Atala coach.")
-                .font(.system(size: 17))
-                .foregroundStyle(Theme.body)
-                .lineSpacing(5)
-                .fixedSize(horizontal: false, vertical: true)
-                .onboardingStaged(2, stage: stage)
+            HStack(spacing: 14) {
+                IconTile(systemName: "square.and.arrow.up", size: 48)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Atala is also a community")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Theme.ink)
+                    Text("Share your results with your friends 😉")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Theme.body)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .card(radius: 22)
+            .accessibilityElement(children: .combine)
+            .onboardingStaged(2, stage: stage)
         }
         .onboardingStageSequence($stage, delays: Self.delays)
     }
@@ -182,6 +194,82 @@ struct OnboardingBeyondCoachScreen: View {
             }
         }
         .onboardingStageSequence($stage, delays: Self.delays, isActive: emphasised)
+    }
+}
+
+/// After "not just a coach": why a clear plan matters, shown with the first week of the user's own plan.
+struct OnboardingPlanMattersScreen: View {
+    @EnvironmentObject private var store: AppStore
+    @State private var emphasised = false
+    /// 1 caption, then one stage per session, then the closing line and the button.
+    @State private var stage = 0
+
+    private var sessions: [Workout] {
+        Array((store.plan?.weeks.first?.workouts ?? []).prefix(4))
+    }
+
+    private var delays: [Double] {
+        [0.2] + Array(repeating: 0.4, count: sessions.count) + [0.5, 0.4]
+    }
+
+    private var closing: String {
+        let weeks = store.plan?.weeks.count ?? PlanEngine.maxWeeks
+        return "Yours is ready: \(OnboardingCopy.weeks(weeks)), session by session."
+    }
+
+    var body: some View {
+        let list = sessions
+        let steps = delays
+        return OnboardingScaffold(buttonsVisible: stage >= steps.count) {
+            OnboardingEmphasisText(text: "Having a clear, precise plan is essential in running.",
+                                   size: 32,
+                                   lineSpacing: 5,
+                                   highlight: "clear, precise plan",
+                                   onFinished: { emphasised = true })
+                .accessibilityAddTraits(.isHeader)
+                .padding(.top, 8)
+            Text("YOUR FIRST WEEK")
+                .font(.system(size: 12, weight: .bold))
+                .kerning(0.8)
+                .foregroundStyle(Theme.muted)
+                .onboardingStaged(0, stage: stage)
+            VStack(spacing: 10) {
+                ForEach(Array(list.enumerated()), id: \.element.id) { index, workout in
+                    HStack(spacing: 14) {
+                        IconTile(systemName: workout.kind.symbol,
+                                 tint: workout.kind.isQuality ? Theme.orangeDeep : Theme.green,
+                                 background: workout.kind.isQuality ? Theme.orangeTint : Theme.greenTint,
+                                 size: 44)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(workout.title)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(Theme.ink)
+                                .lineLimit(1)
+                            Text(Fmt.day(workout.date, "EEEE"))
+                                .font(.system(size: 13))
+                                .foregroundStyle(Theme.muted)
+                        }
+                        Spacer(minLength: 8)
+                        Text(workout.kind.isRun ? Fmt.km(workout.distanceKm) : Fmt.minutes(workout.durationMin))
+                            .font(.system(size: 15, weight: .semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(Theme.ink)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .card(radius: 20)
+                    .accessibilityElement(children: .combine)
+                    .onboardingStaged(index + 1, stage: stage)
+                }
+            }
+            Text(closing)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Theme.green)
+                .fixedSize(horizontal: false, vertical: true)
+                .onboardingStaged(list.count + 1, stage: stage)
+        }
+        .onboardingStageSequence($stage, delays: steps, isActive: emphasised)
     }
 }
 

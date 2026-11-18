@@ -18,6 +18,7 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
     case intro = 37
     case community = 38
     case beyondCoach = 39
+    case planMatters = 40
 
     /// The screens in the order they are shown. `levelRisk` (raw value 34) was removed from the
     /// flow: its raw value stays reserved and a step saved on it resumes on the next screen.
@@ -27,7 +28,7 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
         .levelIntro, .levelFocus,
         .goalIntro, .goal, .race, .target, .why, .coachReply, .consistency,
         .days, .longRun, .constraints, .message, .tone, .projection, .reviews, .community,
-        .signIn, .loading, .planReady, .commitment, .beyondCoach, .trial, .timeline, .reminder, .paywall,
+        .signIn, .loading, .planReady, .commitment, .beyondCoach, .planMatters, .trial, .timeline, .reminder, .paywall,
         .permissions, .healthConnect,
     ]
 
@@ -368,6 +369,7 @@ struct OnboardingStepHost: View {
         case .planReady: OnboardingPlanReadyScreen()
         case .commitment: OnboardingCommitmentScreen()
         case .beyondCoach: OnboardingBeyondCoachScreen()
+        case .planMatters: OnboardingPlanMattersScreen()
         case .trial: OnboardingTrialScreen()
         case .timeline: OnboardingTimelineScreen()
         case .reminder: OnboardingReminderScreen()
