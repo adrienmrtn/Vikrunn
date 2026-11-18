@@ -6,7 +6,6 @@ struct OnboardingGenderScreen: View {
 
     var body: some View {
         OnboardingScaffold(title: "You are…",
-                           subtitle: "So I know who I'm talking to. Your paces come from your running, not from this answer.",
                            canContinue: store.answers.gender != nil) {
             VStack(spacing: 10) {
                 ForEach(Gender.allCases) { gender in
@@ -15,9 +14,6 @@ struct OnboardingGenderScreen: View {
                     }
                 }
             }
-            Text("This stays on your profile and is never shown to anyone.")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.muted)
         }
     }
 }
@@ -26,22 +22,12 @@ struct OnboardingGenderScreen: View {
 struct OnboardingExperienceScreen: View {
     @EnvironmentObject private var store: AppStore
 
-    private func subtitle(_ experience: Experience) -> String {
-        switch experience {
-        case .starting: return "Everything is new, we start from scratch"
-        case .underSixMonths: return "The basics are settling in"
-        case .sixMonthsToTwoYears: return "You run regularly"
-        case .overTwoYears: return "You know the drill"
-        }
-    }
-
     var body: some View {
         OnboardingScaffold(title: "How long have you been running?",
                            canContinue: store.answers.experience != nil) {
             VStack(spacing: 9) {
                 ForEach(Experience.allCases) { experience in
                     OptionCard(title: experience.title,
-                               subtitle: subtitle(experience),
                                selected: store.answers.experience == experience,
                                action: { store.answers.experience = experience }) {
                         VignetteImage(name: experience.vignette)
@@ -56,22 +42,12 @@ struct OnboardingExperienceScreen: View {
 struct OnboardingVolumeScreen: View {
     @EnvironmentObject private var store: AppStore
 
-    private func subtitle(_ volume: WeeklyVolume) -> String {
-        switch volume {
-        case .under10: return "A run or two, or nothing yet"
-        case .from10to25: return "Two or three runs most weeks"
-        case .over25: return "Running is already a habit"
-        }
-    }
-
     var body: some View {
         OnboardingScaffold(title: "How much do you run in a week?",
-                           subtitle: "Think of a normal week these days, not your best one.",
                            canContinue: store.answers.weeklyVolume != nil) {
             VStack(spacing: 9) {
                 ForEach(WeeklyVolume.allCases) { volume in
                     OptionCard(title: volume.title,
-                               subtitle: subtitle(volume),
                                selected: store.answers.weeklyVolume == volume,
                                action: { store.answers.weeklyVolume = volume }) {
                         VignetteImage(name: volume.vignette)
@@ -129,7 +105,6 @@ struct OnboardingHealthScreen: View {
 
     var body: some View {
         OnboardingScaffold(title: "Anything about your health I should know?",
-                           subtitle: "Tick what applies to you today.",
                            canContinue: !store.answers.healthFlags.isEmpty) {
             VStack(spacing: 9) {
                 ForEach(OnboardingHealthOption.all) { option in
@@ -178,11 +153,16 @@ struct OnboardingMirrorScreen: View {
         }
     }
 
+    private var usualVolume: String {
+        let volume = store.answers.weeklyVolume ?? .under10
+        return volume == .notYet ? "Not running yet" : "\(volume.title) a week"
+    }
+
     private var rows: [(String, String)] {
         [
             ("Level", level),
             ("Aerobic speed (VMA)", String(format: "%.1f km/h", vma)),
-            ("Usual volume", "\((store.answers.weeklyVolume ?? .under10).title) a week"),
+            ("Usual volume", usualVolume),
             ("Easy pace", "\(Fmt.pace(PlanEngine.paceFor(vma: vma, fraction: 0.65))) /km"),
         ]
     }

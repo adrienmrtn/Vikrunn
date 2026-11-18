@@ -82,7 +82,7 @@ enum PlanEngine {
         // Number of weeks: up to the race, capped at two months.
         var raceDay: Date?
         var weekCount = maxWeeks
-        if answers.hasRace, goal != .regular, let raceDate = answers.raceDate {
+        if answers.hasRace, !goal.isOpenEnded, let raceDate = answers.raceDate {
             let race = calendar.startOfDay(for: raceDate)
             let days = calendar.dateComponents([.day], from: weekStart, to: race).day ?? 0
             let needed = days / 7 + 1
@@ -100,6 +100,7 @@ enum PlanEngine {
 
         var baseKm: Double
         switch answers.weeklyVolume ?? .under10 {
+        case .notYet: baseKm = beginner ? 5 : 8
         case .under10: baseKm = beginner ? 6 : 10
         case .from10to25: baseKm = 18
         case .over25: baseKm = 32
@@ -113,7 +114,7 @@ enum PlanEngine {
         case .fiveK: weeklyCap = 35; longCap = 10
         case .tenK: weeklyCap = 45; longCap = 14
         case .half: weeklyCap = 60; longCap = 19
-        case .regular: weeklyCap = 40; longCap = 12
+        case .regular, .shape: weeklyCap = 40; longCap = 12
         }
 
         var weeks: [PlanWeek] = []
@@ -293,7 +294,7 @@ enum PlanEngine {
             case .fiveK: distance = 1000; nominal = 5
             case .tenK: distance = 2000; nominal = 4
             case .half: distance = 3000; nominal = 3
-            case .regular: distance = 1000; nominal = 4
+            case .regular, .shape: distance = 1000; nominal = 4
             }
             let (block, count) = reps(distanceM: distance, recoveryM: 400, nominal: nominal, pace: paces.race, spread: 5)
             return workout(date: date, week: week, kind: .racePace, title: "\(count) × \(format(distance)) at race pace",

@@ -40,7 +40,7 @@ struct OnboardingRecentScreen: View {
 
     var body: some View {
         OnboardingScaffold(title: "A recent result?",
-                           subtitle: "A race or an all-out run from the last three months. It's what sets your paces.",
+                           subtitle: "A race or an all-out run from the last 3 months.",
                            canContinue: edited) {
             distancePicker
             OnboardingTimeCard(seconds: seconds,

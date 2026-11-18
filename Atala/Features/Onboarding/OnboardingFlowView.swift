@@ -15,15 +15,19 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
     case levelRisk = 34
     case levelFocus = 35
     case consistency = 36
+    case intro = 37
+    case community = 38
+    case beyondCoach = 39
 
-    /// The screens in the order they are shown. Every case appears here exactly once.
+    /// The screens in the order they are shown. `levelRisk` (raw value 34) was removed from the
+    /// flow: its raw value stays reserved and a step saved on it resumes on the next screen.
     static let order: [OnboardingStep] = [
         .welcome,
-        .firstName, .coach, .hello, .gender, .experience, .volume, .recent, .health, .mirror,
-        .levelIntro, .levelRisk, .levelFocus,
+        .firstName, .intro, .coach, .hello, .gender, .experience, .volume, .recent, .health, .mirror,
+        .levelIntro, .levelFocus,
         .goalIntro, .goal, .race, .target, .why, .coachReply, .consistency,
-        .days, .longRun, .constraints, .message, .tone, .projection, .reviews,
-        .signIn, .loading, .planReady, .commitment, .trial, .timeline, .reminder, .paywall,
+        .days, .longRun, .constraints, .message, .tone, .projection, .reviews, .community,
+        .signIn, .loading, .planReady, .commitment, .beyondCoach, .trial, .timeline, .reminder, .paywall,
         .permissions, .healthConnect,
     ]
 
@@ -78,7 +82,8 @@ final class OnboardingNavigator: ObservableObject {
     /// earlier version keeps its raw value, so it opens the same screen.
     func restore(from store: AppStore) {
         guard !isReady else { return }
-        let saved = OnboardingStep(rawValue: store.onboardingStep) ?? .welcome
+        var saved = OnboardingStep(rawValue: store.onboardingStep) ?? .welcome
+        if saved == .levelRisk { saved = .goalIntro }
         if saved.position > OnboardingStep.loading.position {
             // A plan built on another day would start in the past: rebuild it from today.
             // Nothing can be done or missed yet, the app has not been opened.
@@ -91,14 +96,16 @@ final class OnboardingNavigator: ObservableObject {
 
     func isSkipped(_ candidate: OnboardingStep, store: AppStore) -> Bool {
         switch candidate {
-        case .levelIntro, .levelRisk:
-            // Beginners: congratulations, then the injury figure and its answer.
+        case .levelRisk:
+            return true
+        case .levelIntro:
+            // Beginners: congratulations first.
             return OnboardingRunnerLevel(store.answers.experience) != .beginner
         case .levelFocus:
             // Intermediate and advanced runners: one screen.
             return OnboardingRunnerLevel(store.answers.experience) == .beginner
         case .race, .target:
-            return store.answers.goal == .regular
+            return store.answers.goal.isOpenEnded
         case .longRun:
             return store.answers.runDays.count <= 1
         case .signIn:
@@ -158,7 +165,7 @@ final class OnboardingNavigator: ObservableObject {
     /// on the experience, the race screens on the goal), so the remaining steps stay evenly spaced.
     private func isLeftOutOfBar(_ item: OnboardingStep, store: AppStore) -> Bool {
         switch item {
-        case .levelIntro, .levelRisk, .levelFocus, .race, .target:
+        case .levelIntro, .levelFocus, .race, .target:
             return isSkipped(item, store: store)
         default:
             return false
@@ -307,7 +314,7 @@ struct OnboardingStepHost: View {
     @ViewBuilder private var content: some View {
         if step.position <= OnboardingStep.levelFocus.position {
             profileScreens
-        } else if step.position <= OnboardingStep.reviews.position {
+        } else if step.position <= OnboardingStep.community.position {
             goalScreens
         } else {
             closingScreens
@@ -318,6 +325,7 @@ struct OnboardingStepHost: View {
         switch step {
         case .welcome: OnboardingWelcomeScreen()
         case .firstName: OnboardingFirstNameScreen()
+        case .intro: OnboardingIntroScreen()
         case .coach: OnboardingCoachScreen()
         case .hello: OnboardingHelloScreen()
         case .gender: OnboardingGenderScreen()
@@ -327,7 +335,6 @@ struct OnboardingStepHost: View {
         case .health: OnboardingHealthScreen()
         case .mirror: OnboardingMirrorScreen()
         case .levelIntro: OnboardingLevelIntroScreen()
-        case .levelRisk: OnboardingLevelRiskScreen()
         case .levelFocus: OnboardingLevelFocusScreen()
         default: EmptyView()
         }
@@ -349,6 +356,7 @@ struct OnboardingStepHost: View {
         case .tone: OnboardingToneScreen()
         case .projection: OnboardingProjectionScreen()
         case .reviews: OnboardingReviewsScreen()
+        case .community: OnboardingCommunityScreen()
         default: EmptyView()
         }
     }
@@ -359,6 +367,7 @@ struct OnboardingStepHost: View {
         case .loading: OnboardingLoadingScreen()
         case .planReady: OnboardingPlanReadyScreen()
         case .commitment: OnboardingCommitmentScreen()
+        case .beyondCoach: OnboardingBeyondCoachScreen()
         case .trial: OnboardingTrialScreen()
         case .timeline: OnboardingTimelineScreen()
         case .reminder: OnboardingReminderScreen()

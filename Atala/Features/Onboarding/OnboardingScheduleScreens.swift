@@ -43,7 +43,7 @@ struct OnboardingDaysScreen: View {
 
     var body: some View {
         OnboardingScaffold(title: "When can you run?",
-                           subtitle: "Tick your running days. One ticked day, one session.",
+                           subtitle: "One ticked day, one session.",
                            canContinue: count > 0) {
             VStack(spacing: 0) {
                 ForEach(1...7, id: \.self) { day in
@@ -119,8 +119,7 @@ struct OnboardingLongRunScreen: View {
     }
 
     var body: some View {
-        OnboardingScaffold(title: "And your long run?",
-                           subtitle: "It's the session that takes the most time. Pick the day you have room for it.",
+        OnboardingScaffold(title: "Which day for your long run?",
                            canContinue: canContinue) {
             VStack(spacing: 10) {
                 ForEach(days, id: \.self) { day in
@@ -160,7 +159,7 @@ struct OnboardingConstraintsScreen: View {
 
     var body: some View {
         OnboardingScaffold(title: "Anything else to know?",
-                           subtitle: "Tick what applies to you. Nothing is required.") {
+                           subtitle: "Optional.") {
             VStack(spacing: 9) {
                 ForEach(Constraint.allCases) { constraint in
                     OptionCard(title: constraint.title,
@@ -181,8 +180,7 @@ struct OnboardingToneScreen: View {
     @EnvironmentObject private var store: AppStore
 
     var body: some View {
-        OnboardingScaffold(title: "Which tone do you prefer?",
-                           subtitle: "Here's what I'd tell you after a session.") {
+        OnboardingScaffold(title: "Which tone do you prefer?") {
             VStack(spacing: 10) {
                 ForEach(CoachTone.allCases) { tone in
                     toneCard(tone)

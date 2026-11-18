@@ -8,13 +8,14 @@ enum OnboardingCopy {
         case .tenK: return "10K"
         case .half: return "half marathon"
         case .regular: return "running routine"
+        case .shape: return "fitness routine"
         }
     }
 
     /// "Half marathon in 1:45:00", "10K" or "Run regularly".
     static func goalHeadline(_ answers: OnboardingAnswers) -> String {
         let goal = answers.goal ?? .regular
-        if goal != .regular, let target = answers.targetSeconds {
+        if !goal.isOpenEnded, let target = answers.targetSeconds {
             return "\(goal.title) in \(Fmt.goalTime(target))"
         }
         return goal.title

@@ -66,7 +66,7 @@ struct OnboardingCommitmentScreen: View {
             + Text(frequency).foregroundColor(Theme.green)
             + Text(" for ")
             + Text(OnboardingCopy.weeks(weekCount)).foregroundColor(Theme.green)
-        if goal == .regular {
+        if goal.isOpenEnded {
             return start + Text(" to make running part of my life.")
         }
         let finish = start + Text(" to finish my \(OnboardingCopy.goalNoun(goal))")

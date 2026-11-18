@@ -196,7 +196,7 @@ struct OnboardingPlanReadyScreen: View {
     private var buttonTitle: String {
         if finished || weeks.isEmpty { return "Continue" }
         if current < weeks.count - 1 { return "Unlock week \(current + 2)" }
-        return store.plan?.raceDate != nil && store.answers.goal != .regular ? "See race day" : "See the finish"
+        return store.plan?.raceDate != nil && !store.answers.goal.isOpenEnded ? "See race day" : "See the finish"
     }
 
     var body: some View {
@@ -317,7 +317,7 @@ struct OnboardingPlanReadyScreen: View {
     }
 
     private var finishTitle: String {
-        if store.answers.goal != .regular, let race = store.plan?.raceDate {
+        if !store.answers.goal.isOpenEnded, let race = store.plan?.raceDate {
             return Fmt.day(race, "EEEE d MMMM")
         }
         return "End of week \(max(1, weeks.count))"
@@ -326,7 +326,7 @@ struct OnboardingPlanReadyScreen: View {
     private var finishDetail: String {
         let answers = store.answers
         let goal = answers.goal ?? .regular
-        if goal == .regular { return "Running is part of your week" }
+        if goal.isOpenEnded { return "Running is part of your week" }
         if let target = answers.targetSeconds {
             return "Your \(OnboardingCopy.goalNoun(goal)) in \(Fmt.goalTime(target))"
         }
