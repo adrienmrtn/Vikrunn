@@ -1,7 +1,6 @@
 import SwiftUI
 
-// DEMO OFFER — pricing is not decided and there is no StoreKit: nothing is charged, nothing renews,
-// and no reminder is sent. The screens around it say so plainly instead of promising a real trial.
+// PLACEHOLDER OFFER — the paywall is fake for now: no StoreKit, nothing is charged.
 enum OnboardingPaywallOffer {
     static let trialDays = 3
     static let monthlyPrice = "€8.33"
@@ -31,13 +30,13 @@ struct OnboardingTrialScreen: View {
         let list = benefits
         return OnboardingScaffold(buttonsVisible: stage >= Self.stageDelays.count) {
             CoachAvatar(coach: store.coach, size: 96)
-            OnboardingEmphasisText(text: "We want you to try Atala for free",
+            OnboardingEmphasisText(text: "We want you to try Atala for free for \(OnboardingPaywallOffer.trialDays) days",
                                    size: 32,
                                    lineSpacing: 5,
                                    highlight: "for free",
                                    onFinished: { emphasised = true })
                 .accessibilityAddTraits(.isHeader)
-            Text("Your plan, your coach, every feature. Nothing is charged in this version.")
+            Text("Your plan, your coach, every feature. You pay nothing today.")
                 .font(.system(size: 17))
                 .foregroundStyle(Color(hex: 0x5A5A5A))
                 .lineSpacing(5)
@@ -82,19 +81,20 @@ struct OnboardingTimelineScreen: View {
     private static let stageDelays: [Double] = [0.45, 0.4, 0.5, 0.4, 0.5, 0.55]
 
     private var items: [OnboardingTimelineItem] {
-        [
+        let days = OnboardingPaywallOffer.trialDays
+        return [
             OnboardingTimelineItem(id: 0, symbol: "lock.open.fill", color: Theme.green, title: "Today",
                                    text: "You unlock everything: your full plan, your coach, voice guidance."),
-            OnboardingTimelineItem(id: 1, symbol: "figure.run", color: Theme.yellow, title: "While you train",
-                                   text: "Everything stays open. There is no card to enter and nothing to cancel."),
-            OnboardingTimelineItem(id: 2, symbol: "star.fill", color: Theme.orange, title: "When subscriptions open",
-                                   text: "You see the price in the app first, and you decide then. Nothing starts on its own."),
+            OnboardingTimelineItem(id: 1, symbol: "bell.fill", color: Theme.yellow, title: "In \(days - 1) days",
+                                   text: "We remind you that your trial ends the next day."),
+            OnboardingTimelineItem(id: 2, symbol: "star.fill", color: Theme.orange, title: "In \(days) days",
+                                   text: "Your subscription starts and you carry on with Atala. Cancel before and you pay nothing."),
         ]
     }
 
     var body: some View {
         let list = items
-        return OnboardingScaffold(title: "How it works for now",
+        return OnboardingScaffold(title: "How your free trial works",
                                   buttonsVisible: stage >= Self.stageDelays.count) {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(list) { item in
@@ -151,7 +151,7 @@ struct OnboardingTimelineScreen: View {
     }
 }
 
-/// Screen 30: the promise that nothing changes without a word in the app first, with a ringing bell. The title turns bold
+/// Screen 30: the reminder before the end of the trial, with a ringing bell. The title turns bold
 /// word by word, then the subtitle fades in, then the button.
 struct OnboardingReminderScreen: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -176,12 +176,12 @@ struct OnboardingReminderScreen: View {
                             .animation(.easeInOut(duration: 0.16).repeatForever(autoreverses: true), value: ringing)
                     )
                     .accessibilityHidden(true)
-                OnboardingEmphasisText(text: "We'll tell you before anything changes",
+                OnboardingEmphasisText(text: "We'll tell you before your trial ends",
                                        size: 28,
                                        centered: true,
                                        onFinished: { emphasised = true })
                     .accessibilityAddTraits(.isHeader)
-                Text("The day Atala becomes a subscription, you read it here first. You have time to decide, with no surprise on your account.")
+                Text("You get a reminder the day before. You have time to decide, with no surprise on your account.")
                     .font(.system(size: 17))
                     .foregroundStyle(Color(hex: 0x5A5A5A))
                     .lineSpacing(5)

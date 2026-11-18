@@ -177,7 +177,7 @@ extension AuthService {
         return account
     }
 
-    /// Called from `.onOpenURL`: finishes a web sign-in if the app was opened with `vicrun://auth-callback`.
+    /// Called from `.onOpenURL`: finishes a web sign-in if the app was opened with `atala://auth-callback`.
     nonisolated func handleCallback(_ url: URL) {
         guard url.scheme?.lowercased() == SupabaseConfig.callbackScheme else { return }
         Task { @MainActor in

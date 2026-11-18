@@ -1,10 +1,28 @@
-// Atala coach: checks the caller, applies the daily cap, asks Claude, returns
+// Atala coach: checks the caller, applies the daily cap, asks the model, returns
 // { reply, proposal? }. The plan itself is only changed in the app, after the runner taps Apply.
-import Anthropic from "npm:@anthropic-ai/sdk@^1.10.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-// Claude Opus 5.5 by default; set the COACH_MODEL secret to use another model without redeploying code.
-const MODEL = (Deno.env.get("COACH_MODEL") ?? "").trim() || "claude-opus-5-5";
+// The model is reached through fal's OpenAI-compatible router with the FAL_KEY secret.
+// Gemini Flash-Lite by default (the cheapest Gemini); set the COACH_MODEL secret to use another model without redeploying.
+const MODEL = (Deno.env.get("COACH_MODEL") ?? "").trim() || "google/gemini-2.5-flash-lite";
+const MODEL_URL = "https://fal.run/openrouter/router/openai/v1/chat/completions";
+
+type ToolCall = { id: string; type: "function"; function: { name: string; arguments: string } };
+type ChatTurn = {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string | null;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
+};
+
+/** An error from the model endpoint, with its HTTP status (0 when the endpoint could not be reached). */
+class ModelError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
 const DAILY_CAP = 150;
 const MAX_HISTORY = 30;
 const MAX_MESSAGE_CHARS = 4000;
@@ -155,10 +173,10 @@ function cleanContext(raw: unknown): CoachContext {
   };
 }
 
-function buildMessages(raw: unknown): Anthropic.Beta.BetaMessageParam[] | string {
+function buildMessages(raw: unknown): ChatTurn[] | string {
   if (!Array.isArray(raw) || raw.length === 0) return "messages must be a non-empty array";
   const recent = raw.slice(-MAX_HISTORY);
-  const out: Anthropic.Beta.BetaMessageParam[] = [];
+  const out: ChatTurn[] = [];
   for (const item of recent) {
     const role = item?.role === "user" ? "user" : item?.role === "coach" || item?.role === "assistant" ? "assistant" : null;
     const text = typeof item?.text === "string" ? item.text.trim() : "";
@@ -178,7 +196,7 @@ function buildMessages(raw: unknown): Anthropic.Beta.BetaMessageParam[] | string
 
 // ---------- Prompt and tool ----------
 
-function systemPrompt(context: CoachContext): Anthropic.Beta.BetaTextBlockParam[] {
+function systemPrompt(context: CoachContext): string {
   const coachName = (context.coachName ?? "").trim() || "Coach";
   const firstName = (context.firstName ?? "").trim() || "the runner";
   const tone = TONES[context.tone ?? "kind"] ?? TONES.kind;
@@ -215,21 +233,21 @@ You talk about running, training, recovery, motivation around running, and how t
     recentRuns: context.recentRuns ?? [],
   };
 
-  return [
-    // The stable part first (cacheable), the data that changes with every message after it.
-    { type: "text", text: role, cache_control: { type: "ephemeral" } },
-    {
-      type: "text",
-      text: `Training data (JSON). "today" and "weekday" are the runner's current day. "workouts" covers the last two weeks and roughly the next three; each has its date and weekday. Use the "id" of a workout when you propose a change, and work out dates from "today" rather than guessing.\n${JSON.stringify(data)}`,
-    },
-  ];
+  return `${role}
+
+Training data (JSON). "today" and "weekday" are the runner's current day. "workouts" covers the last two weeks and roughly the next three; each has its date and weekday. Use the "id" of a workout when you propose a change, and work out dates from "today" rather than guessing.
+${JSON.stringify(data)}`;
 }
 
-const proposeTool: Anthropic.Beta.BetaTool = {
-  name: "propose_plan_change",
+const TOOL_NAME = "propose_plan_change";
+
+const proposeTool = {
+  type: "function",
+  function: {
+  name: TOOL_NAME,
   description:
     "Propose a change to the runner's training plan. Use it when the runner asks to move, skip, shorten or lighten sessions, or warns about an upcoming conflict, tiredness, illness or pain. The app shows the proposal as a card; the plan only changes if the runner taps Apply. Only reference workouts listed in the training data, by their id.",
-  input_schema: {
+  parameters: {
     type: "object",
     properties: {
       summary: {
@@ -255,6 +273,7 @@ const proposeTool: Anthropic.Beta.BetaTool = {
       },
     },
     required: ["summary", "changes"],
+  },
   },
 };
 
@@ -328,75 +347,95 @@ function validateProposal(input: unknown, context: CoachContext): { proposal?: P
 
 // ---------- Model call ----------
 
+async function callModel(falKey: string, conversation: ChatTurn[], signal: AbortSignal): Promise<ChatTurn & { finish?: string }> {
+  let response: Response;
+  try {
+    response = await fetch(MODEL_URL, {
+      method: "POST",
+      headers: { "Authorization": `Key ${falKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: conversation,
+        tools: [proposeTool],
+        max_tokens: 1200,
+        temperature: 0.6,
+      }),
+      signal: AbortSignal.any([signal, AbortSignal.timeout(REQUEST_TIMEOUT_MS)]),
+    });
+  } catch (error) {
+    if (signal.aborted) throw error;
+    throw new ModelError(0, error instanceof Error ? error.name : "network");
+  }
+  if (!response.ok) {
+    await response.body?.cancel();
+    throw new ModelError(response.status, "model endpoint error");
+  }
+  const data = await response.json();
+  const choice = data?.choices?.[0];
+  const message = choice?.message;
+  if (!message || typeof message !== "object") throw new ModelError(502, "no message in the model response");
+  const toolCalls: ToolCall[] = Array.isArray(message.tool_calls)
+    ? message.tool_calls.filter((call: ToolCall) => call?.function && typeof call.function.name === "string")
+    : [];
+  return {
+    role: "assistant",
+    content: typeof message.content === "string" ? message.content : null,
+    tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+    finish: typeof choice?.finish_reason === "string" ? choice.finish_reason : undefined,
+  };
+}
+
 async function askCoach(
-  client: Anthropic,
-  messages: Anthropic.Beta.BetaMessageParam[],
+  falKey: string,
+  messages: ChatTurn[],
   context: CoachContext,
   signal: AbortSignal,
 ): Promise<{ reply: string; proposal?: Proposal }> {
-  const conversation = [...messages];
-  const system = systemPrompt(context);
+  const conversation: ChatTurn[] = [{ role: "system", content: systemPrompt(context) }, ...messages];
   let proposal: Proposal | undefined;
   let spokenText = "";
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const response = await client.beta.messages.create({
-      model: MODEL,
-      max_tokens: 8000,
-      output_config: { effort: "low" },
-      // If the model declines for a policy reason, the API retries once on its fallback model.
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      system,
-      tools: [proposeTool],
-      messages: conversation,
-    }, { signal, timeout: REQUEST_TIMEOUT_MS, maxRetries: 1 });
+    const answer = await callModel(falKey, conversation, signal);
+    const text = (answer.content ?? "").trim();
+    const toolCalls = answer.tool_calls ?? [];
 
-    if (response.stop_reason === "refusal") {
-      return { reply: "That's outside what I can help with here. Tell me about your running and I'm all yours." };
-    }
-
-    const text = response.content
-      .filter((block): block is Anthropic.Beta.BetaTextBlock => block.type === "text")
-      .map((block) => block.text)
-      .join("\n")
-      .trim();
-    const toolUses = response.content.filter(
-      (block): block is Anthropic.Beta.BetaToolUseBlock => block.type === "tool_use",
-    );
-
-    if (response.stop_reason !== "tool_use" || toolUses.length === 0) {
+    if (toolCalls.length === 0) {
       return { reply: text || spokenText || proposal?.summary || "", proposal };
     }
 
     if (text) spokenText = text;
-    conversation.push({ role: "assistant", content: response.content });
+    conversation.push({ role: "assistant", content: answer.content, tool_calls: toolCalls });
 
-    const results: Anthropic.Beta.BetaToolResultBlockParam[] = [];
-    for (const toolUse of toolUses) {
-      if (toolUse.name.toLowerCase() !== proposeTool.name) {
-        results.push({ type: "tool_result", tool_use_id: toolUse.id, is_error: true, content: `Unknown tool. The only tool is ${proposeTool.name}.` });
+    for (const call of toolCalls) {
+      if (call.function.name.toLowerCase() !== TOOL_NAME) {
+        conversation.push({ role: "tool", tool_call_id: call.id, content: `Unknown tool. The only tool is ${TOOL_NAME}.` });
         continue;
       }
-      const checked = validateProposal(toolUse.input, context);
+      let input: unknown;
+      try {
+        input = JSON.parse(call.function.arguments || "{}");
+      } catch {
+        conversation.push({ role: "tool", tool_call_id: call.id, content: "The arguments were not valid JSON. Call the tool again with valid JSON." });
+        continue;
+      }
+      const checked = validateProposal(input, context);
       if (!checked.proposal) {
-        results.push({
-          type: "tool_result",
-          tool_use_id: toolUse.id,
-          is_error: true,
+        conversation.push({
+          role: "tool",
+          tool_call_id: call.id,
           content: `The proposal was not shown. Fix these and call the tool again: ${checked.errors.join("; ")}`,
         });
         continue;
       }
       proposal = checked.proposal;
-      results.push({
-        type: "tool_result",
-        tool_use_id: toolUse.id,
+      conversation.push({
+        role: "tool",
+        tool_call_id: call.id,
         content:
           "The proposal is now shown to the runner as a card with Apply and Keep my plan. Nothing has changed yet. Write the short message that goes with it; do not call the tool again.",
       });
     }
-    conversation.push({ role: "user", content: results });
   }
 
   return { reply: spokenText || proposal?.summary || "", proposal };
@@ -408,9 +447,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return fail("method_not_allowed", 405);
 
-  // Without the Anthropic key the app silently uses its on-phone replies.
-  const anthropicKey = (Deno.env.get("ANTHROPIC_API_KEY") ?? "").trim();
-  if (!anthropicKey) return fail("coach_not_configured", 503);
+  // Without the fal key the app silently uses its on-phone replies.
+  const falKey = (Deno.env.get("FAL_KEY") ?? "").trim();
+  if (!falKey) return fail("coach_not_configured", 503);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -423,7 +462,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (!token) return fail("unauthorized", 401);
 
   try {
-    return await handle(req, token, supabaseUrl, serviceKey, anthropicKey);
+    return await handle(req, token, supabaseUrl, serviceKey, falKey);
   } catch (error) {
     console.error("coach: unexpected error", error instanceof Error ? error.message : "unknown");
     return fail("server_error", 500);
@@ -435,7 +474,7 @@ async function handle(
   token: string,
   supabaseUrl: string,
   serviceKey: string,
-  anthropicKey: string,
+  falKey: string,
 ): Promise<Response> {
   const admin = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -473,28 +512,27 @@ async function handle(
   const timer = setTimeout(() => deadline.abort(), DEADLINE_MS);
   let result: { reply: string; proposal?: Proposal };
   try {
-    const client = new Anthropic({ apiKey: anthropicKey });
-    result = await askCoach(client, messages, context, deadline.signal);
+    result = await askCoach(falKey, messages, context, deadline.signal);
   } catch (error) {
     if (deadline.signal.aborted) {
       console.error("coach: model took too long");
       return fail("timeout", 504);
     }
-    if (error instanceof Anthropic.RateLimitError) {
-      console.error("coach: model rate limited");
-      return fail("busy", 503);
-    }
-    if (error instanceof Anthropic.APIConnectionError) {
-      console.error("coach: model unreachable");
-      return fail("upstream_unreachable", 502);
-    }
-    if (error instanceof Anthropic.APIError) {
+    if (error instanceof ModelError) {
       // 401/403: the key is wrong or revoked. Same answer as a missing key, so the app falls back.
       if (error.status === 401 || error.status === 403) {
-        console.error("coach: the Anthropic key was refused", error.status);
+        console.error("coach: the fal key was refused", error.status);
         return fail("coach_not_configured", 503);
       }
-      console.error("coach: model error", error.status, error.type ?? "");
+      if (error.status === 429) {
+        console.error("coach: model rate limited");
+        return fail("busy", 503);
+      }
+      if (error.status === 0) {
+        console.error("coach: model unreachable");
+        return fail("upstream_unreachable", 502);
+      }
+      console.error("coach: model error", error.status);
       return fail("upstream_error", 502);
     }
     console.error("coach: unexpected model error", error instanceof Error ? error.name : "unknown");

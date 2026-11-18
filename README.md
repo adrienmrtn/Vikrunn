@@ -6,7 +6,7 @@ Running-coach app for iPhone (project and target are still named `Vicrun`) (Swif
 
 1. Open `Vicrun.xcodeproj` in Xcode 16 or later.
 2. Select the `Vicrun` target, tab *Signing & Capabilities*, and choose your team.
-   Change the bundle identifier (`com.vicrun.app`) if it is already taken.
+   Change the bundle identifier (`com.atala.app`) if it is already taken.
 3. Pick an iPhone simulator or your phone and press Run.
 
 There are no third-party dependencies.
