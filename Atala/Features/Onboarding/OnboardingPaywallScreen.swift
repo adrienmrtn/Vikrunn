@@ -23,21 +23,26 @@ struct OnboardingPhotoStrip: View {
     var body: some View {
         let list = tiles
         let loop = Double(CGFloat(list.count) * (tileWidth + Self.spacing))
-        return TimelineView(.animation(paused: reduceMotion)) { timeline in
-            let elapsed = timeline.date.timeIntervalSinceReferenceDate
-            let shift = loop > 0 ? CGFloat((elapsed * speed).truncatingRemainder(dividingBy: loop)) : 0
-            HStack(spacing: Self.spacing) {
-                // Twice the list: when the first copy has left, the second one is exactly in its place.
-                ForEach(0..<(list.count * 2), id: \.self) { index in
-                    tile(list[index % list.count])
+        // The strip is an overlay of a screen-wide box, so its own width never widens the page.
+        return Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .overlay(alignment: .leading) {
+                TimelineView(.animation(paused: reduceMotion)) { timeline in
+                    let elapsed = timeline.date.timeIntervalSinceReferenceDate
+                    let shift = loop > 0 ? CGFloat((elapsed * speed).truncatingRemainder(dividingBy: loop)) : 0
+                    HStack(spacing: Self.spacing) {
+                        // Twice the list: when the first copy has left, the second one is exactly in its place.
+                        ForEach(0..<(list.count * 2), id: \.self) { index in
+                            tile(list[index % list.count])
+                        }
+                    }
+                    .fixedSize()
+                    .offset(x: -shift)
                 }
             }
-            .offset(x: -shift)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(height: height)
-        .clipped()
-        .accessibilityHidden(true)
+            .clipped()
+            .accessibilityHidden(true)
     }
 
     private func tile(_ name: String) -> some View {

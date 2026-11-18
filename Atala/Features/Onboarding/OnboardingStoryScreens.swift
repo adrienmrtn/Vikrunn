@@ -80,7 +80,7 @@ enum OnboardingCommunityFigure {
 
 /// Right after the reviews: the runners already training with Atala.
 struct OnboardingCommunityScreen: View {
-    /// 1 title, 2 photo and figure, 3 text, 4 button.
+    /// 1 title, 2 photo and figure, 3 community card, 4 button.
     @State private var stage = 0
 
     private static let delays: [Double] = [0.1, 0.35, 0.7, 0.4]
@@ -232,6 +232,7 @@ struct OnboardingPlanMattersScreen: View {
                 .font(.system(size: 12, weight: .bold))
                 .kerning(0.8)
                 .foregroundStyle(Theme.muted)
+                .opacity(list.isEmpty ? 0 : 1)
                 .onboardingStaged(0, stage: stage)
             VStack(spacing: 10) {
                 ForEach(Array(list.enumerated()), id: \.element.id) { index, workout in

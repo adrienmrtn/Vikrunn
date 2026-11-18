@@ -50,6 +50,12 @@ struct OnboardingLinkGraphic: View {
         }
     }
 
+    /// Every other dot is lit, and they swap on each pulse.
+    private func dotOpacity(_ index: Int) -> Double {
+        let even = index % 2 == 0
+        return pulsing == even ? 1 : 0.25
+    }
+
     @ViewBuilder private var link: some View {
         if linked {
             Image(systemName: "checkmark.circle.fill")
@@ -63,7 +69,7 @@ struct OnboardingLinkGraphic: View {
                     Circle()
                         .fill(Theme.green)
                         .frame(width: 7, height: 7)
-                        .opacity(pulsing ? (index % 2 == 0 ? 1 : 0.25) : (index % 2 == 0 ? 0.25 : 1))
+                        .opacity(dotOpacity(index))
                 }
             }
             .frame(width: 64)
