@@ -72,16 +72,18 @@ extension View {
 struct MainHeroImage: View {
     let name: String
     var height: CGFloat = 170
+    /// Which part of the picture stays visible when it is cropped to the frame.
+    var alignment: Alignment = .center
 
     var body: some View {
         Color.clear
             .frame(maxWidth: .infinity)
             .frame(height: height)
-            .overlay(
+            .overlay(alignment: alignment) {
                 Image(name)
                     .resizable()
                     .scaledToFill()
-            )
+            }
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .accessibilityHidden(true)
     }

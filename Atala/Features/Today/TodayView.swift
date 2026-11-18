@@ -18,7 +18,7 @@ struct TodayView: View {
                     TodayWeekStrip()
                         .padding(.top, 14)
                         .mainStagedAppear(index: 1)
-                    MainHeroImage(name: "illu_today", height: 190)
+                    heroImage
                         .padding(.top, 16)
                         .mainStagedAppear(index: 2)
                     heroCard
@@ -130,6 +130,19 @@ struct TodayView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Profile and settings")
+    }
+
+    /// A runner photo matching the gender given in onboarding, or the illustration otherwise.
+    @ViewBuilder
+    private var heroImage: some View {
+        switch store.answers.gender {
+        case .man:
+            MainHeroImage(name: "hero_today_man", height: 280, alignment: .top)
+        case .woman:
+            MainHeroImage(name: "hero_today_woman", height: 280, alignment: .top)
+        case .other, .undisclosed, nil:
+            MainHeroImage(name: "illu_today", height: 190)
+        }
     }
 
     @ViewBuilder
