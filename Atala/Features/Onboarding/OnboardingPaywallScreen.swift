@@ -16,6 +16,28 @@ struct OnboardingPaywallScreen: View {
             + Text(" then \(OnboardingPaywallOffer.monthlyPrice) a month (\(OnboardingPaywallOffer.yearlyPrice) billed yearly)")
     }
 
+    /// The user's own goal, plan and reason, above the offer (wording in `OnboardingPaywallCopy`).
+    private var reminder: some View {
+        VStack(spacing: 8) {
+            Text(OnboardingPaywallCopy.goalLine(answers: store.answers, plan: store.plan))
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(Theme.ink)
+                .accessibilityAddTraits(.isHeader)
+            Text(OnboardingPaywallCopy.planLine(coachName: store.coach.name))
+                .font(.system(size: 17))
+                .foregroundStyle(Theme.body)
+            if let because = OnboardingPaywallCopy.motivationLine(store.answers.motivation) {
+                Text(because)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.green)
+                    .padding(.top, 2)
+            }
+        }
+        .lineSpacing(4)
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -37,10 +59,11 @@ struct OnboardingPaywallScreen: View {
             }
             .padding(.horizontal, 8)
             Spacer(minLength: 12)
-            VStack(spacing: 24) {
+            VStack(spacing: 20) {
                 CoachAvatar(coach: store.coach, size: 72)
+                reminder
                 offer
-                    .font(.system(size: 22, weight: .medium))
+                    .font(.system(size: 19, weight: .medium))
                     .foregroundColor(Theme.ink)
                     .lineSpacing(6)
                     .multilineTextAlignment(.center)

@@ -1,17 +1,28 @@
 import SwiftUI
+import UIKit
 
 private struct OnboardingWelcomeSlide: Identifiable {
     let id: Int
-    let image: String
+    /// Illustration shown until the photo is in the asset catalog.
+    let illustration: String
+    /// Photo of the slide ("welcome_photo_1" ... "_3"). Used as soon as it exists in the catalog.
+    let photo: String
     let title: String
     let text: String
 
+    var usesPhoto: Bool {
+        UIImage(named: photo) != nil
+    }
+
     static let all: [OnboardingWelcomeSlide] = [
-        OnboardingWelcomeSlide(id: 0, image: "welcome_1", title: "Welcome to Atala",
-                               text: "Your running coach, from your first 5K to the half marathon."),
-        OnboardingWelcomeSlide(id: 1, image: "welcome_2", title: "A plan that fits your life",
+        OnboardingWelcomeSlide(id: 0, illustration: "welcome_1", photo: "welcome_photo_1",
+                               title: "Run like you belong",
+                               text: "Atala is the coach behind runners who show up, from a first 5K to a half marathon."),
+        OnboardingWelcomeSlide(id: 1, illustration: "welcome_2", photo: "welcome_photo_2",
+                               title: "A plan that fits your life",
                                text: "Pick the days you can run. Your plan is built around them."),
-        OnboardingWelcomeSlide(id: 2, image: "welcome_3", title: "A coach who tells you why",
+        OnboardingWelcomeSlide(id: 2, illustration: "welcome_3", photo: "welcome_photo_3",
+                               title: "A coach who tells you why",
                                text: "Every session has its reason, every question its answer."),
     ]
 }
@@ -101,15 +112,24 @@ struct OnboardingWelcomeScreen: View {
         .scrollTargetBehavior(.paging)
         .scrollPosition(id: $page)
         .scrollIndicators(.hidden)
-        .frame(height: imageHeight + 138)
+        .frame(height: imageHeight + 150)
     }
 
     private func slideView(_ slide: OnboardingWelcomeSlide, width: CGFloat, imageHeight: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Image(slide.image)
+        let usesPhoto = slide.usesPhoto
+        return VStack(alignment: .leading, spacing: 0) {
+            Image(usesPhoto ? slide.photo : slide.illustration)
                 .resizable()
                 .scaledToFill()
                 .frame(width: width, height: imageHeight)
+                .overlay(alignment: .top) {
+                    // Photos only: a soft dark veil at the top keeps the cream logo legible.
+                    if usesPhoto {
+                        LinearGradient(colors: [Color.black.opacity(0.42), Color.black.opacity(0)],
+                                       startPoint: .top, endPoint: .bottom)
+                            .frame(height: min(190, imageHeight * 0.5))
+                    }
+                }
                 .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 32, bottomTrailingRadius: 32))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 10) {
@@ -121,13 +141,14 @@ struct OnboardingWelcomeScreen: View {
                     .font(.system(size: 16))
                     .foregroundStyle(Color(hex: 0x5A5A5A))
                     .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 24)
             .padding(.top, 26)
             .frame(width: width, alignment: .leading)
             Spacer(minLength: 0)
         }
-        .frame(width: width, height: imageHeight + 138, alignment: .top)
+        .frame(width: width, height: imageHeight + 150, alignment: .top)
     }
 
     private var dots: some View {

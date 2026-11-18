@@ -79,6 +79,7 @@ struct OnboardingCommitmentScreen: View {
     private var reason: String? {
         guard let motivation = store.answers.motivation else { return nil }
         switch motivation {
+        case .athletic: return "Because I want an athletic body."
         case .prove: return "Because I want to prove to myself I can do it."
         case .record: return "Because I want to beat my record."
         case .health: return "Because I want to take care of my health."

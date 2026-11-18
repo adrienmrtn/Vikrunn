@@ -84,6 +84,7 @@ struct OnboardingCoachReplyScreen: View {
 
     private var chip: String {
         switch motivation {
+        case .athletic: return "You want an athletic body"
         case .prove: return "You want to prove to yourself you can do it"
         case .record: return "You want to beat your record"
         case .health: return "You want to take care of your health"

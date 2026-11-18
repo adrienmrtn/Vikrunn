@@ -95,10 +95,13 @@ enum WeeklyVolume: String, Codable, CaseIterable, Identifiable {
 }
 
 enum Motivation: String, Codable, CaseIterable, Identifiable {
-    case prove, record, health, clearHead, together
+    // `athletic` was added later and is listed first: the raw value is the case name, so answers
+    // saved by earlier versions still decode.
+    case athletic, prove, record, health, clearHead, together
     var id: String { rawValue }
     var title: String {
         switch self {
+        case .athletic: return "Get an athletic body"
         case .prove: return "Prove to myself I can do it"
         case .record: return "Beat my record"
         case .health: return "Take care of my health"
@@ -108,6 +111,7 @@ enum Motivation: String, Codable, CaseIterable, Identifiable {
     }
     var subtitle: String {
         switch self {
+        case .athletic: return "Look and feel stronger"
         case .prove: return "See something through"
         case .record: return "Do better than last time"
         case .health: return "Move more, feel better"
@@ -118,6 +122,7 @@ enum Motivation: String, Codable, CaseIterable, Identifiable {
     /// The coach's adaptive answer shown right after the "why" question.
     var coachReply: String {
         switch self {
+        case .athletic: return "I'll get you there, one session at a time."
         case .prove: return "I'll help you prove it to yourself."
         case .record: return "We'll go and get that record together."
         case .health: return "We'll build a habit your body thanks you for."
@@ -127,6 +132,7 @@ enum Motivation: String, Codable, CaseIterable, Identifiable {
     }
     var vignette: String {
         switch self {
+        case .athletic: return "vignette_why_athletic"
         case .prove: return "vignette_why_prove"
         case .record: return "vignette_why_record"
         case .health: return "vignette_why_health"

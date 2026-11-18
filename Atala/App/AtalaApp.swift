@@ -32,21 +32,31 @@ struct AtalaApp: App {
     }
 }
 
-/// Onboarding until it is finished, then the app itself.
+/// Onboarding until it is finished, then the app itself. The launch splash sits above either one
+/// for its short animation, on every cold launch.
 struct RootView: View {
     @EnvironmentObject private var store: AppStore
+    /// Not saved: a new process starts with the splash again.
+    @State private var splashDone = false
 
     var body: some View {
         ZStack {
-            if store.hasCompletedOnboarding {
-                MainTabView()
-                    .transition(.opacity)
-            } else {
-                OnboardingFlowView()
-                    .transition(.opacity)
+            ZStack {
+                if store.hasCompletedOnboarding {
+                    MainTabView()
+                        .transition(.opacity)
+                } else {
+                    OnboardingFlowView()
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeInOut(duration: 0.35), value: store.hasCompletedOnboarding)
+            if !splashDone {
+                // The splash fades itself out, then asks to be removed.
+                AtalaSplashView(onFinished: { splashDone = true })
+                    .zIndex(10)
             }
         }
-        .animation(.easeInOut(duration: 0.35), value: store.hasCompletedOnboarding)
         .authSyncPrompts()
     }
 }
