@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Every screen of the entry flow, in order. The raw value is what `AppStore.onboardingStep` stores,
-/// so never reorder the cases once the app is released: append instead.
+/// Every screen of the entry flow. The raw value is what `AppStore.onboardingStep` stores, so it
+/// identifies a screen for good: never renumber or reuse one. New screens are appended with a new
+/// raw value, and the order in which screens are shown lives in `order`, not in the raw values.
 enum OnboardingStep: Int, CaseIterable, Hashable {
     case welcome = 0
     case firstName, coach, hello, gender, experience, volume, recent, health, mirror
@@ -9,6 +10,35 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
     case days, longRun, constraints, message, tone, projection, reviews
     case signIn, loading, planReady, commitment, trial, timeline, reminder, paywall
     case permissions, healthConnect
+    // Added after the first release (raw values 33 and up). Their place in the flow is set by `order`.
+    case levelIntro = 33
+    case levelRisk = 34
+    case levelFocus = 35
+    case consistency = 36
+
+    /// The screens in the order they are shown. Every case appears here exactly once.
+    static let order: [OnboardingStep] = [
+        .welcome,
+        .firstName, .coach, .hello, .gender, .experience, .volume, .recent, .health, .mirror,
+        .levelIntro, .levelRisk, .levelFocus,
+        .goalIntro, .goal, .race, .target, .why, .coachReply, .consistency,
+        .days, .longRun, .constraints, .message, .tone, .projection, .reviews,
+        .signIn, .loading, .planReady, .commitment, .trial, .timeline, .reminder, .paywall,
+        .permissions, .healthConnect,
+    ]
+
+    private static let positions: [OnboardingStep: Int] = {
+        var result: [OnboardingStep: Int] = [:]
+        for (index, item) in order.enumerated() {
+            result[item] = index
+        }
+        return result
+    }()
+
+    /// Index of the step in `order`: use it, never the raw value, to compare two steps.
+    var position: Int {
+        OnboardingStep.positions[self] ?? 0
+    }
 
     /// Full-screen coach "explainer" screens (tap to continue, circular reveal): no progress bar.
     var isTapScreen: Bool {
@@ -17,8 +47,8 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
 
     /// The bar runs from the first name to the reviews.
     var showsProgress: Bool {
-        rawValue >= OnboardingStep.firstName.rawValue
-            && rawValue <= OnboardingStep.reviews.rawValue
+        position >= OnboardingStep.firstName.position
+            && position <= OnboardingStep.reviews.position
             && !isTapScreen
     }
 
@@ -44,11 +74,12 @@ final class OnboardingNavigator: ObservableObject {
     let transition = OnboardingTransitionContext()
     private var lastMove = Date.distantPast
 
-    /// Resumes where the user left (answers and step are saved on the phone).
+    /// Resumes where the user left (answers and step are saved on the phone). A step saved by an
+    /// earlier version keeps its raw value, so it opens the same screen.
     func restore(from store: AppStore) {
         guard !isReady else { return }
         let saved = OnboardingStep(rawValue: store.onboardingStep) ?? .welcome
-        if saved.rawValue > OnboardingStep.loading.rawValue {
+        if saved.position > OnboardingStep.loading.position {
             // A plan built on another day would start in the past: rebuild it from today.
             // Nothing can be done or missed yet, the app has not been opened.
             let fresh = store.plan.map { Calendar.plan.isDateInToday($0.createdAt) } ?? false
@@ -60,6 +91,12 @@ final class OnboardingNavigator: ObservableObject {
 
     func isSkipped(_ candidate: OnboardingStep, store: AppStore) -> Bool {
         switch candidate {
+        case .levelIntro, .levelRisk:
+            // Beginners: congratulations, then the injury figure and its answer.
+            return OnboardingRunnerLevel(store.answers.experience) != .beginner
+        case .levelFocus:
+            // Intermediate and advanced runners: one screen.
+            return OnboardingRunnerLevel(store.answers.experience) == .beginner
         case .race, .target:
             return store.answers.goal == .regular
         case .longRun:
@@ -72,26 +109,30 @@ final class OnboardingNavigator: ObservableObject {
     }
 
     func next(_ store: AppStore) {
-        var raw = step.rawValue + 1
-        while let candidate = OnboardingStep(rawValue: raw) {
+        let order = OnboardingStep.order
+        var index = step.position + 1
+        while index < order.count {
+            let candidate = order[index]
             if !isSkipped(candidate, store: store) {
                 go(to: candidate, forward: true, store: store)
                 return
             }
-            raw += 1
+            index += 1
         }
         store.finishOnboarding()
     }
 
     func back(_ store: AppStore) {
         guard step.allowsBack else { return }
-        var raw = step.rawValue - 1
-        while let candidate = OnboardingStep(rawValue: raw) {
+        let order = OnboardingStep.order
+        var index = step.position - 1
+        while index >= 0 {
+            let candidate = order[index]
             if !isSkipped(candidate, store: store) {
                 go(to: candidate, forward: false, store: store)
                 return
             }
-            raw -= 1
+            index -= 1
         }
     }
 
@@ -113,14 +154,24 @@ final class OnboardingNavigator: ObservableObject {
         store.onboardingStep = target.rawValue
     }
 
+    /// Steps left out of the bar because an earlier answer rules them out (the level screens depend
+    /// on the experience, the race screens on the goal), so the remaining steps stay evenly spaced.
+    private func isLeftOutOfBar(_ item: OnboardingStep, store: AppStore) -> Bool {
+        switch item {
+        case .levelIntro, .levelRisk, .levelFocus, .race, .target:
+            return isSkipped(item, store: store)
+        default:
+            return false
+        }
+    }
+
     /// 5 % on the first name, 100 % on the reviews, even steps in between.
     func progress(for candidate: OnboardingStep, store: AppStore) -> Double? {
         guard candidate.showsProgress else { return nil }
-        let withoutRace = store.answers.goal == .regular
-        let bar = OnboardingStep.allCases.filter { item in
+        let bar = OnboardingStep.order.filter { item in
             guard item.showsProgress else { return false }
             if item == candidate { return true }
-            return !(withoutRace && (item == .race || item == .target))
+            return !isLeftOutOfBar(item, store: store)
         }
         guard bar.count > 1, let index = bar.firstIndex(of: candidate) else { return 0.05 }
         return 0.05 + 0.95 * Double(index) / Double(bar.count - 1)
@@ -129,13 +180,15 @@ final class OnboardingNavigator: ObservableObject {
     /// Value held by the fixed bar on any step: screens without a bar keep the value of the last
     /// step that had one, so the bar never runs backwards while it is hidden.
     func barProgress(for candidate: OnboardingStep, store: AppStore) -> Double {
-        var raw = candidate.rawValue
-        while let item = OnboardingStep(rawValue: raw) {
+        let order = OnboardingStep.order
+        var index = candidate.position
+        while index >= 0 {
+            let item = order[index]
             let counts = item == candidate || !isSkipped(item, store: store)
             if item.showsProgress, counts {
                 return progress(for: item, store: store) ?? 0.05
             }
-            raw -= 1
+            index -= 1
         }
         return 0.05
     }
@@ -252,9 +305,9 @@ struct OnboardingStepHost: View {
     }
 
     @ViewBuilder private var content: some View {
-        if step.rawValue <= OnboardingStep.mirror.rawValue {
+        if step.position <= OnboardingStep.levelFocus.position {
             profileScreens
-        } else if step.rawValue <= OnboardingStep.reviews.rawValue {
+        } else if step.position <= OnboardingStep.reviews.position {
             goalScreens
         } else {
             closingScreens
@@ -273,6 +326,9 @@ struct OnboardingStepHost: View {
         case .recent: OnboardingRecentScreen()
         case .health: OnboardingHealthScreen()
         case .mirror: OnboardingMirrorScreen()
+        case .levelIntro: OnboardingLevelIntroScreen()
+        case .levelRisk: OnboardingLevelRiskScreen()
+        case .levelFocus: OnboardingLevelFocusScreen()
         default: EmptyView()
         }
     }
@@ -285,6 +341,7 @@ struct OnboardingStepHost: View {
         case .target: OnboardingTargetScreen()
         case .why: OnboardingWhyScreen()
         case .coachReply: OnboardingCoachReplyScreen()
+        case .consistency: OnboardingConsistencyScreen()
         case .days: OnboardingDaysScreen()
         case .longRun: OnboardingLongRunScreen()
         case .constraints: OnboardingConstraintsScreen()
