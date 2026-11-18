@@ -127,7 +127,7 @@ extension AppStore {
                 let average = total / Double(lastWeeks.count)
                 if average >= 25 {
                     updated.weeklyVolume = .over25
-                } else if average >= 10, (updated.weeklyVolume ?? .under10) == .under10 {
+                } else if average >= 10, [.notYet, .under10].contains(updated.weeklyVolume ?? .under10) {
                     updated.weeklyVolume = .from10to25
                 }
             }

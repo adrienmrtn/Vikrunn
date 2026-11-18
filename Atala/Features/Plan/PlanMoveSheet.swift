@@ -73,6 +73,12 @@ extension AppStore {
         func isHard(_ kind: WorkoutKind) -> Bool { kind.isQuality || kind == .long }
         guard isHard(workout.kind) else { return false }
         let calendar = Calendar.plan
+        // On a swap the other session lands on this one's day: two hard days side by side count too.
+        if case .swap(let rival) = planMoveSlot(for: workout, on: day), isHard(rival.kind) {
+            let gap = calendar.dateComponents([.day], from: calendar.startOfDay(for: workout.date),
+                                              to: calendar.startOfDay(for: day)).day ?? 0
+            if abs(gap) == 1 { return true }
+        }
         for offset in [-1, 1] {
             guard let neighbour = calendar.date(byAdding: .day, value: offset, to: day) else { continue }
             let hardNextDoor = planOthers(on: neighbour, besides: workout).contains { other in

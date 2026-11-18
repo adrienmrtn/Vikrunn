@@ -162,11 +162,16 @@ struct RunFlowView: View {
     private func attachHeartRate(to run: RunRecord) {
         guard store.settings.healthImportEnabled else { return }
         let store = self.store
+        let end = Date()
         Task { @MainActor in
-            guard let measured = await HealthKitService.shared.heartRate(from: run.date, to: Date()) else { return }
-            store.updateRun(run.id) { record in
-                record.avgHeartRate = measured.average
-                record.maxHeartRate = measured.peak
+            // The watch hands its samples to the phone with a delay: look now, then once more later.
+            for wait in [0.0, 60.0] {
+                if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
+                guard let measured = await HealthKitService.shared.heartRate(from: run.date, to: end) else { continue }
+                store.updateRun(run.id) { record in
+                    record.avgHeartRate = measured.average
+                    record.maxHeartRate = measured.peak
+                }
             }
         }
     }
