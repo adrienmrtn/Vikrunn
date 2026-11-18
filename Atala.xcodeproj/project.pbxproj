@@ -7,14 +7,14 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		A10000000000000000000001 /* Vicrun.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Vicrun.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000001 /* Atala.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Atala.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000000000000000000000D /* Config */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Config; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A10000000000000000000002 /* Vicrun */ = {
+		A10000000000000000000002 /* Atala */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Vicrun;
+			path = Atala;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -33,7 +33,7 @@
 		A10000000000000000000004 = {
 			isa = PBXGroup;
 			children = (
-				A10000000000000000000002 /* Vicrun */,
+				A10000000000000000000002 /* Atala */,
 				A1000000000000000000000D /* Config */,
 				A10000000000000000000005 /* Products */,
 			);
@@ -42,7 +42,7 @@
 		A10000000000000000000005 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A10000000000000000000001 /* Vicrun.app */,
+				A10000000000000000000001 /* Atala.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -50,9 +50,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A10000000000000000000006 /* Vicrun */ = {
+		A10000000000000000000006 /* Atala */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A1000000000000000000000C /* Build configuration list for PBXNativeTarget "Vicrun" */;
+			buildConfigurationList = A1000000000000000000000C /* Build configuration list for PBXNativeTarget "Atala" */;
 			buildPhases = (
 				A10000000000000000000007 /* Sources */,
 				A10000000000000000000003 /* Frameworks */,
@@ -63,13 +63,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A10000000000000000000002 /* Vicrun */,
+				A10000000000000000000002 /* Atala */,
 			);
-			name = Vicrun;
+			name = Atala;
 			packageProductDependencies = (
 			);
-			productName = Vicrun;
-			productReference = A10000000000000000000001 /* Vicrun.app */;
+			productName = Atala;
+			productReference = A10000000000000000000001 /* Atala.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -87,7 +87,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A1000000000000000000000B /* Build configuration list for PBXProject "Vicrun" */;
+			buildConfigurationList = A1000000000000000000000B /* Build configuration list for PBXProject "Atala" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -101,7 +101,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A10000000000000000000006 /* Vicrun */,
+				A10000000000000000000006 /* Atala */,
 			);
 		};
 /* End PBXProject section */
@@ -176,7 +176,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = Config/Vicrun.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Config/Atala.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -210,7 +210,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = Config/Vicrun.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Config/Atala.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -243,7 +243,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A1000000000000000000000B /* Build configuration list for PBXProject "Vicrun" */ = {
+		A1000000000000000000000B /* Build configuration list for PBXProject "Atala" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A10000000000000000000010 /* Debug */,
@@ -252,7 +252,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A1000000000000000000000C /* Build configuration list for PBXNativeTarget "Vicrun" */ = {
+		A1000000000000000000000C /* Build configuration list for PBXNativeTarget "Atala" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A10000000000000000000012 /* Debug */,

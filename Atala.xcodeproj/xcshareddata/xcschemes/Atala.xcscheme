@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A10000000000000000000006"
-               BuildableName = "Vicrun.app"
-               BlueprintName = "Vicrun"
-               ReferencedContainer = "container:Vicrun.xcodeproj">
+               BuildableName = "Atala.app"
+               BlueprintName = "Atala"
+               ReferencedContainer = "container:Atala.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -43,9 +43,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A10000000000000000000006"
-            BuildableName = "Vicrun.app"
-            BlueprintName = "Vicrun"
-            ReferencedContainer = "container:Vicrun.xcodeproj">
+            BuildableName = "Atala.app"
+            BlueprintName = "Atala"
+            ReferencedContainer = "container:Atala.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -60,9 +60,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A10000000000000000000006"
-            BuildableName = "Vicrun.app"
-            BlueprintName = "Vicrun"
-            ReferencedContainer = "container:Vicrun.xcodeproj">
+            BuildableName = "Atala.app"
+            BlueprintName = "Atala"
+            ReferencedContainer = "container:Atala.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

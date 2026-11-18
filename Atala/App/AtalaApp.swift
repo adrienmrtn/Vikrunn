@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct VicrunApp: App {
+struct AtalaApp: App {
     @StateObject private var store = AppStore()
     @Environment(\.scenePhase) private var scenePhase
 
