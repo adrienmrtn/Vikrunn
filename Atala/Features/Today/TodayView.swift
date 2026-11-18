@@ -9,12 +9,18 @@ struct TodayView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(subtitle)
-                        .font(.system(size: 13))
-                        .foregroundStyle(Theme.muted)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .mainStagedAppear(index: 0)
+                    HStack(spacing: 8) {
+                        Text(subtitle)
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.muted)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        Spacer(minLength: 0)
+                        if store.streak.current > 0 {
+                            MainStreakChip(streak: store.streak)
+                        }
+                    }
+                    .mainStagedAppear(index: 0)
                     TodayWeekStrip()
                         .padding(.top, 14)
                         .mainStagedAppear(index: 1)

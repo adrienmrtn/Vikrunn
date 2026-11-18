@@ -10,6 +10,7 @@ struct WorkoutDetailView: View {
     @State private var showRun = false
     @State private var showManualEntry = false
     @State private var showGuided = false
+    @State private var showMove = false
 
     var body: some View {
         Group {
@@ -40,6 +41,10 @@ struct WorkoutDetailView: View {
         }
         .sheet(isPresented: $showManualEntry) {
             ManualRunEntryView(workout: store.workout(id: workoutID))
+                .environmentObject(store)
+        }
+        .sheet(isPresented: $showMove) {
+            PlanMoveSheet(workoutID: workoutID)
                 .environmentObject(store)
         }
     }
@@ -123,6 +128,16 @@ struct WorkoutDetailView: View {
                 Image(systemName: "ellipsis.circle")
             }
             .accessibilityLabel("More options")
+        } else if let workout = store.workout(id: workoutID), store.planCanMove(workout) {
+            Button {
+                showMove = true
+            } label: {
+                Label("Move", systemImage: "calendar")
+                    .labelStyle(.titleAndIcon)
+                    .font(.system(size: 15, weight: .semibold))
+            }
+            .foregroundStyle(Theme.ink)
+            .accessibilityLabel("Move this session to another day")
         }
     }
 

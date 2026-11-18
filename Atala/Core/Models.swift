@@ -447,6 +447,8 @@ struct RoutePoint: Codable, Equatable {
     var lat: Double
     var lon: Double
     var time: Date
+    /// Altitude in metres. Nil for routes recorded before altitude was kept, or when the GPS had none.
+    var alt: Double?
     var coordinate: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: lat, longitude: lon) }
 }
 
@@ -478,6 +480,8 @@ struct RunRecord: Codable, Identifiable, Equatable {
     var route: [RoutePoint] = []
     var splits: [RunSplit] = []
     var feeling: Feeling?
+    /// Highest heart rate of the run, when Apple Health had one. Added later, so it stays last.
+    var maxHeartRate: Int?
 
     var distanceKm: Double { distanceM / 1000 }
     var avgPace: Int { distanceM > 0 ? Int(Double(durationSec) / (distanceM / 1000)) : 0 }

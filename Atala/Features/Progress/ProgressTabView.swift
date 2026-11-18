@@ -22,6 +22,9 @@ struct ProgressTabView: View {
                             .padding(.top, 14)
                             .mainStagedAppear(index: 3)
                     }
+                    MainStreakCard(streak: store.streak)
+                        .padding(.top, 18)
+                        .mainStagedAppear(index: 4)
                     totalsRow
                         .padding(.top, 16)
                         .mainStagedAppear(index: 4)

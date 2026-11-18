@@ -154,7 +154,21 @@ struct RunFlowView: View {
         let run = tracker.makeRecord(title: workout?.title ?? "Free run", workoutID: workout?.id)
         store.addRun(run)
         savedRun = run
+        attachHeartRate(to: run)
         phase = .feeling
+    }
+
+    /// When the Health import is on, a watch worn during the run gives its heart rate.
+    private func attachHeartRate(to run: RunRecord) {
+        guard store.settings.healthImportEnabled else { return }
+        let store = self.store
+        Task { @MainActor in
+            guard let measured = await HealthKitService.shared.heartRate(from: run.date, to: Date()) else { return }
+            store.updateRun(run.id) { record in
+                record.avgHeartRate = measured.average
+                record.maxHeartRate = measured.peak
+            }
+        }
     }
 
     private func showSummary(feeling: Feeling?) {
