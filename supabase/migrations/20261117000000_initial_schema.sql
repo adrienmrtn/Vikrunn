@@ -1,4 +1,4 @@
--- Vicrun initial schema: one user owns their own rows, nothing else.
+-- Atala initial schema: one user owns their own rows, nothing else.
 
 create table public.profiles (
   user_id uuid primary key references auth.users (id) on delete cascade,

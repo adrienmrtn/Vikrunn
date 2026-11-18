@@ -1,4 +1,4 @@
-// Vicrun delete-account: removes the caller's rows, then the auth user itself.
+// Atala delete-account: removes the caller's rows, then the auth user itself.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders: Record<string, string> = {
