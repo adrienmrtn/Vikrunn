@@ -163,8 +163,9 @@ struct OnboardingBeyondCoachScreen: View {
 
     var body: some View {
         OnboardingScaffold(buttonsVisible: stage >= Self.delays.count) {
-            CoachAvatar(coach: store.coach, size: 72)
-                .padding(.top, 8)
+            OnboardingPhotoCard(name: AtalaPhotos.woman, height: 210, alignment: .top) {
+                EmptyView()
+            }
             OnboardingEmphasisText(text: "Atala is not just a coach.",
                                    size: 34,
                                    lineSpacing: 4,

@@ -7,7 +7,7 @@ Language: English (U.S.). The app itself is in English only for now.
 
 | Field | Value | Limit |
 |---|---|---|
-| Name | Atala: Running Coach & Plans | 30 |
+| Name | Atala: Running Coach | 30 |
 | Subtitle | 5K, 10K & half marathon plans | 30 |
 | Bundle ID | com.atala.app | |
 | SKU | atala-ios | |
@@ -22,7 +22,7 @@ Your plan, your coach, your pace. Tell Atala your goal and the days you can run:
 
 ## Keywords (100, comma-separated, no spaces)
 
-run,runner,training,jogging,pace,tracker,gps,interval,strength,stretching,race,beginner,fitness,ai
+run,runner,training,plan,jogging,pace,tracker,gps,interval,strength,stretching,race,beginner,fitness
 
 ## Description (4000)
 
@@ -61,7 +61,7 @@ WORKS WITH APPLE HEALTH
 
 ATALA PRO
 Atala Pro unlocks your full plan, your coach, voice guidance and guided sessions.
-• Free trial, then an auto-renewing subscription, monthly or yearly
+• Free trial, then an auto-renewing yearly subscription
 • Payment is charged to your Apple Account at confirmation of purchase
 • Your subscription renews automatically unless it is cancelled at least 24 hours before the end of the current period
 • Manage or cancel at any time in your App Store account settings

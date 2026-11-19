@@ -2,27 +2,41 @@
 
 Checked on 19 November 2026: the RevenueCat account has four projects (Nutria, Sophia, Micabo, UnSwap) and **none for Atala**. Nothing is configured yet, and the app does not contain the RevenueCat SDK: the paywall is a placeholder.
 
-## Proposed offer
+## The offer
 
-| | Yearly | Monthly |
+One product: a yearly subscription, priced by country.
+
+| | Yearly |
+|---|---|
+| Product ID | `atala_pro_yearly` |
+| Reference name | Atala Pro Yearly |
+| Duration | 1 year |
+| Free trial | 3 days |
+| Display name | Atala Pro |
+| Description | Full plan, coach and guided sessions |
+
+Subscription group: **Atala Pro**.
+
+### Prices by country
+
+The ceiling is €49.99 a year, the floor is about €19.99 a year. Apple only accepts its own price points, so each line gives the target and you pick the closest point offered in that currency.
+
+| Tier | Target (per year) | Countries |
 |---|---|---|
-| Product ID | `atala_pro_yearly` | `atala_pro_monthly` |
-| Reference name | Atala Pro Yearly | Atala Pro Monthly |
-| Duration | 1 year | 1 month |
-| Price (France) | €99.99 | €14.99 |
-| Free trial | 3 days | none |
-| Display name | Atala Pro (Yearly) | Atala Pro (Monthly) |
-| Description | Full plan, coach and guided sessions | Full plan, coach and guided sessions |
+| A | €49.99 / $49.99 / £44.99 / CHF 49.90 | Eurozone, United States, United Kingdom, Switzerland, Canada, Australia, New Zealand, Nordics, Japan, Singapore, Hong Kong, UAE, Israel, South Korea |
+| B | ≈ €34.99 | Poland, Czechia, Hungary, Romania, Bulgaria, Croatia, Chile, Saudi Arabia, Qatar, Taiwan |
+| C | ≈ €27.99 | Mexico, Brazil, South Africa, Malaysia, Thailand, Colombia, Peru |
+| D | ≈ €19.99 | Türkiye, India, Indonesia, Philippines, Vietnam, Egypt, Nigeria, Pakistan, Argentina, Kazakhstan |
 
-The yearly price and the 3-day trial are the ones the app already shows ("€8.33 a month, €99.99 billed yearly"). The monthly price is a suggestion: the app shows none today. For comparison, Runna charges $19.99 a month and $119.99 a year.
-
-Subscription group: **Atala Pro** (both products in the same group, yearly ranked above monthly).
+How to enter it: set the base price in the United States ($49.99), let Apple fill every country, then open the countries of tiers B, C and D and lower them by hand.
+Countries not listed keep Apple's automatic equivalent of tier A; move any of them down if you see fit.
+The app shows the price the store returns for the user's country, so nothing has to change in the code per country.
 
 ## Step 1: App Store Connect (you)
 
 1. **Agreements, Tax, and Banking**: the Paid Apps agreement must be active, or no product can be sold.
 2. Atala → **Subscriptions** → create the group "Atala Pro".
-3. Create the two products with the IDs above. For each: duration, price, localisation (display name and description), and a screenshot of the paywall for review.
+3. Create the product with the ID above: duration, prices by country (table above), localisation (display name and description), and a screenshot of the paywall for review.
 4. On the yearly product → **Subscription Prices** → **Introductory Offers** → free trial, 3 days, all territories.
 5. **Users and Access → Integrations → In-App Purchase**: generate an In-App Purchase key (`.p8`). RevenueCat needs it, with its Key ID and your Issuer ID.
 
@@ -32,11 +46,9 @@ The RevenueCat connection available to me in this session is read-only: I can ch
 
 1. **Create a project** named "Atala".
 2. **Add an app** → App Store → bundle ID `com.atala.app` → upload the `.p8` key from step 1.5.
-3. **Products** → import `atala_pro_yearly` and `atala_pro_monthly`.
-4. **Entitlements** → create `pro` → attach both products.
-5. **Offerings** → create `default`, mark it current → two packages:
-   - `$rc_annual` → `atala_pro_yearly`
-   - `$rc_monthly` → `atala_pro_monthly`
+3. **Products** → import `atala_pro_yearly`.
+4. **Entitlements** → create `pro` → attach the product.
+5. **Offerings** → create `default`, mark it current → one package: `$rc_annual` → `atala_pro_yearly`.
 6. **API keys** → copy the public Apple key (starts with `appl_`). It is safe to put in the app.
 
 ## Step 3: the app (me)
