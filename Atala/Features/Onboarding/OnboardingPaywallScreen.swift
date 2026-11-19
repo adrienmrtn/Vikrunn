@@ -198,6 +198,10 @@ struct OnboardingPaywallScreen: View {
         .task {
             await purchases.refresh()
         }
+        .onChange(of: showsMonthly) { _, offered in
+            // The monthly card can go away once the real offers load: fall back to the yearly plan.
+            if !offered { plan = .yearly }
+        }
         .alert("We couldn't complete that", isPresented: purchaseErrorShown) {
             Button("OK", role: .cancel) {}
         } message: {

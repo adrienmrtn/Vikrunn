@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// When the welcome gift is shown: to people who are not subscribed, shortly after the app opens,
 /// once a day at most and three times in all. Nothing is saved to the account: it is a property
@@ -43,9 +44,23 @@ struct GiftOfferPresenter: ViewModifier {
                 // The subscription state may still be loading at launch: ask once more first.
                 await purchases.refresh()
                 guard !purchases.isPro, GiftOfferSchedule.isDue() else { return }
+                // With the store connected, only offer the gift when the store really has it.
+                guard !purchases.canPurchase || purchases.offers[.gift] != nil else { return }
+                // Never on top of a sheet, a run or an alert: it waits for the next launch instead.
+                guard !Self.somethingIsPresented else { return }
                 GiftOfferSchedule.noteShown()
                 shown = true
             }
+    }
+}
+
+extension GiftOfferPresenter {
+    /// True while a sheet, a full-screen cover or an alert is already on screen.
+    @MainActor
+    static var somethingIsPresented: Bool {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let window = scenes.flatMap { $0.windows }.first { $0.isKeyWindow }
+        return window?.rootViewController?.presentedViewController != nil
     }
 }
 
@@ -69,11 +84,12 @@ struct GiftOfferView: View {
     private var fullPrice: String { purchases.offers[.yearly]?.price ?? OnboardingPaywallOffer.yearlyPrice }
 
     /// Rounded down to a multiple of five, so the badge never promises more than the real discount.
+    /// Zero when the gift is not cheaper than the yearly plan: the badge is then left out.
     private var discountPercent: Int {
         guard let gift, let full = purchases.offers[.yearly], full.amount > 0 else { return 50 }
         let ratio = NSDecimalNumber(decimal: gift.amount).doubleValue / NSDecimalNumber(decimal: full.amount).doubleValue
-        let percent = Int(((1 - ratio) * 100).rounded())
-        return max(5, percent / 5 * 5)
+        let percent = Int(((1 - ratio) * 100).rounded(.down))
+        return max(0, percent / 5 * 5)
     }
 
     private var errorShown: Binding<Bool> {
@@ -165,13 +181,15 @@ struct GiftOfferView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
-            Text("\(discountPercent)% OFF")
-                .font(.system(size: 13, weight: .bold))
-                .kerning(1)
-                .foregroundStyle(Theme.forest)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
-                .background(Theme.yellow, in: Capsule())
+            if discountPercent > 0 {
+                Text("\(discountPercent)% OFF")
+                    .font(.system(size: 13, weight: .bold))
+                    .kerning(1)
+                    .foregroundStyle(Theme.forest)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .background(Theme.yellow, in: Capsule())
+            }
             VStack(spacing: 4) {
                 Text("Access your full plan for only")
                     .font(.system(size: 17))
@@ -207,7 +225,7 @@ struct GiftOfferView: View {
                 .foregroundStyle(Color.white.opacity(0.85))
                 .frame(height: 44)
                 .disabled(isBuying)
-            Text(purchases.canPurchase
+            Text(gift != nil
                  ? "Yearly subscription, no free trial. Renews automatically, cancel any time."
                  : "Price shown as an example. Nothing is charged in this version.")
                 .font(.system(size: 12))

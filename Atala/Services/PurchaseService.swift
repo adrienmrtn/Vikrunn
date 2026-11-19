@@ -95,10 +95,10 @@ final class PurchaseService: ObservableObject {
         }
         guard let offerings = try? await Purchases.shared.offerings() else { return }
         var loaded: [PurchasePlan: PurchaseOffer] = [:]
-        if let package = offerings.current?.annual { loaded[.yearly] = Self.offer(from: package) }
-        if let package = offerings.current?.monthly { loaded[.monthly] = Self.offer(from: package) }
+        if let package = offerings.current?.annual { loaded[.yearly] = await Self.offer(from: package) }
+        if let package = offerings.current?.monthly { loaded[.monthly] = await Self.offer(from: package) }
         if let package = offerings.offering(identifier: Self.giftOfferingID)?.annual {
-            loaded[.gift] = Self.offer(from: package)
+            loaded[.gift] = await Self.offer(from: package)
         }
         offers = loaded
         #endif
@@ -147,11 +147,13 @@ final class PurchaseService: ObservableObject {
         }
     }
 
-    private static func offer(from package: Package) -> PurchaseOffer {
+    /// The free trial is only announced to people the store says can still have it.
+    private static func offer(from package: Package) async -> PurchaseOffer {
         let product = package.storeProduct
         var trial: Int?
         if let intro = product.introductoryDiscount, intro.paymentMode == .freeTrial {
-            trial = days(in: intro.subscriptionPeriod)
+            let status = await Purchases.shared.checkTrialOrIntroDiscountEligibility(product: product)
+            if status == .eligible { trial = days(in: intro.subscriptionPeriod) }
         }
         return PurchaseOffer(price: product.localizedPriceString,
                              perMonth: product.localizedPricePerMonth,
