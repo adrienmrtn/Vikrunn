@@ -62,6 +62,18 @@ enum AppLanguage {
         }
     }
 
+    /// The language's English name, for instructions sent to the coach service.
+    static var englishName: String {
+        let names: [String: String] = [
+            "en": "English", "fr": "French", "es": "Spanish", "de": "German", "it": "Italian",
+            "pt-BR": "Brazilian Portuguese", "pt-PT": "European Portuguese", "nl": "Dutch", "sv": "Swedish",
+            "da": "Danish", "no": "Norwegian", "fi": "Finnish", "pl": "Polish", "cs": "Czech", "sk": "Slovak",
+            "hu": "Hungarian", "ro": "Romanian", "hr": "Croatian", "sl": "Slovenian", "el": "Greek",
+            "tr": "Turkish", "ru": "Russian", "ar": "Arabic", "he": "Hebrew", "ja": "Japanese"
+        ]
+        return names[current] ?? "English"
+    }
+
     static var isRightToLeft: Bool {
         let code = current
         return code == "ar" || code == "he"

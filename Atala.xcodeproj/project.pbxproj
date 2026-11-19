@@ -188,7 +188,7 @@
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Atala;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Atala reads your runs and their heart rate from Apple Health so your coach can adapt your plan.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Atala saves the runs you record to Apple Health.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Atala only reads from Apple Health. It does not add or change any of your Health data.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Atala uses your location to record your run, even when the screen is locked.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Atala uses your location to record the distance, pace and route of your run.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -222,7 +222,7 @@
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Atala;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Atala reads your runs and their heart rate from Apple Health so your coach can adapt your plan.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Atala saves the runs you record to Apple Health.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Atala only reads from Apple Health. It does not add or change any of your Health data.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Atala uses your location to record your run, even when the screen is locked.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Atala uses your location to record the distance, pace and route of your run.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

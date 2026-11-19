@@ -82,6 +82,11 @@ enum CoachService {
         if !lastIsSame {
             items.append(["role": "user", "text": newText])
         }
+        // The coach answers in the app's language. Said in the message itself, so it works with
+        // every version of the coach service; the user never sees this line.
+        if AppLanguage.current != "en", let last = items.indices.last, let body = items[last]["text"] as? String {
+            items[last]["text"] = body + "\n\n(Answer in " + AppLanguage.englishName + ".)"
+        }
         return items
     }
 

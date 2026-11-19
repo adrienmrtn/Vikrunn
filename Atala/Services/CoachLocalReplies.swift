@@ -16,21 +16,21 @@ enum CoachLocalReplies {
         if let proposed = CoachLocalProposals.reply(words: words, lowered: lowered, store: store, tone: tone) {
             return proposed
         }
-        if words.count <= 4, matches(words, ["thank", "thanks", "cheers", "great", "perfect"]) {
+        if words.count <= 4, matches(words, ["thank", "thanks", "cheers", "great", "perfect"] + CoachWords.list("thanks_stems")) {
             return ChatMessage(role: .coach, text: pick(tone, kind: L("Any time. I'm here whenever you need me."),
                                                         direct: L("Good. Back to it."),
                                                         playful: L("That's what I'm here for. Now go and be brilliant.")))
         }
-        if matches(words, ["pace", "paces", "fast", "faster", "slow", "slower", "speed"]) {
+        if matches(words, ["pace", "paces", "fast", "faster", "slow", "slower", "speed"] + CoachWords.list("pace_stems")) {
             return ChatMessage(role: .coach, text: paceText(store: store, tone: tone))
         }
-        if matches(words, ["race", "goal", "target", "ready", "predict", "finish"]) {
+        if matches(words, ["race", "goal", "target", "ready", "predict", "finish"] + CoachWords.list("goal_stems")) {
             return ChatMessage(role: .coach, text: goalText(store: store, tone: tone))
         }
-        if matches(words, ["next", "today", "tomorrow", "tonight", "week", "session", "workout", "plan", "schedule", "when"]) {
+        if matches(words, ["next", "today", "tomorrow", "tonight", "week", "session", "workout", "plan", "schedule", "when"] + CoachWords.list("next_stems")) {
             return ChatMessage(role: .coach, text: nextText(store: store, tone: tone))
         }
-        if matches(words, ["motivat", "lazy", "bored", "quit", "struggl", "discourag", "hard", "doubt"]) {
+        if matches(words, ["motivat", "lazy", "bored", "quit", "struggl", "discourag", "hard", "doubt"] + CoachWords.list("motivation_stems")) {
             let lead = pick(tone, kind: L("Some days are heavier than others, and that's normal."),
                             direct: L("Motivation comes and goes. The habit stays."),
                             playful: L("Even the best legs have grumpy days."))
@@ -38,7 +38,7 @@ enum CoachLocalReplies {
             let next: String = nextText(store: store, tone: tone)
             return ChatMessage(role: .coach, text: [lead, start, next].joined(separator: " "))
         }
-        if words.count <= 3, matches(words, ["hi", "hello", "hey", "morning", "evening"]) {
+        if words.count <= 3, matches(words, ["hi", "hello", "hey", "morning", "evening"] + CoachWords.list("greeting_stems")) {
             let greeting: String = L("Hi %@.", store.firstName)
             return ChatMessage(role: .coach, text: greeting + " " + nextText(store: store, tone: tone))
         }

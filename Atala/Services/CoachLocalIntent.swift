@@ -17,11 +17,16 @@ enum CoachLocalIntent {
     /// `words` are the lowercased words of the message, `lowered` the whole lowercased message
     /// with straight apostrophes.
     static func detect(words: [String], lowered: String) -> CoachLocalIntent? {
-        if hasStem(words, painStems) || hasPhrase(lowered, painPhrases) { return .pain }
-        if hasStem(words, sickStems) || hasWord(words, sickWords) || hasPhrase(lowered, sickPhrases) { return .sick }
-        if hasStem(words, skipStems) || hasPhrase(lowered, skipPhrases) { return .skip }
-        if hasStem(words, tiredStems) || hasPhrase(lowered, tiredPhrases) { return .tired }
-        if hasStem(words, busyStems) || hasWord(words, busyWords) || hasPhrase(lowered, busyPhrases) { return .busy }
+        if hasStem(words, painStems + CoachWords.list("pain_stems"))
+            || hasPhrase(lowered, painPhrases + CoachWords.list("pain_phrases")) { return .pain }
+        if hasStem(words, sickStems + CoachWords.list("sick_stems")) || hasWord(words, sickWords)
+            || hasPhrase(lowered, sickPhrases + CoachWords.list("sick_phrases")) { return .sick }
+        if hasStem(words, skipStems + CoachWords.list("skip_stems"))
+            || hasPhrase(lowered, skipPhrases + CoachWords.list("skip_phrases")) { return .skip }
+        if hasStem(words, tiredStems + CoachWords.list("tired_stems"))
+            || hasPhrase(lowered, tiredPhrases + CoachWords.list("tired_phrases")) { return .tired }
+        if hasStem(words, busyStems + CoachWords.list("busy_stems")) || hasWord(words, busyWords)
+            || hasPhrase(lowered, busyPhrases + CoachWords.list("busy_phrases")) { return .busy }
         return nil
     }
 
@@ -33,20 +38,22 @@ enum CoachLocalIntent {
         var offsets: [Int] = []
 
         if hasWord(words, ["today", "tonight"])
-            || hasPhrase(lowered, ["this morning", "this afternoon", "this evening"]) {
+            || hasPhrase(lowered, ["this morning", "this afternoon", "this evening"] + CoachWords.list("today_phrases")) {
             offsets.append(0)
         }
-        if hasWord(words, ["tomorrow"]) {
+        if hasWord(words, ["tomorrow"]) || hasPhrase(lowered, CoachWords.list("tomorrow_phrases")) {
             offsets.append(1)
         }
-        if hasWord(words, ["weekend", "weekends"]) {
+        if hasWord(words, ["weekend", "weekends"]) || hasPhrase(lowered, CoachWords.list("weekend_phrases")) {
             // Saturday and Sunday of the current week (only Sunday is left when today is Sunday).
             offsets.append(max(0, 6 - todayIndex))
             offsets.append(7 - todayIndex)
         }
-        for index in weekdayNames.indices where hasWord(words, weekdayNames[index]) {
+        for index in weekdayNames.indices {
             // Next occurrence of that weekday, today included.
-            offsets.append((index + 1 - todayIndex + 7) % 7)
+            let named = hasWord(words, weekdayNames[index])
+                || hasPhrase(lowered, CoachWords.list("weekday_\(index + 1)_phrases"))
+            if named { offsets.append((index + 1 - todayIndex + 7) % 7) }
         }
 
         var days: [Date] = []
