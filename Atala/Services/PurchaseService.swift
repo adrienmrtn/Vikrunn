@@ -10,10 +10,33 @@ enum PurchaseOutcome: Equatable {
     case failed(String)
 }
 
+/// The three things that can be bought. All of them unlock Atala Pro.
+enum PurchasePlan: Hashable {
+    /// Yearly, with a free trial: the main offer of the paywall.
+    case yearly
+    case monthly
+    /// The welcome gift: yearly at half price, no free trial, offered once the paywall was declined.
+    case gift
+}
+
+/// One plan as the store describes it for this user, in their own currency.
+struct PurchaseOffer: Equatable {
+    /// "€49.99"
+    var price: String
+    /// The same price per month ("€4.17"), when the store can work it out.
+    var perMonth: String?
+    /// The same price per week ("€0.48"), when the store can work it out.
+    var perWeek: String?
+    /// Length of the free trial in days, nil when the user is not offered one.
+    var trialDays: Int?
+    /// The price as a number, to compare plans.
+    var amount: Decimal
+}
+
 /// Subscriptions through RevenueCat. The code compiles with or without the RevenueCat package:
 /// until the package is added to the project (File, Add Package Dependencies,
 /// https://github.com/RevenueCat/purchases-ios-spm), `canPurchase` stays false and the paywall
-/// keeps its placeholder behaviour.
+/// and the gift screen keep their placeholder behaviour.
 @MainActor
 final class PurchaseService: ObservableObject {
     static let shared = PurchaseService()
@@ -22,23 +45,31 @@ final class PurchaseService: ObservableObject {
     static let apiKey = "appl_bRCiZyoHTRfuxxtWZxouCvcdQru"
     /// Identifier of the entitlement that Atala Pro unlocks.
     static let entitlementID = "atala_pro"
+    /// Identifier of the RevenueCat offering that holds the welcome gift.
+    static let giftOfferingID = "gift"
 
     /// True while the user has an active Atala Pro subscription (trial included).
     @Published private(set) var isPro = false
-    /// Price of the yearly plan in the user's own currency, as the store gives it ("€49.99").
-    @Published private(set) var yearlyPrice: String?
-    /// The same price per month ("€4.17"), when the store can work it out.
-    @Published private(set) var monthlyPrice: String?
-    /// Length of the free trial in days, nil when the user is not offered one.
-    @Published private(set) var trialDays: Int?
+    /// The plans loaded from the store. Empty until they are loaded, or without the package.
+    @Published private(set) var offers: [PurchasePlan: PurchaseOffer] = [:]
+
     /// True once the yearly plan is loaded from the store and can be bought.
-    @Published private(set) var canPurchase = false
+    var canPurchase: Bool { offers[.yearly] != nil }
+
+    /// How much cheaper `plan` is than paying month by month for a year, in percent (58 for 58 %).
+    func savingPercent(of plan: PurchasePlan) -> Int? {
+        guard let yearly = offers[plan], let monthly = offers[.monthly], monthly.amount > 0 else { return nil }
+        let fullYear = NSDecimalNumber(decimal: monthly.amount * 12).doubleValue
+        let paid = NSDecimalNumber(decimal: yearly.amount).doubleValue
+        guard fullYear > 0, paid < fullYear else { return nil }
+        return Int(((1 - paid / fullYear) * 100).rounded())
+    }
 
     private var started = false
 
     private init() {}
 
-    /// Starts the SDK once, then loads the offer and the subscription state.
+    /// Starts the SDK once, then loads the offers and the subscription state.
     /// `userID` is the account's identifier, nil for a guest.
     func start(userID: String?) {
         #if canImport(RevenueCat)
@@ -55,36 +86,30 @@ final class PurchaseService: ObservableObject {
         #endif
     }
 
-    /// Reloads the yearly plan and whether Atala Pro is active.
+    /// Reloads the plans and whether Atala Pro is active.
     func refresh() async {
         #if canImport(RevenueCat)
         guard started else { return }
         if let info = try? await Purchases.shared.customerInfo() {
             isPro = info.entitlements[Self.entitlementID]?.isActive == true
         }
-        if let offerings = try? await Purchases.shared.offerings(),
-           let package = offerings.current?.annual {
-            let product = package.storeProduct
-            yearlyPrice = product.localizedPriceString
-            monthlyPrice = product.localizedPricePerMonth
-            if let intro = product.introductoryDiscount, intro.paymentMode == .freeTrial {
-                trialDays = Self.days(in: intro.subscriptionPeriod)
-            } else {
-                trialDays = nil
-            }
-            canPurchase = true
-        } else {
-            canPurchase = false
+        guard let offerings = try? await Purchases.shared.offerings() else { return }
+        var loaded: [PurchasePlan: PurchaseOffer] = [:]
+        if let package = offerings.current?.annual { loaded[.yearly] = Self.offer(from: package) }
+        if let package = offerings.current?.monthly { loaded[.monthly] = Self.offer(from: package) }
+        if let package = offerings.offering(identifier: Self.giftOfferingID)?.annual {
+            loaded[.gift] = Self.offer(from: package)
         }
+        offers = loaded
         #endif
     }
 
-    /// Buys the yearly plan (the free trial starts when the user is eligible).
-    func purchaseYearly() async -> PurchaseOutcome {
+    /// Buys a plan (the free trial starts when the plan has one and the user is eligible).
+    func purchase(_ plan: PurchasePlan) async -> PurchaseOutcome {
         #if canImport(RevenueCat)
         guard started,
               let offerings = try? await Purchases.shared.offerings(),
-              let package = offerings.current?.annual else {
+              let package = Self.package(for: plan, in: offerings) else {
             return .failed("The subscription is not available right now. Please try again in a moment.")
         }
         do {
@@ -114,6 +139,27 @@ final class PurchaseService: ObservableObject {
     }
 
     #if canImport(RevenueCat)
+    private static func package(for plan: PurchasePlan, in offerings: Offerings) -> Package? {
+        switch plan {
+        case .yearly: return offerings.current?.annual
+        case .monthly: return offerings.current?.monthly
+        case .gift: return offerings.offering(identifier: giftOfferingID)?.annual
+        }
+    }
+
+    private static func offer(from package: Package) -> PurchaseOffer {
+        let product = package.storeProduct
+        var trial: Int?
+        if let intro = product.introductoryDiscount, intro.paymentMode == .freeTrial {
+            trial = days(in: intro.subscriptionPeriod)
+        }
+        return PurchaseOffer(price: product.localizedPriceString,
+                             perMonth: product.localizedPricePerMonth,
+                             perWeek: product.localizedPricePerWeek,
+                             trialDays: trial,
+                             amount: product.price)
+    }
+
     private static func days(in period: SubscriptionPeriod) -> Int {
         switch period.unit {
         case .day: return period.value

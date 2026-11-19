@@ -76,9 +76,24 @@ struct OnboardingPaywallScreen: View {
     @State private var isBuying = false
     @State private var purchaseError: String?
 
-    private var trialDays: Int { purchases.trialDays ?? OnboardingPaywallOffer.trialDays }
-    private var monthlyPrice: String { purchases.monthlyPrice ?? OnboardingPaywallOffer.monthlyPrice }
-    private var yearlyPrice: String { purchases.yearlyPrice ?? OnboardingPaywallOffer.yearlyPrice }
+    /// The plan the main button buys. Yearly is chosen from the start.
+    @State private var plan: PurchasePlan = .yearly
+
+    // Store values when the offers are loaded, the placeholder ones otherwise.
+    private var trialDays: Int? {
+        purchases.canPurchase ? purchases.offers[.yearly]?.trialDays : OnboardingPaywallOffer.trialDays
+    }
+    private var yearlyPerMonth: String {
+        purchases.offers[.yearly]?.perMonth ?? OnboardingPaywallOffer.monthlyPrice
+    }
+    private var yearlyPrice: String { purchases.offers[.yearly]?.price ?? OnboardingPaywallOffer.yearlyPrice }
+    private var monthPrice: String { purchases.offers[.monthly]?.price ?? OnboardingPaywallOffer.monthPrice }
+    private var yearlySaving: Int? {
+        purchases.canPurchase ? purchases.savingPercent(of: .yearly) : OnboardingPaywallOffer.yearlySaving
+    }
+    /// The monthly plan is offered when the store has it, and always in the placeholder.
+    private var showsMonthly: Bool { !purchases.canPurchase || purchases.offers[.monthly] != nil }
+    private var startsWithTrial: Bool { plan == .yearly && trialDays != nil }
 
     private var purchaseErrorShown: Binding<Bool> {
         Binding(
@@ -89,7 +104,7 @@ struct OnboardingPaywallScreen: View {
         )
     }
 
-    /// Buys the yearly plan when the store is ready; otherwise moves on, as the placeholder did.
+    /// Buys the chosen plan when the store is ready; otherwise moves on, as the placeholder did.
     private func startTrial() {
         Haptics.confirm()
         guard purchases.canPurchase else {
@@ -99,7 +114,7 @@ struct OnboardingPaywallScreen: View {
         guard !isBuying else { return }
         isBuying = true
         Task { @MainActor in
-            let outcome = await purchases.purchaseYearly()
+            let outcome = await purchases.purchase(plan)
             isBuying = false
             switch outcome {
             case .purchased:
@@ -257,29 +272,28 @@ struct OnboardingPaywallScreen: View {
         }
     }
 
+    /// The plans to choose from: yearly first and selected, monthly under it.
     private var offerCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .center) {
-                Text("\(trialDays) DAYS FREE")
-                    .font(.system(size: 12, weight: .bold))
-                    .kerning(0.8)
-                    .foregroundStyle(Color.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Theme.green, in: Capsule())
-                Spacer(minLength: 8)
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(Theme.green)
-                    .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 10) {
+            planCard(.yearly,
+                     title: "Yearly",
+                     price: "\(yearlyPerMonth) a month",
+                     detail: "\(yearlyPrice) billed yearly",
+                     badge: trialDays.map { "\($0) DAYS FREE" },
+                     saving: yearlySaving.map { "Save \($0)%" })
+            if showsMonthly {
+                planCard(.monthly,
+                         title: "Monthly",
+                         price: "\(monthPrice) a month",
+                         detail: "Billed every month, no free trial",
+                         badge: nil,
+                         saving: nil)
             }
-            (Text("Then \(monthlyPrice)").font(.system(size: 22, weight: .bold))
-                + Text(" a month").font(.system(size: 16, weight: .semibold)))
-                .foregroundColor(Theme.ink)
-            Text("\(yearlyPrice) billed yearly. Cancel any time before the trial ends and you pay nothing.")
+            Text(startsWithTrial
+                 ? "Cancel any time before the trial ends and you pay nothing."
+                 : "Renews automatically. Cancel any time in your App Store settings.")
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.body)
-                .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
             if !purchases.canPurchase {
                 Text("Prices shown as an example. Nothing is charged in this version.")
@@ -288,21 +302,68 @@ struct OnboardingPaywallScreen: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.greenTint, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(Theme.green, lineWidth: 1.5)
-        )
-        .accessibilityElement(children: .combine)
+    }
+
+    private func planCard(_ option: PurchasePlan, title: String, price: String, detail: String,
+                          badge: String?, saving: String?) -> some View {
+        let selected = plan == option
+        return Button {
+            Haptics.select()
+            plan = option
+        } label: {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(title)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Theme.ink)
+                        if let badge {
+                            Text(badge)
+                                .font(.system(size: 11, weight: .bold))
+                                .kerning(0.6)
+                                .foregroundStyle(Color.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Theme.green, in: Capsule())
+                        }
+                        if let saving {
+                            Text(saving)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Theme.orangeDeep)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Theme.orangeTint, in: Capsule())
+                        }
+                    }
+                    Text(price)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(Theme.ink)
+                    Text(detail)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.muted)
+                }
+                Spacer(minLength: 8)
+                SelectionMark(selected: selected)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(selected ? Theme.greenTint : Color.white,
+                        in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(selected ? Theme.green : Theme.controlBorder, lineWidth: selected ? 1.5 : 1)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     private var callToAction: some View {
         VStack(spacing: 10) {
             Button(action: startTrial) {
                 VStack(spacing: 2) {
-                    Text(isBuying ? "One moment…" : "Start my free trial")
+                    Text(isBuying ? "One moment…" : (startsWithTrial ? "Start my free trial" : "Subscribe"))
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(Color.white)
                     Text("Easy to cancel, at any time")
