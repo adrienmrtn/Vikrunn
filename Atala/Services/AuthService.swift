@@ -147,7 +147,9 @@ final class AuthService: ObservableObject {
             sessionExpired = false
             return refreshed.accessToken
         case .invalid:
-            sessionExpired = true
+            // A refresh started with an older session can end after a new sign-in: only the
+            // session still in use can be declared dead.
+            if store.account?.refreshToken == refreshToken { sessionExpired = true }
             return nil
         case .unavailable:
             // Offline or server trouble: the current token may still do for a moment.

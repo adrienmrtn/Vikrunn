@@ -50,6 +50,8 @@ struct AuthSyncPrompts: ViewModifier {
             }
             .alert(L("We couldn't finish signing you in"), isPresented: errorShown) {
                 Button(L("Try again")) { store.syncChoicePending = true }
+                // Without a connection this could loop: the question comes back at the next launch.
+                Button(L("Not now"), role: .cancel) { }
             } message: {
                 Text(errorMessage ?? L("Please try again."))
             }
