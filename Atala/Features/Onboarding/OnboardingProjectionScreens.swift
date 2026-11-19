@@ -3,19 +3,17 @@ import SwiftUI
 /// Screen 22: where the plan takes the user, computed by `PlanEngine` from the real answers.
 struct OnboardingProjectionScreen: View {
     @EnvironmentObject private var store: AppStore
-    /// 1 hero card and empty chart, 2 times count while the curve draws, 3 verdict, 4-6 stat tiles,
-    /// 7 coach note, 8 button.
+    /// 1 hero card, 2 the big number counts, 3 verdict, 4-6 stat tiles, 7 coach note, 8 button.
     @State private var stage = 0
 
-    private static let stageDelays: [Double] = [0.35, 0.45, 1.45, 0.35, 0.16, 0.16, 0.45, 0.5]
-    private static let counting = Animation.easeInOut(duration: 1.1)
+    /// The verdict waits for the count (0.9 s) to be nearly over; the tiles follow without a gap.
+    private static let stageDelays: [Double] = [0.3, 0.35, 0.85, 0.3, 0.14, 0.14, 0.4, 0.4]
+    private static let counting = Animation.easeInOut(duration: 0.9)
 
     var body: some View {
         let plan = PlanEngine.generate(answers: store.answers)
         OnboardingScaffold(title: title(plan), buttonsVisible: stage >= Self.stageDelays.count) {
             heroCard(plan)
-                .onboardingStaged(0, stage: stage)
-            chart(plan)
                 .onboardingStaged(0, stage: stage)
             stats(plan)
             CoachNote(coach: store.coach, text: note(plan))
@@ -143,27 +141,6 @@ struct OnboardingProjectionScreen: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 22)
         .background(Theme.green, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-    }
-
-    /// The curve from today's level to the goal: it draws itself while the big number counts.
-    private func chart(_ plan: TrainingPlan) -> some View {
-        let usesTimes = !plan.goal.isOpenEnded && plan.currentSeconds != nil
-        let startValue: String
-        let goalValue: String
-        if usesTimes {
-            let today = plan.currentSeconds ?? 0
-            startValue = Fmt.goalTime(today)
-            goalValue = Fmt.goalTime(plan.predictedSeconds ?? today)
-        } else {
-            startValue = Fmt.km(plan.weeks.first?.plannedKm ?? 0, decimals: 0)
-            goalValue = Fmt.km(plan.peakKm, decimals: 0)
-        }
-        return OnboardingProjectionChart(weekCount: plan.weeks.count,
-                                         startCaption: usesTimes ? "Today" : "First week",
-                                         startValue: startValue,
-                                         goalCaption: usesTimes ? "Goal" : "Biggest week",
-                                         goalValue: goalValue,
-                                         drawn: stage >= 2)
     }
 
     private func stats(_ plan: TrainingPlan) -> some View {

@@ -263,6 +263,7 @@ struct SignInOptionsSheet: View {
     // MARK: Actions
 
     private func goBack() {
+        Haptics.tap()
         errorText = nil
         infoText = nil
         switch mode {
@@ -285,6 +286,7 @@ struct SignInOptionsSheet: View {
 
     private func continueAsGuest() {
         guard busy == nil else { return }
+        Haptics.tap()
         onSignedIn(AuthService.shared.continueAsGuest())
     }
 
@@ -302,6 +304,7 @@ struct SignInOptionsSheet: View {
                     account = try await AuthService.shared.signInWithGoogle()
                 }
                 busy = nil
+                Haptics.success()
                 onSignedIn(account)
             } catch {
                 busy = nil
@@ -335,6 +338,7 @@ struct SignInOptionsSheet: View {
 
     private func resendCode() {
         guard busy == nil else { return }
+        Haptics.tap()
         busy = .sendingCode
         errorText = nil
         infoText = nil
@@ -361,6 +365,7 @@ struct SignInOptionsSheet: View {
                 let account = try await AuthService.shared.verifyEmailCode(email: email, code: code)
                 busy = nil
                 focus = nil
+                Haptics.success()
                 onSignedIn(account)
             } catch {
                 busy = nil
@@ -376,6 +381,7 @@ struct SignInOptionsSheet: View {
         } else {
             errorText = "Something went wrong. Please try again."
         }
+        Haptics.error()
     }
 }
 

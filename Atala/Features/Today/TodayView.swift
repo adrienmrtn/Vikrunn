@@ -136,6 +136,7 @@ struct TodayView: View {
     /// Opens the profile, from the navigation bar.
     private var profileButton: some View {
         Button {
+            Haptics.tap()
             chrome.showProfile = true
         } label: {
             CoachAvatar(coach: store.coach, size: 32)

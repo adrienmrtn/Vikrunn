@@ -158,7 +158,10 @@ struct MainNextPlanButton: View {
         Button("Build my next plan") { confirm = true }
             .buttonStyle(PrimaryButtonStyle())
             .confirmationDialog("Build your next plan?", isPresented: $confirm, titleVisibility: .visible) {
-                Button("Build it with the same goal") { store.mainBuildNextPlan() }
+                Button("Build it with the same goal") {
+                    Haptics.success()
+                    store.mainBuildNextPlan()
+                }
                 Button("Change my goal first") { chrome.showProfile = true }
                 Button("Cancel", role: .cancel) {}
             } message: {

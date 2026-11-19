@@ -118,6 +118,9 @@ struct OnboardingPermissionsScreen: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .onAppear { location.refresh() }
+        .onChange(of: location.isAllowed) { _, allowed in
+            if allowed { Haptics.success() }
+        }
     }
 
     private var locationButtonTitle: String {
@@ -151,6 +154,7 @@ struct OnboardingPermissionsScreen: View {
     }
 
     private func locationTapped() {
+        Haptics.confirm()
         if location.isRefused {
             guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
             UIApplication.shared.open(url)
@@ -271,11 +275,17 @@ struct OnboardingHealthConnectScreen: View {
 
     private func connect() {
         guard available, !connected, !isAsking else { return }
+        Haptics.confirm()
         isAsking = true
         Task { @MainActor in
             let granted = await HealthKitService.shared.requestAuthorization()
             store.settings.healthImportEnabled = granted
             wasRefused = !granted
+            if granted {
+                Haptics.success()
+            } else {
+                Haptics.warning()
+            }
             if granted {
                 importedCount = await HealthKitService.shared.importRecentRuns(into: store)
             }

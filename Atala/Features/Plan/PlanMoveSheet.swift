@@ -183,7 +183,10 @@ struct PlanMoveSheet: View {
         }
         return Button {
             if store.planMove(workout.id, to: day) {
+                Haptics.success()
                 dismiss()
+            } else {
+                Haptics.warning()
             }
         } label: {
             HStack(spacing: 12) {

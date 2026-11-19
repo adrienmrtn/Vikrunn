@@ -9,7 +9,10 @@ struct AuthProviderButton<Icon: View>: View {
     @ViewBuilder var icon: Icon
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            Haptics.tap()
+            action()
+        }) {
             HStack(spacing: 12) {
                 icon
                     .frame(width: 22, height: 22)

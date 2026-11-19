@@ -124,3 +124,13 @@ struct HapticOnPress: ViewModifier {
         }
     }
 }
+
+extension View {
+    /// Plays a haptic when the view is tapped, without taking the tap away from it. For navigation
+    /// links, which have no action closure, and for buttons that sit inside a scroll view.
+    func hapticOnTap(_ kind: Haptics.Kind = .tap) -> some View {
+        simultaneousGesture(TapGesture().onEnded { _ in
+            Haptics.play(kind)
+        })
+    }
+}

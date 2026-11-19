@@ -12,7 +12,7 @@ struct OnboardingHelloScreen: View {
     }
 
     var body: some View {
-        OnboardingTapScreen(hintColor: Color.white, hintShadow: true, canContinue: finished, backdrop: {
+        OnboardingTapScreen(hintColor: Color.white, hintShadow: true, canContinue: finished, pose: .wave, backdrop: {
             Color(hex: 0x2F5A2A)
                 .overlay {
                     Image("bg_hello")
@@ -50,7 +50,7 @@ struct OnboardingGoalIntroScreen: View {
     @State private var finished = false
 
     var body: some View {
-        OnboardingTapScreen(lightContent: true, canContinue: finished, backdrop: {
+        OnboardingTapScreen(lightContent: true, canContinue: finished, pose: .present, backdrop: {
             Theme.green
                 .overlay(alignment: .bottom) {
                     Circle()
@@ -106,7 +106,7 @@ struct OnboardingCoachReplyScreen: View {
     }
 
     var body: some View {
-        OnboardingTapScreen(hintColor: Theme.orangeDeep, canContinue: finished, backdrop: {
+        OnboardingTapScreen(hintColor: Theme.orangeDeep, canContinue: finished, pose: .thumbsUp, backdrop: {
             Theme.orangeTint
                 .overlay(alignment: .bottom) {
                     Circle()

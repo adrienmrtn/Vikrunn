@@ -121,6 +121,7 @@ struct WorkoutDetailView: View {
         if let workout = store.workout(id: workoutID), workout.status == .done, !workout.kind.isRun {
             Menu {
                 Button("Mark as not done") {
+                    Haptics.tap()
                     store.setStatus(.planned, for: workout.id)
                     store.refreshMissed()
                 }
@@ -130,6 +131,7 @@ struct WorkoutDetailView: View {
             .accessibilityLabel("More options")
         } else if let workout = store.workout(id: workoutID), store.planCanMove(workout) {
             Button {
+                Haptics.tap()
                 showMove = true
             } label: {
                 Label("Move", systemImage: "calendar")
@@ -216,6 +218,7 @@ struct WorkoutDetailView: View {
                 .card(radius: 16)
             }
             .buttonStyle(.plain)
+            .hapticOnTap()
         }
     }
 
@@ -239,9 +242,10 @@ struct WorkoutDetailView: View {
         if !workout.kind.isRun {
             // Strength and stretching, planned or missed: a guided session, or a simple tick.
             Button("Mark as done") {
+                Haptics.success()
                 store.setStatus(.done, for: workout.id)
             }
-            .buttonStyle(SecondaryButtonStyle())
+            .buttonStyle(SecondaryButtonStyle(haptic: nil))
             Button("Start") {
                 showGuided = true
             }

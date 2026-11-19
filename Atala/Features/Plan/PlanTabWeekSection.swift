@@ -12,7 +12,10 @@ struct PlanTabWeekSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button(action: onToggle) {
+            Button(action: {
+                Haptics.tap()
+                onToggle()
+            }) {
                 headerRow
             }
             .buttonStyle(.plain)
@@ -33,6 +36,7 @@ struct PlanTabWeekSection: View {
                             PlanTabSessionRow(workout: workout)
                         }
                         .buttonStyle(.plain)
+                        .hapticOnTap()
                     }
                     totalsRow
                 }

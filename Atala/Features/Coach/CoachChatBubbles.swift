@@ -77,20 +77,30 @@ struct CoachChatTypingRow: View {
 
 /// Shown before the first message: a short invitation and suggested messages, sent as soon as they are tapped.
 struct CoachChatEmptyState: View {
-    let coachName: String
+    let coach: Coach
     let prompts: [String]
     let onPick: (String) -> Void
 
+    private var coachName: String { coach.name }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Ask \(coachName) anything")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(Theme.ink)
-            Text("Your plan, a session, your paces, a busy week or tired legs. Write whenever you need.")
-                .font(.system(size: 14))
-                .foregroundStyle(Theme.muted)
-                .lineSpacing(3)
-                .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .bottom, spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Ask \(coachName) anything")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(Theme.ink)
+                    Text("Your plan, a session, your paces, a busy week or tired legs. Write whenever you need.")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.muted)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                CoachPoseView(coach: coach, pose: .present)
+                    .frame(width: 84, height: 132)
+                    .accessibilityHidden(true)
+            }
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "calendar.badge.clock")
                     .font(.system(size: 14, weight: .semibold))
@@ -171,7 +181,7 @@ struct CoachChatQuickPrompts: View {
         CoachChatMessageRow(message: ChatMessage(role: .coach, text: "Let's not force it. Here is what I suggest."),
                             coach: Coach.all[0])
         CoachChatTypingRow(coach: Coach.all[0])
-        CoachChatEmptyState(coachName: "Awa", prompts: ["What's my next session?"], onPick: { _ in })
+        CoachChatEmptyState(coach: Coach.all[0], prompts: ["What's my next session?"], onPick: { _ in })
     }
     .padding()
     .environmentObject(AppStore.preview)

@@ -110,6 +110,7 @@ struct ProfileDaysSection: View {
     private func dayButton(_ day: Int) -> some View {
         let selected = draft.runDays.contains(day)
         return Button {
+            Haptics.select()
             toggle(day)
         } label: {
             Text(Weekday.short(day))

@@ -50,10 +50,12 @@ enum OnboardingCopy {
 struct OnboardingScaffold<Content: View>: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var nav: OnboardingNavigator
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let title: String?
     private let subtitle: String?
     private let buttonTitle: String
+    private let buttonHaptic: Haptics.Kind?
     private let canContinue: Bool
     private let tinted: Bool
     private let buttonsVisible: Bool
@@ -65,6 +67,7 @@ struct OnboardingScaffold<Content: View>: View {
     init(title: String? = nil,
          subtitle: String? = nil,
          buttonTitle: String = "Continue",
+         buttonHaptic: Haptics.Kind? = .confirm,
          canContinue: Bool = true,
          tinted: Bool = false,
          buttonsVisible: Bool = true,
@@ -75,6 +78,7 @@ struct OnboardingScaffold<Content: View>: View {
         self.title = title
         self.subtitle = subtitle
         self.buttonTitle = buttonTitle
+        self.buttonHaptic = buttonHaptic
         self.canContinue = canContinue
         self.tinted = tinted
         self.buttonsVisible = buttonsVisible
@@ -107,6 +111,11 @@ struct OnboardingScaffold<Content: View>: View {
                 .animation(.easeOut(duration: 0.35), value: buttonsVisible)
         }
         .background((tinted ? Theme.surface : Color.white).ignoresSafeArea())
+        .onChange(of: buttonsVisible) { _, visible in
+            // A staged reveal has ended: a soft tick as the button arrives. Not with Reduce Motion,
+            // where everything is there as soon as the screen opens.
+            if visible, !reduceMotion { Haptics.soft() }
+        }
     }
 
     @ViewBuilder private var header: some View {
@@ -139,9 +148,12 @@ struct OnboardingScaffold<Content: View>: View {
     }
 
     @ViewBuilder private var buttons: some View {
-        PrimaryButton(title: buttonTitle, enabled: canContinue, action: primaryTapped)
+        PrimaryButton(title: buttonTitle, enabled: canContinue, haptic: buttonHaptic, action: primaryTapped)
         if let secondaryTitle, let onSecondary {
-            Button(secondaryTitle, action: onSecondary)
+            Button(secondaryTitle, action: {
+                Haptics.tap()
+                onSecondary()
+            })
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.ink)
                 .frame(maxWidth: .infinity)
@@ -168,7 +180,10 @@ struct OnboardingPlainOptionRow: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            Haptics.select()
+            action()
+        }) {
             HStack {
                 Text(title)
                     .font(.system(size: 16, weight: selected ? .semibold : .medium))
@@ -202,7 +217,10 @@ struct OnboardingTimeCard: View {
     var body: some View {
         HStack(spacing: 8) {
             roundButton(symbol: "minus", label: "Less", delta: -stepSeconds)
-            Button(action: onTapTime) {
+            Button(action: {
+                Haptics.tap()
+                onTapTime()
+            }) {
                 VStack(spacing: 2) {
                     Text(Fmt.goalTime(seconds))
                         .font(.system(size: 48, weight: .bold))
@@ -227,7 +245,10 @@ struct OnboardingTimeCard: View {
     }
 
     private func roundButton(symbol: String, label: String, delta: Int) -> some View {
-        Button(action: { onChange(seconds + delta) }) {
+        Button(action: {
+            Haptics.select()
+            onChange(seconds + delta)
+        }) {
             Image(systemName: symbol)
                 .font(.system(size: 20, weight: .medium))
                 .foregroundStyle(Theme.ink)

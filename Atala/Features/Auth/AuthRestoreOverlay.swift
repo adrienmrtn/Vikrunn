@@ -79,6 +79,7 @@ struct AuthSyncPrompts: ViewModifier {
             let outcome = await SyncService.resolveChoice(keepPhone: keepPhone, store: store)
             resolving = false
             if case .failed(let failure) = outcome {
+                Haptics.error()
                 errorMessage = failure.userMessage
             }
         }

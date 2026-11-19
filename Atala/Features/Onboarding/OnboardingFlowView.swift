@@ -291,7 +291,10 @@ struct OnboardingFlowView: View {
                 OnboardingFlowHeader(progress: nav.barProgress(for: nav.step, store: store),
                                      showsBar: nav.step.showsProgress,
                                      showsBack: nav.step.showsHeaderBack,
-                                     onBack: { nav.back(store) })
+                                     onBack: {
+                                         Haptics.tap()
+                                         nav.back(store)
+                                     })
                     .padding(.horizontal, Theme.screenPadding)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .zIndex(2)

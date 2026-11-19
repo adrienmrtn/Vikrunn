@@ -14,7 +14,7 @@ enum OnboardingRevealTiming {
     /// When the coach and the text start to fade in.
     static let content: Double = 0.42
     /// When the coach starts to speak.
-    static let speech: Double = 0.85
+    static let speech: Double = 0.7
 }
 
 /// Incoming screen: fades in while rising a few points and settling.

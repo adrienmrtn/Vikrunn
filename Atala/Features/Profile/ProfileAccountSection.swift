@@ -43,7 +43,10 @@ struct ProfileAccountSection: View {
                 signInRow
             }
             if isSignedIn {
-                Button("Sign out") { alert = .confirmSignOut }
+                Button("Sign out") {
+                    Haptics.warning()
+                    alert = .confirmSignOut
+                }
                     .disabled(busy != nil)
             }
             deleteRow
@@ -117,12 +120,18 @@ struct ProfileAccountSection: View {
         Text("Your session has expired. Your plan and runs are safe on this phone; sign in again to keep saving them to your account.")
             .font(.footnote)
             .foregroundStyle(Theme.muted)
-        Button("Sign in again") { showSignIn = true }
+        Button("Sign in again") {
+            Haptics.tap()
+            showSignIn = true
+        }
             .disabled(busy != nil)
     }
 
     private var signInRow: some View {
-        Button(action: { showSignIn = true }) {
+        Button(action: {
+            Haptics.tap()
+            showSignIn = true
+        }) {
             HStack {
                 Text(busy == .signingIn ? "Signing in…" : "Sign in")
                 Spacer()
@@ -135,7 +144,10 @@ struct ProfileAccountSection: View {
     }
 
     private var deleteRow: some View {
-        Button(role: .destructive, action: { alert = .confirmDelete }) {
+        Button(role: .destructive, action: {
+            Haptics.warning()
+            alert = .confirmDelete
+        }) {
             HStack {
                 Text(deleteTitle)
                 Spacer()
@@ -242,6 +254,7 @@ struct ProfileAccountSection: View {
             Task { @MainActor in
                 // Let the sign-in sheet close before the alert appears.
                 try? await Task.sleep(nanoseconds: 500_000_000)
+                Haptics.error()
                 alert = .error("That's a different account. Sign out first to switch accounts.")
             }
             return
@@ -252,6 +265,7 @@ struct ProfileAccountSection: View {
             let outcome = await AuthSignInFlow.complete(account, store: store, policy: .askIfBoth)
             busy = nil
             if case .failed(let failure) = outcome {
+                Haptics.error()
                 alert = .error(failure.userMessage)
             }
         }
@@ -259,6 +273,7 @@ struct ProfileAccountSection: View {
 
     private func syncNow() {
         guard busy == nil else { return }
+        Haptics.tap()
         busy = .syncing
         syncNote = nil
         Task { @MainActor in
@@ -266,10 +281,12 @@ struct ProfileAccountSection: View {
             busy = nil
             switch outcome {
             case .done:
+                Haptics.success()
                 syncNote = nil
             case .notSignedIn:
                 syncNote = auth.sessionExpired ? "Sign in again to sync." : nil
             case .failed(let failure):
+                Haptics.error()
                 syncNote = failure == .offline
                     ? "No connection. Your changes are kept on this phone and sent when you're back online."
                     : failure.userMessage
@@ -286,6 +303,7 @@ struct ProfileAccountSection: View {
                 _ = await SyncService.syncNow(store: store)
                 if SyncService.hasPendingChanges(store: store) {
                     busy = nil
+                    Haptics.warning()
                     alert = .signOutUnsaved
                     return
                 }
@@ -302,6 +320,7 @@ struct ProfileAccountSection: View {
             do {
                 try await AuthService.shared.deleteAccount(store: store)
             } catch {
+                Haptics.error()
                 alert = .error(error.localizedDescription)
             }
             busy = nil
@@ -317,6 +336,7 @@ struct ProfileFooterSection: View {
         Section {
             #if DEBUG
             Button("Restart onboarding", role: .destructive) {
+                Haptics.warning()
                 store.eraseEverything()
             }
             #endif

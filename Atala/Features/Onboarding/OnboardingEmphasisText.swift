@@ -18,8 +18,8 @@ struct OnboardingEmphasisText: View {
     var emphasisWeight: Font.Weight = .bold
     var emphasisColor: Color = Theme.ink
     /// Seconds between two words.
-    var wordInterval: Double = 0.18
-    var startDelay: Double = 0.45
+    var wordInterval: Double = 0.125
+    var startDelay: Double = 0.32
     var onFinished: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -93,7 +93,7 @@ struct OnboardingEmphasisText: View {
         }
         let interval = UInt64(max(0.05, wordInterval) * 1_000_000_000)
         for index in 0..<count {
-            withAnimation(.easeOut(duration: 0.24)) {
+            withAnimation(.easeOut(duration: 0.2)) {
                 lit = index + 1
             }
             try? await Task.sleep(nanoseconds: interval)

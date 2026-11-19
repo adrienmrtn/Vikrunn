@@ -37,7 +37,10 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Done") {
+                        Haptics.tap()
+                        dismiss()
+                    }
                         .fontWeight(.semibold)
                 }
             }
@@ -76,10 +79,17 @@ struct ProfileView: View {
             }
         } else if hasPlanChanges {
             Section {
-                Button("Update my plan") { confirmUpdate = true }
+                Button("Update my plan") {
+                    // The sessions to come are replaced: the confirmation opens with a warning.
+                    Haptics.warning()
+                    confirmUpdate = true
+                }
                     .fontWeight(.semibold)
                     .disabled(!canBuild)
-                Button("Discard changes", role: .cancel) { draft = Self.withoutPastRace(store.answers) }
+                Button("Discard changes", role: .cancel) {
+                    Haptics.tap()
+                    draft = Self.withoutPastRace(store.answers)
+                }
             } footer: {
                 Text(canBuild
                      ? "Your changes to the goal and training days apply once you update your plan."
@@ -136,6 +146,7 @@ struct ProfileView: View {
     }
 
     private func applyDraft() {
+        Haptics.success()
         var answers = store.answers
         let isRace = draft.goal != nil && !draft.goal.isOpenEnded
         answers.goal = draft.goal
@@ -206,6 +217,9 @@ private struct ProfileCoachSection: View {
                 }
             }
             .pickerStyle(.segmented)
+            .onChange(of: store.answers.tone) { _, _ in
+                Haptics.select()
+            }
             Text("“\(store.answers.tone.example)”")
                 .font(.system(size: 14))
                 .italic()
@@ -220,6 +234,7 @@ private struct ProfileCoachSection: View {
     private func coachButton(_ coach: Coach) -> some View {
         let selected = store.answers.coachID == coach.id
         return Button {
+            if !selected { Haptics.select() }
             store.answers.coachID = coach.id
         } label: {
             VStack(spacing: 6) {

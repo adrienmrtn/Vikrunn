@@ -49,7 +49,7 @@ struct CoachChatView: View {
                     CoachChatHeader(coach: store.coach, runCount: store.runs.count)
                     banner
                     if store.messages.isEmpty {
-                        CoachChatEmptyState(coachName: store.coach.name, prompts: prompts) { prompt in
+                        CoachChatEmptyState(coach: store.coach, prompts: prompts) { prompt in
                             send(prompt)
                         }
                     }
@@ -161,6 +161,7 @@ struct CoachChatView: View {
     private func send(_ text: String) {
         let trimmed = String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(2000))
         guard !trimmed.isEmpty, !isSending else { return }
+        Haptics.tap()
         draft = ""
         store.messages.append(ChatMessage(role: .user, text: trimmed))
         isSending = true
@@ -168,6 +169,8 @@ struct CoachChatView: View {
             let reply = await CoachService.send(trimmed, store: store)
             store.messages.append(reply)
             isSending = false
+            // The coach's reply has arrived.
+            Haptics.soft()
         }
     }
 }
@@ -221,6 +224,7 @@ struct CoachChatToneMenu: View {
         Menu {
             ForEach(CoachTone.allCases) { option in
                 Button {
+                    if option != tone { Haptics.select() }
                     tone = option
                 } label: {
                     if option == tone {

@@ -21,150 +21,47 @@ struct Coach: Identifiable, Hashable {
     static func by(id: Int) -> Coach { all.first { $0.id == id } ?? all[0] }
 }
 
-/// Plays the transparent idle frames of a coach (coachN_000.webp ... coachN_120.webp, 24 frames per second).
-/// Frames stay compressed in memory and are decoded one at a time off the main thread,
-/// so the animation is smooth and light.
-final class CoachFramePlayer: ObservableObject {
-    @Published private(set) var image: UIImage?
+/// The static poses a coach can take. `wave` is the original full-body picture.
+enum CoachPose: String, CaseIterable {
+    case wave, thumbsUp, present, cheer, crossed, run
+}
 
-    static let frameCount = 121
-    static let framesPerSecond = 24.0
-
-    private var coachID: Int?
-    private var frames: [Data] = []
-    private var timer: Timer?
-    private var tick = 0
-    private var decoding = false
-    private var generation = 0
-    private let queue = DispatchQueue(label: "vicrun.coach.frames", qos: .userInitiated)
-
-    deinit { timer?.invalidate() }
-
-    private static func url(_ coachID: Int, _ index: Int) -> URL? {
-        Bundle.main.url(forResource: String(format: "coach%d_%03d", coachID, index), withExtension: "webp")
-    }
-
-    private static func decode(_ data: Data) -> UIImage? {
-        guard let image = UIImage(data: data) else { return nil }
-        return image.preparingForDisplay() ?? image
-    }
-
-    /// Shows the first frame of the coach, without animating.
-    func showStill(coachID: Int) {
-        if self.coachID == coachID, image != nil {
-            // Same coach, already on screen: just freeze on the current frame.
-            stop()
-            return
-        }
-        stop()
-        image = nil
-        self.coachID = coachID
-        generation += 1
-        let current = generation
-        queue.async { [weak self] in
-            guard let url = Self.url(coachID, 0), let data = try? Data(contentsOf: url),
-                  let still = Self.decode(data) else { return }
-            DispatchQueue.main.async {
-                guard let self, self.generation == current else { return }
-                self.image = still
-            }
+extension Coach {
+    /// Name of the catalog image of a pose: "coachN_full" for `wave`, "coachN_pose_..." otherwise.
+    func poseAsset(_ pose: CoachPose) -> String {
+        switch pose {
+        case .wave: return fullAsset
+        case .thumbsUp: return "coach\(id)_pose_thumbsup"
+        case .present: return "coach\(id)_pose_present"
+        case .cheer: return "coach\(id)_pose_cheer"
+        case .crossed: return "coach\(id)_pose_crossed"
+        case .run: return "coach\(id)_pose_run"
         }
     }
 
-    /// Starts (or restarts for another coach) the looping animation.
-    func play(coachID: Int) {
-        if self.coachID == coachID, timer != nil { return }
-        stop()
-        if self.coachID != coachID { image = nil }
-        self.coachID = coachID
-        generation += 1
-        let current = generation
-        queue.async { [weak self] in
-            var loaded: [Data] = []
-            for index in 0..<Self.frameCount {
-                guard let url = Self.url(coachID, index), let data = try? Data(contentsOf: url) else { break }
-                loaded.append(data)
-            }
-            let first = loaded.first.flatMap { Self.decode($0) }
-            DispatchQueue.main.async {
-                guard let self, self.generation == current else { return }
-                self.frames = loaded
-                if let first { self.image = first }
-                self.startTimer()
-            }
-        }
-    }
-
-    func stop() {
-        timer?.invalidate()
-        timer = nil
-        frames = []
-        tick = 0
-        decoding = false
-        generation += 1
-    }
-
-    private func startTimer() {
-        timer?.invalidate()
-        guard frames.count > 1 else { return }
-        let newTimer = Timer(timeInterval: 1.0 / Self.framesPerSecond, repeats: true) { [weak self] _ in
-            self?.advance()
-        }
-        RunLoop.main.add(newTimer, forMode: .common)
-        timer = newTimer
-    }
-
-    private func advance() {
-        let count = frames.count
-        guard count > 1, !decoding else { return }
-        // Ping-pong: forward then backward, so the loop has no visible jump.
-        let period = 2 * (count - 1)
-        tick = (tick + 1) % period
-        let index = tick < count ? tick : period - tick
-        guard index >= 0, index < count else { return }
-        let data = frames[index]
-        let current = generation
-        decoding = true
-        queue.async { [weak self] in
-            let decoded = Self.decode(data)
-            DispatchQueue.main.async {
-                guard let self, self.generation == current else { return }
-                self.decoding = false
-                if let decoded { self.image = decoded }
-            }
-        }
+    /// Same, but falls back to the full-body picture when the pose image is not in the catalog.
+    func availablePoseAsset(_ pose: CoachPose) -> String {
+        let name = poseAsset(pose)
+        if name == fullAsset { return name }
+        return UIImage(named: name) == nil ? fullAsset : name
     }
 }
 
-/// Full-body coach, breathing and waving in a loop when `animated` is true.
-struct CoachAnimationView: View {
+/// Full-body coach, as a still picture in the given pose.
+struct CoachPoseView: View {
     let coach: Coach
-    var animated: Bool = true
-    @StateObject private var player = CoachFramePlayer()
+    let pose: CoachPose
 
-    var body: some View {
-        Group {
-            if let image = player.image {
-                Image(uiImage: image)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-            } else {
-                Image(coach.fullAsset).resizable().scaledToFit().opacity(0.001)
-            }
-        }
-        .accessibilityLabel(coach.name)
-        .onAppear { refresh() }
-        .onChange(of: animated) { _, _ in refresh() }
-        .onChange(of: coach.id) { _, _ in refresh() }
-        .onDisappear { player.stop() }
+    init(coach: Coach, pose: CoachPose = .wave) {
+        self.coach = coach
+        self.pose = pose
     }
 
-    private func refresh() {
-        if animated {
-            player.play(coachID: coach.id)
-        } else {
-            player.showStill(coachID: coach.id)
-        }
+    var body: some View {
+        Image(coach.availablePoseAsset(pose))
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
+            .accessibilityLabel(coach.name)
     }
 }

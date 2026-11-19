@@ -206,7 +206,7 @@ struct CoachChatProposalCard: View {
         withAnimation(.easeInOut(duration: 0.25)) {
             store.coachApply(proposalIn: messageID)
         }
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        Haptics.success()
         let id = messageID
         Task {
             await SyncService.pushAll(store: store)
@@ -215,6 +215,7 @@ struct CoachChatProposalCard: View {
     }
 
     private func keep() {
+        Haptics.tap()
         withAnimation(.easeInOut(duration: 0.25)) {
             store.decline(proposalIn: messageID)
         }

@@ -25,22 +25,25 @@ struct OnboardingTapScreen<Backdrop: View, Top: View>: View {
     private let hintColor: Color
     private let hintShadow: Bool
     private let canContinue: Bool
+    private let pose: CoachPose
     private let backdrop: Backdrop
     private let top: Top
 
     /// `lightContent`: white chevron, for dark backgrounds. `hintColor` defaults to white on dark
     /// backgrounds and ink on light ones. The backdrop must not ignore the safe area itself:
-    /// it is stretched edge to edge here.
+    /// it is stretched edge to edge here. `pose` is the picture of the coach shown on this screen.
     init(lightContent: Bool = false,
          hintColor: Color? = nil,
          hintShadow: Bool = false,
          canContinue: Bool = true,
+         pose: CoachPose = .wave,
          @ViewBuilder backdrop: () -> Backdrop,
          @ViewBuilder top: () -> Top) {
         self.lightContent = lightContent
         self.hintColor = hintColor ?? (lightContent ? Color.white : Theme.ink)
         self.hintShadow = hintShadow
         self.canContinue = canContinue
+        self.pose = pose
         self.backdrop = backdrop()
         self.top = top()
     }
@@ -72,6 +75,10 @@ struct OnboardingTapScreen<Backdrop: View, Top: View>: View {
         }
         .background { revealedBackdrop }
         .onAppear(perform: startReveal)
+        .onChange(of: canContinue) { _, ready in
+            // The coach has finished speaking: a soft tick says the screen can be tapped.
+            if ready { Haptics.soft() }
+        }
     }
 
     /// The backdrop, edge to edge, clipped by the growing circle.
@@ -87,6 +94,7 @@ struct OnboardingTapScreen<Backdrop: View, Top: View>: View {
 
     private func advance() {
         guard canContinue else { return }
+        Haptics.tap()
         nav.next(store)
     }
 
@@ -107,7 +115,7 @@ struct OnboardingTapScreen<Backdrop: View, Top: View>: View {
     }
 
     private var figure: some View {
-        CoachAnimationView(coach: store.coach, animated: true)
+        CoachPoseView(coach: store.coach, pose: pose)
             .frame(maxWidth: 320, maxHeight: 500)
             .background(alignment: .bottom) {
                 Ellipse()
@@ -120,7 +128,10 @@ struct OnboardingTapScreen<Backdrop: View, Top: View>: View {
 
     @ViewBuilder private var backButton: some View {
         if step.allowsBack {
-            Button(action: { nav.back(store) }) {
+            Button(action: {
+                Haptics.tap()
+                nav.back(store)
+            }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(lightContent ? Color.white : Theme.ink)
