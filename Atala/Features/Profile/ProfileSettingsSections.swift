@@ -226,8 +226,11 @@ private struct ProfileLanguageRow: View {
             }
             .tint(Theme.green)
             .onChange(of: selection) { _, code in
-                // Rebuilds the app in the new language, which also closes this sheet.
-                LanguageModel.shared.choose(code)
+                // Closes the sheet, then rebuilds the app in the new language.
+                showLanguages = false
+                DispatchQueue.main.async {
+                    LanguageModel.shared.choose(code)
+                }
             }
         }
     }

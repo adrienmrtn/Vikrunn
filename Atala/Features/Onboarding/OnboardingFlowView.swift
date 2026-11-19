@@ -183,7 +183,7 @@ final class OnboardingNavigator: ObservableObject {
     /// on the experience, the race screens on the goal), so the remaining steps stay evenly spaced.
     private func isLeftOutOfBar(_ item: OnboardingStep, store: AppStore) -> Bool {
         switch item {
-        case .recent, .levelIntro, .levelFocus, .race, .target:
+        case .recent, .health, .levelIntro, .levelFocus, .race, .target:
             return isSkipped(item, store: store)
         default:
             return false

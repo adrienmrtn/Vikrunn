@@ -131,7 +131,7 @@ struct OnboardingLoadingScreen: View {
     private var stages: [String] {
         let answers = store.answers
         let sessions = OnboardingCopy.sessionsPerWeek(answers)
-        var list = [
+        var list: [String] = [
             L("Reading your answers"),
             L("Working out your paces"),
             sessions == 1 ? L("Placing your session of the week") : L("Placing your %@ sessions a week", sessions),
