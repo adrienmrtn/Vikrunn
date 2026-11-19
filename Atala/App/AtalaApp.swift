@@ -49,6 +49,7 @@ struct RootView: View {
             ZStack {
                 if store.hasCompletedOnboarding {
                     MainTabView()
+                        .modifier(GiftOfferPresenter())
                         .transition(.opacity)
                 } else {
                     OnboardingFlowView()

@@ -3,8 +3,15 @@ import SwiftUI
 // PLACEHOLDER OFFER — the paywall is fake for now: no StoreKit, nothing is charged.
 enum OnboardingPaywallOffer {
     static let trialDays = 3
+    /// The yearly plan, per month and in full.
     static let monthlyPrice = "€4.17"
     static let yearlyPrice = "€49.99"
+    /// The monthly plan.
+    static let monthPrice = "€9.99"
+    static let yearlySaving = 58
+    /// The welcome gift: yearly at half price, per week and in full.
+    static let giftWeeklyPrice = "€0.48"
+    static let giftYearlyPrice = "€24.99"
 }
 
 /// Screen 28: invitation to the free trial. The headline is there from the start in light grey
