@@ -217,7 +217,7 @@ struct OnboardingMirrorScreen: View {
     private var estimateCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center) {
-                Text(L("YOUR %@ TODAY", reference.title.uppercased()))
+                Text(L("YOUR %@ TODAY", reference.title.uppercased(with: AppLanguage.locale)))
                     .font(.system(size: 12, weight: .bold))
                     .kerning(0.8)
                     .foregroundStyle(Theme.greenOnDark)

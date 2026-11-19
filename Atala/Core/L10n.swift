@@ -51,3 +51,11 @@ func L(_ key: String) -> String {
 func L(_ key: String, _ values: CustomStringConvertible...) -> String {
     L10n.fill(L10n.string(key), values.map { $0.description })
 }
+
+extension String {
+    /// A translated title placed inside a sentence: lower case in English ("your tempo run"),
+    /// untouched elsewhere, where capitals carry meaning (German nouns, Turkish dotted letters).
+    var midSentence: String {
+        AppLanguage.current == "en" ? lowercased() : self
+    }
+}

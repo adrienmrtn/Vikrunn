@@ -132,7 +132,7 @@ enum CoachLocalReplies {
                 parts.append(L("Your %@ is almost here.", plan.goal.title))
             }
         } else {
-            parts.append(L("Your goal: %@.", plan.goal.title.lowercased()))
+            parts.append(L("Your goal: %@.", plan.goal.title.midSentence))
         }
         if let target = plan.targetSeconds {
             parts.append(L("You're aiming for %@, which means about %@ per km.", Fmt.goalTime(target), Fmt.pace(plan.paces.race)))

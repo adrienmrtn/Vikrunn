@@ -24,7 +24,7 @@ struct OnboardingSignInScreen: View {
         list.append(Row(id: "Rhythm", label: L("Rhythm"), symbol: "calendar",
                         value: OnboardingCopy.sessions(OnboardingCopy.sessionsPerWeek(answers))))
         list.append(Row(id: "Coach", label: L("Coach"), symbol: "person.fill",
-                        value: L("%@, %@ tone", store.coach.name, answers.tone.title.lowercased())))
+                        value: L("%@, %@ tone", store.coach.name, answers.tone.title.midSentence)))
         return list
     }
 

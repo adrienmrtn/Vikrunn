@@ -219,10 +219,10 @@ enum CoachLocalProposals {
             if let day = destination(for: run, earliest: earliest, blocked: blocked, store: store) {
                 change.newDate = day
                 blocked.insert(day)
-                moved.append(L("your %@ from %@ to %@", run.title.lowercased(), dayName(run.date), dayName(day)))
+                moved.append(L("your %@ from %@ to %@", run.title.midSentence, dayName(run.date), dayName(day)))
             } else {
                 change.remove = true
-                dropped.append(L("your %@ %@", run.title.lowercased(), CoachLocalReplies.dayLabel(run.date)))
+                dropped.append(L("your %@ %@", run.title.midSentence, CoachLocalReplies.dayLabel(run.date)))
             }
             changes.append(change)
         }
@@ -257,7 +257,7 @@ enum CoachLocalProposals {
             var change = PlanChange(workoutID: run.id)
             change.remove = true
             changes.append(change)
-            names.append(L("your %@ %@", run.title.lowercased(), CoachLocalReplies.dayLabel(run.date)))
+            names.append(L("your %@ %@", run.title.midSentence, CoachLocalReplies.dayLabel(run.date)))
         }
         var text = CoachLocalReplies.pick(tone, kind: L("Understood, no guilt needed."),
                                           direct: L("Understood."),
@@ -286,7 +286,7 @@ enum CoachLocalProposals {
             change.newTitle = L("Easy run")
             change.newDistanceKm = km
             change.newDurationMin = Int((km * Double(easyPace) / 60).rounded())
-            let text = advice + " " + L("In the meantime I'd swap your %@ %@ for a short easy run.", hard.title.lowercased(), CoachLocalReplies.dayLabel(hard.date))
+            let text = advice + " " + L("In the meantime I'd swap your %@ %@ for a short easy run.", hard.title.midSentence, CoachLocalReplies.dayLabel(hard.date))
             return ChatMessage(role: .coach, text: text, proposal: PlanProposal(summary: note, changes: [change]))
         }
         if let next = runs.first, next.distanceKm > 3 {

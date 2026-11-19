@@ -103,7 +103,7 @@ enum RunFormat {
         let quantity = amount(step)
         switch step.kind {
         case .work: return L("Next: %@ fast", quantity)
-        default: return L("Next: %@ %@", step.kind.title.lowercased(), quantity)
+        default: return L("Next: %@ %@", step.kind.title.midSentence, quantity)
         }
     }
 
