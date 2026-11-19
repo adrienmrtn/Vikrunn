@@ -580,7 +580,9 @@ enum Weekday {
     static var short: [String] {
         var calendar = Calendar(identifier: .gregorian)
         calendar.locale = AppLanguage.locale
+        // Capitalised: these stand alone, on chips and in headers.
         return mondayFirst(calendar.shortStandaloneWeekdaySymbols, fallback: englishShort)
+            .map { $0.prefix(1).uppercased() + $0.dropFirst() }
     }
     static var long: [String] {
         var calendar = Calendar(identifier: .gregorian)

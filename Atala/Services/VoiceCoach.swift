@@ -33,24 +33,26 @@ final class VoiceCoach: NSObject, ObservableObject {
         synthesizer.delegate = self
     }
 
-    /// The most natural English voice installed on the phone: a premium or enhanced one when the
-    /// user downloaded it (Settings, Accessibility, Spoken Content, Voices), the standard one otherwise.
+    /// The most natural voice installed on the phone for the app's language: a premium or enhanced
+    /// one when the user downloaded it (Settings, Accessibility, Spoken Content, Voices), the
+    /// standard one otherwise.
     nonisolated private static func bestVoice() -> AVSpeechSynthesisVoice? {
         func rank(_ voice: AVSpeechSynthesisVoice) -> Int {
-            var score = 0
             switch voice.quality {
-            case .premium: score += 20
-            case .enhanced: score += 10
-            default: break
+            case .premium: return 20
+            case .enhanced: return 10
+            default: return 0
             }
-            if voice.language == "en-US" { score += 2 }
-            return score
         }
-        let english = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.hasPrefix("en") }
-        if let best = english.max(by: { rank($0) < rank($1) }), rank(best) >= 10 {
+        let tag = AppLanguage.localeIdentifier.replacingOccurrences(of: "_", with: "-")
+        let base = String(tag.prefix(2))
+        let candidates = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.hasPrefix(base) }
+        let regional = candidates.filter { $0.language == tag }
+        let pool = regional.isEmpty ? candidates : regional
+        if let best = pool.max(by: { rank($0) < rank($1) }), rank(best) >= 10 {
             return best
         }
-        return AVSpeechSynthesisVoice(language: "en-US")
+        return AVSpeechSynthesisVoice(language: tag) ?? pool.first
     }
 
     // MARK: Cues

@@ -120,7 +120,7 @@ private struct ProgressTabRunRow: View {
         HStack(spacing: 12) {
             IconTile(systemName: ProgressTabStats.sourceSymbol(run.source), size: 38)
             VStack(alignment: .leading, spacing: 1) {
-                Text(run.title.isEmpty ? L("Run") : run.title)
+                Text(run.title.isEmpty ? L("Run") : L(run.title))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                     .lineLimit(1)
