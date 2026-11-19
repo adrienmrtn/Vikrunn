@@ -8,20 +8,20 @@ struct OnboardingDaysScreen: View {
 
     private var summaryTitle: String {
         switch count {
-        case 0: return "No day ticked yet"
-        case 1: return "1 day ticked, 1 session a week"
-        default: return "\(count) days ticked, \(count) sessions a week"
+        case 0: return L("No day ticked yet")
+        case 1: return L("1 day ticked, 1 session a week")
+        default: return L("%@ days ticked, %@ sessions a week", count, count)
         }
     }
 
     private var summaryDetail: String {
         switch count {
-        case 0: return "Tick at least one day to continue"
-        case 1: return "A gentle start. You can add a day later"
-        case 2: return "Enough to build a real habit"
-        case 3, 4: return "A good rhythm to progress steadily"
-        case 5, 6: return "A full week: I'll keep most runs easy"
-        default: return "Every day: I'll make sure you recover"
+        case 0: return L("Tick at least one day to continue")
+        case 1: return L("A gentle start. You can add a day later")
+        case 2: return L("Enough to build a real habit")
+        case 3, 4: return L("A good rhythm to progress steadily")
+        case 5, 6: return L("A full week: I'll keep most runs easy")
+        default: return L("Every day: I'll make sure you recover")
         }
     }
 
@@ -42,8 +42,8 @@ struct OnboardingDaysScreen: View {
     }
 
     var body: some View {
-        OnboardingScaffold(title: "When can you run?",
-                           subtitle: "One ticked day, one session.",
+        OnboardingScaffold(title: L("When can you run?"),
+                           subtitle: L("One ticked day, one session."),
                            canContinue: count > 0) {
             VStack(spacing: 0) {
                 ForEach(1...7, id: \.self) { day in
@@ -122,7 +122,7 @@ struct OnboardingLongRunScreen: View {
     }
 
     var body: some View {
-        OnboardingScaffold(title: "Which day for your long run?",
+        OnboardingScaffold(title: L("Which day for your long run?"),
                            canContinue: canContinue) {
             VStack(spacing: 10) {
                 ForEach(days, id: \.self) { day in
@@ -142,11 +142,11 @@ struct OnboardingConstraintsScreen: View {
 
     private func subtitle(_ constraint: Constraint) -> String {
         switch constraint {
-        case .pastInjury: return "Your coach keeps it in mind"
-        case .travel: return "Tell your coach, sessions can move"
-        case .treadmill: return "You can log those runs by hand"
-        case .strength: return "Good news: it protects you from injury"
-        case .irregularSleep: return "Easy runs stay truly easy"
+        case .pastInjury: return L("Your coach keeps it in mind")
+        case .travel: return L("Tell your coach, sessions can move")
+        case .treadmill: return L("You can log those runs by hand")
+        case .strength: return L("Good news: it makes you a stronger runner")
+        case .irregularSleep: return L("Easy runs stay truly easy")
         }
     }
 
@@ -161,10 +161,10 @@ struct OnboardingConstraintsScreen: View {
     }
 
     var body: some View {
-        OnboardingScaffold(title: "Anything else to know?",
-                           subtitle: "Optional.") {
+        OnboardingScaffold(title: L("Anything else to know?"),
+                           subtitle: L("Optional.")) {
             VStack(spacing: 9) {
-                ForEach(Constraint.allCases) { constraint in
+                ForEach(Constraint.allCases.filter { $0 != .pastInjury }) { constraint in
                     OptionCard(title: constraint.title,
                                subtitle: subtitle(constraint),
                                selected: store.answers.constraints.contains(constraint),
@@ -183,13 +183,13 @@ struct OnboardingToneScreen: View {
     @EnvironmentObject private var store: AppStore
 
     var body: some View {
-        OnboardingScaffold(title: "Which tone do you prefer?") {
+        OnboardingScaffold(title: L("Which tone do you prefer?")) {
             VStack(spacing: 10) {
                 ForEach(CoachTone.allCases) { tone in
                     toneCard(tone)
                 }
             }
-            Text("You can change the tone at any time.")
+            Text(L("You can change the tone at any time."))
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.muted)
         }

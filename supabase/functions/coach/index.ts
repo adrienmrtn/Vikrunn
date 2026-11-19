@@ -68,6 +68,7 @@ interface ContextWorkout {
 interface CoachContext {
   firstName?: string;
   coachName?: string;
+  language?: string;
   tone?: string;
   goal?: string;
   raceDate?: string | null;
@@ -161,6 +162,7 @@ function cleanContext(raw: unknown): CoachContext {
   return {
     firstName: shortText(input.firstName, 40),
     coachName: shortText(input.coachName, 40),
+    language: shortText(input.language, 8),
     tone: shortText(input.tone, 16),
     goal: shortText(input.goal, 60),
     raceDate: isIsoDate(input.raceDate) ? input.raceDate : null,
@@ -200,12 +202,17 @@ function systemPrompt(context: CoachContext): string {
   const coachName = (context.coachName ?? "").trim() || "Coach";
   const firstName = (context.firstName ?? "").trim() || "the runner";
   const tone = TONES[context.tone ?? "kind"] ?? TONES.kind;
+  // The app sends its language code ("fr", "pt-BR", "ja"); anything unexpected falls back to English.
+  const code = (context.language ?? "").trim();
+  const language = /^[a-z]{2}(-[A-Z]{2})?$/.test(code) && code !== "en"
+    ? `the language with the code "${code}" (the runner's app language; training data such as session titles may be in it or in English)`
+    : "English";
 
   const role = `You are ${coachName}, the personal running coach of ${firstName} inside the Atala app. ${firstName} writes to you in a chat on their phone, usually between two things, and wants an answer they can act on.
 
 How you talk
 - Tone chosen by the runner: ${tone}
-- Write in English, in plain sentences, the way a good coach texts: usually two to four short sentences. No headings, no bullet lists, no markdown, no emoji.
+- Write in ${language}, in plain sentences, the way a good coach texts: usually two to four short sentences. No headings, no bullet lists, no markdown, no emoji.
 - Be concrete: use the sessions, dates, distances and paces from the data below rather than general advice. Paces are in min/km, distances in km.
 - You only reply when the runner writes to you, and you answer what they asked.
 

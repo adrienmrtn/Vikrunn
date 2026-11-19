@@ -16,8 +16,8 @@ enum CoachChatPlanText {
     /// "Today", "Tomorrow" or "Thu 19 Nov".
     static func day(_ date: Date) -> String {
         let calendar = Calendar.plan
-        if calendar.isDateInToday(date) { return "Today" }
-        if calendar.isDateInTomorrow(date) { return "Tomorrow" }
+        if calendar.isDateInToday(date) { return L("Today") }
+        if calendar.isDateInTomorrow(date) { return L("Tomorrow") }
         return Fmt.day(date, "EEE d MMM")
     }
 }
@@ -48,13 +48,13 @@ extension AppStore {
         if change.newKind == .easy, let paces = plan?.paces {
             updateWorkout(change.workoutID) { session in
                 let meters = Int((session.distanceKm * 10).rounded()) * 100
-                let step = WorkoutStep(kind: .steady, label: "Easy pace", distanceM: meters,
+                let step = WorkoutStep(kind: .steady, label: L("Easy pace"), distanceM: meters,
                                        paceFast: paces.easy - 15, paceSlow: paces.easy + 20)
                 session.blocks = [WorkoutBlock(steps: [step])]
-                session.subtitle = "You should be able to talk"
+                session.subtitle = L("You should be able to talk")
                 session.targetPace = paces.easy
                 session.effort = 3
-                session.why = "A short easy run in place of the planned session, as agreed with your coach. It keeps you moving without adding strain."
+                session.why = L("A short easy run in place of the planned session, as agreed with your coach. It keeps you moving without adding strain.")
             }
         } else if change.newDistanceKm != nil {
             updateWorkout(change.workoutID) { session in

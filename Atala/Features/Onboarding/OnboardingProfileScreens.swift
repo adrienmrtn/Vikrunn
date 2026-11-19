@@ -5,7 +5,7 @@ struct OnboardingGenderScreen: View {
     @EnvironmentObject private var store: AppStore
 
     var body: some View {
-        OnboardingScaffold(title: "You are…",
+        OnboardingScaffold(title: L("You are…"),
                            canContinue: store.answers.gender != nil) {
             VStack(spacing: 10) {
                 ForEach(Gender.allCases) { gender in
@@ -23,7 +23,7 @@ struct OnboardingExperienceScreen: View {
     @EnvironmentObject private var store: AppStore
 
     var body: some View {
-        OnboardingScaffold(title: "How long have you been running?",
+        OnboardingScaffold(title: L("How long have you been running?"),
                            canContinue: store.answers.experience != nil) {
             VStack(spacing: 9) {
                 ForEach(Experience.allCases) { experience in
@@ -43,7 +43,7 @@ struct OnboardingVolumeScreen: View {
     @EnvironmentObject private var store: AppStore
 
     var body: some View {
-        OnboardingScaffold(title: "How much do you run in a week?",
+        OnboardingScaffold(title: L("How much do you run in a week?"),
                            canContinue: store.answers.weeklyVolume != nil) {
             VStack(spacing: 9) {
                 ForEach(WeeklyVolume.allCases) { volume in
@@ -73,19 +73,19 @@ private struct OnboardingHealthOption: Identifiable {
 
     static let nothingID = "none"
 
-    static let all: [OnboardingHealthOption] = [
-        OnboardingHealthOption(id: nothingID, title: "Nothing to report", subtitle: "I feel fine to start",
+    static var all: [OnboardingHealthOption] { [
+        OnboardingHealthOption(id: nothingID, title: L("Nothing to report"), subtitle: L("I feel fine to start"),
                                symbol: "checkmark", tint: Theme.green, background: Theme.greenTint),
-        OnboardingHealthOption(id: "pain", title: "A pain or an injury right now",
-                               subtitle: "See a professional first, we start gently",
+        OnboardingHealthOption(id: "pain", title: L("A pain or an injury right now"),
+                               subtitle: L("See a professional first, we start gently"),
                                symbol: "bandage.fill", tint: Theme.orangeDeep, background: Theme.orangeTint),
-        OnboardingHealthOption(id: "heart", title: "A heart or breathing condition",
-                               subtitle: "Check with your doctor before starting",
+        OnboardingHealthOption(id: "heart", title: L("A heart or breathing condition"),
+                               subtitle: L("Check with your doctor before starting"),
                                symbol: "heart.fill", tint: Theme.orangeDeep, background: Theme.orangeTint),
-        OnboardingHealthOption(id: "break", title: "Back after a long break",
-                               subtitle: "We rebuild step by step",
+        OnboardingHealthOption(id: "break", title: L("Back after a long break"),
+                               subtitle: L("We rebuild step by step"),
                                symbol: "arrow.counterclockwise", tint: Theme.green, background: Theme.greenTint),
-    ]
+    ] }
 }
 
 /// Screen 9: health. The coach never diagnoses, it only starts more gently.
@@ -108,7 +108,7 @@ struct OnboardingHealthScreen: View {
     }
 
     var body: some View {
-        OnboardingScaffold(title: "Anything about your health I should know?",
+        OnboardingScaffold(title: L("Anything about your health I should know?"),
                            canContinue: !store.answers.healthFlags.isEmpty) {
             VStack(spacing: 9) {
                 ForEach(OnboardingHealthOption.all) { option in
@@ -139,23 +139,23 @@ struct OnboardingMirrorScreen: View {
 
     private var source: String {
         if let result = store.answers.recentResult {
-            return "Based on your \(OnboardingCopy.distanceName(result.distanceKm)) in \(Fmt.goalTime(result.seconds))"
+            return L("Based on your %@ in %@", OnboardingCopy.distanceName(result.distanceKm), Fmt.goalTime(result.seconds))
         }
-        return "Based on your answers"
+        return L("Based on your answers")
     }
 
     private var level: String {
         switch store.answers.experience ?? .starting {
-        case .starting: return "Beginner"
-        case .underSixMonths: return "Getting started"
-        case .sixMonthsToTwoYears: return "Intermediate"
-        case .overTwoYears: return "Experienced"
+        case .starting: return L("Beginner")
+        case .underSixMonths: return L("Getting started")
+        case .sixMonthsToTwoYears: return L("Intermediate")
+        case .overTwoYears: return L("Experienced")
         }
     }
 
     private var usualVolume: String {
         let volume = store.answers.weeklyVolume ?? .under10
-        return volume == .notYet ? "Not running yet" : "\(volume.title) a week"
+        return volume == .notYet ? L("Not running yet") : L("%@ a week", volume.title)
     }
 
     private var easyPace: String {
@@ -166,14 +166,14 @@ struct OnboardingMirrorScreen: View {
     private static let stageDelays: [Double] = [0.3, 0.35, 0.35, 0.25, 0.4]
 
     var body: some View {
-        OnboardingScaffold(buttonTitle: "That's me",
+        OnboardingScaffold(buttonTitle: L("That's me"),
                            buttonsVisible: stage >= Self.stageDelays.count,
-                           secondaryTitle: "Change something",
+                           secondaryTitle: L("Change something"),
                            onSecondary: { nav.go(to: .experience, forward: false, store: store) }) {
             HStack(spacing: 12) {
                 CoachAvatar(coach: store.coach, size: 52)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Here's what I see")
+                    Text(L("Here's what I see"))
                         .font(Theme.title(26))
                         .foregroundStyle(Theme.ink)
                         .accessibilityAddTraits(.isHeader)
@@ -187,14 +187,14 @@ struct OnboardingMirrorScreen: View {
                 .onboardingStaged(1, stage: stage)
             HStack(spacing: 12) {
                 tile(symbol: "bolt.fill", tint: Theme.orangeDeep, background: Theme.orangeTint,
-                     value: String(format: "%.1f km/h", vma), label: "Aerobic speed (VMA)")
+                     value: String(format: "%.1f km/h", vma), label: L("Aerobic speed (VMA)"))
                 tile(symbol: "figure.run", tint: Theme.green, background: Theme.greenTint,
-                     value: easyPace, label: "Easy pace")
+                     value: easyPace, label: L("Easy pace"))
             }
             .onboardingStaged(2, stage: stage)
             HStack(spacing: 12) {
                 IconTile(systemName: "calendar", tint: Theme.yellowDeep, background: Theme.yellowTint, size: 40)
-                Text("Usual volume")
+                Text(L("Usual volume"))
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.muted)
                 Spacer(minLength: 8)
@@ -217,7 +217,7 @@ struct OnboardingMirrorScreen: View {
     private var estimateCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center) {
-                Text("YOUR \(reference.title.uppercased()) TODAY")
+                Text(L("YOUR %@ TODAY", reference.title.uppercased(with: AppLanguage.locale)))
                     .font(.system(size: 12, weight: .bold))
                     .kerning(0.8)
                     .foregroundStyle(Theme.greenOnDark)
@@ -237,7 +237,7 @@ struct OnboardingMirrorScreen: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
                 .animation(.easeOut(duration: 0.9), value: stage)
-            Text("Your starting point. Your goal comes next.")
+            Text(L("Your starting point. Your goal comes next."))
                 .font(.system(size: 15))
                 .foregroundStyle(Theme.greenOnDark)
         }
@@ -249,7 +249,7 @@ struct OnboardingMirrorScreen: View {
         )
         .shadow(color: Theme.green.opacity(0.25), radius: 16, x: 0, y: 10)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Your \(reference.title) today: \(Fmt.goalTime(PlanEngine.predictedSeconds(vma: vma, goal: reference) ?? 0)). Level: \(level).")
+        .accessibilityLabel(L("Your %@ today: %@. Level: %@.", reference.title, Fmt.goalTime(PlanEngine.predictedSeconds(vma: vma, goal: reference) ?? 0), level))
     }
 
     private func tile(symbol: String, tint: Color, background: Color, value: String, label: String) -> some View {

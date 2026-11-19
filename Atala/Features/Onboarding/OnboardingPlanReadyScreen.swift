@@ -112,7 +112,7 @@ struct OnboardingWeekNode: View {
         .frame(width: OnboardingPathLayout.nodeWidth, height: 64)
         .scaleEffect(isCurrent ? 1.1 : 1)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(unlocked ? "Week \(number)" : "Week \(number), locked")
+        .accessibilityLabel(unlocked ? L("Week %@", number) : L("Week %@, locked", number))
     }
 }
 
@@ -146,7 +146,7 @@ struct OnboardingPlanReadyScreen: View {
                 }
                 .scrollIndicators(.hidden)
                 BottomBar {
-                    PrimaryButton(title: "Continue") { nav.next(store) }
+                    PrimaryButton(title: L("Continue")) { nav.next(store) }
                 }
                 .overlay(alignment: .top) {
                     Rectangle().fill(Theme.cardBorder).frame(height: 1)
@@ -164,15 +164,15 @@ struct OnboardingPlanReadyScreen: View {
 
     private var header: some View {
         VStack(spacing: 10) {
-            Text("YOUR PLAN IS READY")
+            Text(L("YOUR PLAN IS READY"))
                 .font(.system(size: 12, weight: .bold))
                 .kerning(0.8)
                 .foregroundStyle(Theme.green)
-            Text("Here's how we'll work")
+            Text(L("Here's how we'll work"))
                 .font(Theme.title(30))
                 .foregroundStyle(Theme.ink)
                 .accessibilityAddTraits(.isHeader)
-            Text("Every week you follow the path, until your goal.")
+            Text(L("Every week you follow the path, until your goal."))
                 .font(.system(size: 17))
                 .foregroundStyle(Theme.body)
                 .fixedSize(horizontal: false, vertical: true)
@@ -236,7 +236,7 @@ struct OnboardingPlanReadyScreen: View {
         }
         .frame(width: OnboardingPathLayout.width, height: OnboardingPathLayout.rowHeight, alignment: .topLeading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Week \(index + 1), \(week.phase.title), \(Fmt.km(week.plannedKm, decimals: 0))")
+        .accessibilityLabel(L("Week %@, %@, %@", index + 1, week.phase.title, Fmt.km(week.plannedKm, decimals: 0)))
     }
 
     private var finishRow: some View {
@@ -275,17 +275,17 @@ struct OnboardingPlanReadyScreen: View {
         if !store.answers.goal.isOpenEnded, let race = store.plan?.raceDate {
             return Fmt.day(race, "EEEE d MMMM")
         }
-        return "End of week \(max(1, weeks.count))"
+        return L("End of week %@", max(1, weeks.count))
     }
 
     private var finishDetail: String {
         let answers = store.answers
         let goal = answers.goal ?? .regular
-        if goal.isOpenEnded { return "Running is part of your week" }
+        if goal.isOpenEnded { return L("Running is part of your week") }
         if let target = answers.targetSeconds {
-            return "Your \(OnboardingCopy.goalNoun(goal)) in \(Fmt.goalTime(target))"
+            return L("Your %@ in %@", OnboardingCopy.goalNoun(goal), Fmt.goalTime(target))
         }
-        return "Ready for your \(OnboardingCopy.goalNoun(goal))"
+        return L("Ready for your %@", OnboardingCopy.goalNoun(goal))
     }
 
     /// Lights the weeks one by one, following them down the page, then the finish.

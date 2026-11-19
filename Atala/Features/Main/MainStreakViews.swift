@@ -9,7 +9,7 @@ struct MainStreakChip: View {
             Image(systemName: "flame.fill")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(streak.activeThisWeek ? Theme.orange : Theme.faint)
-            Text("\(streak.current)-week streak")
+            Text(L("%@-week streak", streak.current))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(streak.activeThisWeek ? Theme.orangeDeep : Theme.muted)
                 .lineLimit(1)
@@ -18,7 +18,7 @@ struct MainStreakChip: View {
         .padding(.vertical, 5)
         .background(streak.activeThisWeek ? Theme.orangeTint : Theme.surface, in: Capsule())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(StreakEngine.weeks(streak.current)) streak")
+        .accessibilityLabel(L("%@ streak", StreakEngine.weeks(streak.current)))
     }
 }
 
@@ -39,10 +39,10 @@ struct MainStreakCard: View {
                     )
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(streak.current > 0 ? "\(StreakEngine.weeks(streak.current)) in a row" : "No streak yet")
+                    Text(streak.current > 0 ? L("%@ in a row", StreakEngine.weeks(streak.current)) : L("No streak yet"))
                         .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(Theme.ink)
-                    Text(streak.best > 0 ? "Your best: \(StreakEngine.weeks(streak.best))" : "Every streak starts with one session")
+                    Text(streak.best > 0 ? L("Your best: %@", StreakEngine.weeks(streak.best)) : L("Every streak starts with one session"))
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.muted)
                 }

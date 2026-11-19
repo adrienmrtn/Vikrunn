@@ -30,7 +30,7 @@ struct RunReadyScreen: View {
         .background(Color.white.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
             BottomBar {
-                PrimaryButton(title: "Start session", action: onStart)
+                PrimaryButton(title: L("Start session"), action: onStart)
             }
         }
     }
@@ -46,7 +46,7 @@ struct RunReadyScreen: View {
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
-        .accessibilityLabel("Close")
+        .accessibilityLabel(L("Close"))
         .padding(.leading, -10)
     }
 
@@ -55,7 +55,7 @@ struct RunReadyScreen: View {
             Text(sessionLine)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Theme.orangeDeep)
-            Text("Ready to go?")
+            Text(L("Ready to go?"))
                 .font(Theme.title(28))
                 .foregroundStyle(Theme.ink)
         }
@@ -65,19 +65,19 @@ struct RunReadyScreen: View {
         VStack(spacing: 0) {
             Divider().overlay(Theme.hairline)
             RunReadyRow(symbol: "location.fill", tint: Theme.green, background: Theme.greenTint,
-                        title: "GPS signal", subtitle: gpsSubtitle) {
+                        title: L("GPS signal"), subtitle: gpsSubtitle) {
                 gpsTrailing
             }
             Divider().overlay(Theme.hairline)
             RunReadyRow(symbol: "speaker.wave.2.fill", tint: Theme.orangeDeep, background: Theme.orangeTint,
-                        title: "\(store.coach.name)'s voice", subtitle: voiceSubtitle) {
-                Toggle("Coach voice", isOn: $store.settings.voice.enabled)
+                        title: L("%@'s voice", store.coach.name), subtitle: voiceSubtitle) {
+                Toggle(L("Coach voice"), isOn: $store.settings.voice.enabled)
                     .labelsHidden()
                     .tint(Theme.green)
             }
             Divider().overlay(Theme.hairline)
             RunReadyRow(symbol: "music.note", tint: Theme.yellowDeep, background: Theme.yellowTint,
-                        title: "Music", subtitle: "Gets quieter when \(store.coach.name) speaks") {
+                        title: L("Music"), subtitle: L("Gets quieter when %@ speaks", store.coach.name)) {
                 EmptyView()
             }
             Divider().overlay(Theme.hairline)
@@ -87,19 +87,25 @@ struct RunReadyScreen: View {
     // MARK: GPS
 
     private var gpsSubtitle: String {
-        if tracker.isSimulating { return "Simulated signal (simulator)" }
+        if tracker.isSimulating { return L("Simulated signal (simulator)") }
         switch tracker.gps {
-        case .unknown: return "Looking for satellites…"
-        case .denied: return "Location is off: only your time will be measured. Turn it on in Settings, or add the run by hand afterwards."
-        case .poor: return "Weak\(accuracyText). Move to an open spot."
-        case .fair: return "Fair\(accuracyText)"
-        case .good: return "Good\(accuracyText)"
+        case .unknown: return L("Looking for satellites…")
+        case .denied: return L("Location is off: only your time will be measured. Turn it on in Settings, or add the run by hand afterwards.")
+        case .poor:
+            if let metres = accuracyMetres { return L("Weak, accuracy %@ m. Move to an open spot.", metres) }
+            return L("Weak. Move to an open spot.")
+        case .fair:
+            if let metres = accuracyMetres { return L("Fair, accuracy %@ m", metres) }
+            return L("Fair")
+        case .good:
+            if let metres = accuracyMetres { return L("Good, accuracy %@ m", metres) }
+            return L("Good")
         }
     }
 
-    private var accuracyText: String {
-        guard let accuracy = tracker.accuracy else { return "" }
-        return ", accuracy \(Int(accuracy.rounded())) m"
+    private var accuracyMetres: Int? {
+        guard let accuracy = tracker.accuracy else { return nil }
+        return Int(accuracy.rounded())
     }
 
     @ViewBuilder
@@ -110,7 +116,7 @@ struct RunReadyScreen: View {
         case .poor:
             RunReadyBadge(symbol: "exclamationmark", color: Theme.orange)
         case .denied:
-            Button("Settings") {
+            Button(L("Settings")) {
                 Haptics.tap()
                 openSettings()
             }
@@ -130,31 +136,31 @@ struct RunReadyScreen: View {
     // MARK: Wording
 
     private var sessionLine: String {
-        guard let workout else { return "Free run" }
+        guard let workout else { return L("Free run") }
         return "\(workout.title) · \(Fmt.minutes(workout.durationMin))"
     }
 
     private var voiceSubtitle: String {
-        guard ProAccess.isPro else { return "Included in Atala Pro" }
-        guard store.settings.voice.enabled else { return "Off for this run" }
-        return tracker.hasSteps ? "Announces each step" : "Announces each kilometre"
+        guard ProAccess.isPro else { return L("Included in Atala Pro") }
+        guard store.settings.voice.enabled else { return L("Off for this run") }
+        return tracker.hasSteps ? L("Announces each step") : L("Announces each kilometre")
     }
 
     private var coachLine: String {
         guard let first = tracker.steps.first else {
-            return "No plan today. Run the way you feel, I'll keep track of everything."
+            return L("No plan today. Run the way you feel, I'll keep track of everything.")
         }
         let hasFastPart = tracker.steps.contains { $0.kind == .work }
         if first.kind == .warmup, let seconds = first.durationSec {
             let minutes = max(1, seconds / 60)
             return hasFastPart
-                ? "We start with \(minutes) very easy minutes. I'll tell you when to speed up."
-                : "We start with \(minutes) very easy minutes."
+                ? L("We start with %@ very easy minutes. I'll tell you when to speed up.", minutes)
+                : L("We start with %@ very easy minutes.", minutes)
         }
         if first.kind == .work {
-            return "Today is your day. Start a touch slower than you want to, I'll guide you."
+            return L("Today is your day. Start a touch slower than you want to, I'll guide you.")
         }
-        return "Easy and steady today. You should be able to talk the whole way."
+        return L("Easy and steady today. You should be able to talk the whole way.")
     }
 }
 

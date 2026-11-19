@@ -128,7 +128,7 @@ struct CoachChatView: View {
 
     private var inputBar: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            TextField("Write to your coach", text: $draft, axis: .vertical)
+            TextField(L("Write to your coach"), text: $draft, axis: .vertical)
                 .lineLimit(1...4)
                 .font(.system(size: 15))
                 .foregroundStyle(Theme.ink)
@@ -141,7 +141,7 @@ struct CoachChatView: View {
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .stroke(Color(hex: 0xCFCFCF), lineWidth: 1)
                 )
-                .accessibilityLabel("Message to your coach")
+                .accessibilityLabel(L("Message to your coach"))
             Button(action: { send(draft) }) {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 18, weight: .bold))
@@ -152,7 +152,7 @@ struct CoachChatView: View {
             }
             .buttonStyle(.plain)
             .disabled(!canSend)
-            .accessibilityLabel("Send")
+            .accessibilityLabel(L("Send"))
         }
         .padding(.horizontal, Theme.screenPadding)
         .padding(.top, 8)
@@ -198,7 +198,7 @@ struct CoachChatHeader: View {
                         .fill(Theme.greenSoft)
                         .frame(width: 13, height: 13)
                         .overlay(Circle().stroke(Color.white, lineWidth: 2.5))
-                        .accessibilityLabel("Online")
+                        .accessibilityLabel(L("Online"))
                 }
             VStack(alignment: .leading, spacing: 2) {
                 Text(coach.trait)
@@ -218,9 +218,9 @@ struct CoachChatHeader: View {
     }
 
     private var subtitle: String {
-        if runCount == 1 { return "Your coach · knows your 1 run" }
-        if runCount > 1 { return "Your coach · knows your \(runCount) runs" }
-        return "Your coach"
+        if runCount == 1 { return L("Your coach · knows your %@ run", runCount) }
+        if runCount > 1 { return L("Your coach · knows your %@ runs", runCount) }
+        return L("Your coach")
     }
 }
 
@@ -243,11 +243,11 @@ struct CoachChatToneMenu: View {
                 }
             }
         } label: {
-            Text("Tone: \(tone.title)")
+            Text(L("Tone: %@", tone.title))
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Theme.ink)
         }
-        .accessibilityLabel("Coach tone: \(tone.title)")
+        .accessibilityLabel(L("Coach tone: %@", tone.title))
     }
 }
 

@@ -43,7 +43,7 @@ struct ProfileAccountSection: View {
                 signInRow
             }
             if isSignedIn {
-                Button("Sign out") {
+                Button(L("Sign out")) {
                     Haptics.warning()
                     alert = .confirmSignOut
                 }
@@ -51,7 +51,7 @@ struct ProfileAccountSection: View {
             }
             deleteRow
         } header: {
-            Text("Account")
+            Text(L("Account"))
         } footer: {
             Text(footerText)
         }
@@ -61,7 +61,7 @@ struct ProfileAccountSection: View {
 
     private var identityRow: some View {
         HStack {
-            Text(isSignedIn ? "Signed in as" : "Account")
+            Text(isSignedIn ? L("Signed in as") : L("Account"))
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
                 Text(statusText)
@@ -69,7 +69,7 @@ struct ProfileAccountSection: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 if isSignedIn, let provider = auth.signedInProvider {
-                    Text("with \(provider.title)")
+                    Text(L("with %@", provider.title))
                         .font(.footnote)
                         .foregroundStyle(Theme.muted)
                 }
@@ -93,7 +93,7 @@ struct ProfileAccountSection: View {
 
     @ViewBuilder private var syncRows: some View {
         HStack {
-            Text("Last synced")
+            Text(L("Last synced"))
             Spacer()
             Text(lastSyncedText)
                 .foregroundStyle(Theme.muted)
@@ -101,7 +101,7 @@ struct ProfileAccountSection: View {
         .accessibilityElement(children: .combine)
         Button(action: syncNow) {
             HStack {
-                Text(busy == .syncing ? "Syncing…" : "Sync now")
+                Text(busy == .syncing ? L("Syncing…") : L("Sync now"))
                 Spacer()
                 if busy == .syncing {
                     SwiftUI.ProgressView()
@@ -117,10 +117,10 @@ struct ProfileAccountSection: View {
     }
 
     @ViewBuilder private var expiredRow: some View {
-        Text("Your session has expired. Your plan and runs are safe on this phone; sign in again to keep saving them to your account.")
+        Text(L("Your session has expired. Your plan and runs are safe on this phone; sign in again to keep saving them to your account."))
             .font(.footnote)
             .foregroundStyle(Theme.muted)
-        Button("Sign in again") {
+        Button(L("Sign in again")) {
             Haptics.tap()
             showSignIn = true
         }
@@ -133,7 +133,7 @@ struct ProfileAccountSection: View {
             showSignIn = true
         }) {
             HStack {
-                Text(busy == .signingIn ? "Signing in…" : "Sign in")
+                Text(busy == .signingIn ? L("Signing in…") : L("Sign in"))
                 Spacer()
                 if busy == .signingIn {
                     SwiftUI.ProgressView()
@@ -165,32 +165,32 @@ struct ProfileAccountSection: View {
     private var isSignedIn: Bool { store.hasRealAccount }
 
     private var deleteTitle: String {
-        if busy == .deleting { return "Deleting…" }
-        if busy == .signingOut { return "Signing out…" }
-        return isSignedIn ? "Delete my account" : "Erase my data"
+        if busy == .deleting { return L("Deleting…") }
+        if busy == .signingOut { return L("Signing out…") }
+        return isSignedIn ? L("Delete my account") : L("Erase my data")
     }
 
     private var statusText: String {
-        guard let account = store.account else { return "Not signed in" }
-        if account.isGuest { return "Guest" }
-        return account.email ?? "Signed in"
+        guard let account = store.account else { return L("Not signed in") }
+        if account.isGuest { return L("Guest") }
+        return account.email ?? L("Signed in")
     }
 
     private var lastSyncedText: String {
-        if store.syncActivity != .idle || busy == .syncing { return "Syncing…" }
-        guard let date = store.lastSyncedAt else { return "Not yet" }
+        if store.syncActivity != .idle || busy == .syncing { return L("Syncing…") }
+        guard let date = store.lastSyncedAt else { return L("Not yet") }
         let seconds = Date().timeIntervalSince(date)
-        if seconds < 90 { return "Just now" }
-        if seconds < 3600 { return "\(Int(seconds / 60)) min ago" }
-        if Calendar.plan.isDateInToday(date) { return "Today at " + Fmt.day(date, "HH:mm") }
-        return Fmt.day(date, "d MMM 'at' HH:mm")
+        if seconds < 90 { return L("Just now") }
+        if seconds < 3600 { return L("%@ min ago", Int(seconds / 60)) }
+        if Calendar.plan.isDateInToday(date) { return L("Today at %@", Fmt.day(date, "HH:mm")) }
+        return L("%@ at %@", Fmt.day(date, "d MMM"), Fmt.day(date, "HH:mm"))
     }
 
     private var footerText: String {
         if isSignedIn {
-            return "Your plan, your runs and your settings are saved to your account, and come back when you sign in on another phone."
+            return L("Your plan, your runs and your settings are saved to your account, and come back when you sign in on another phone.")
         }
-        return "As a guest, everything stays on this phone only. Sign in to keep your plan and your runs safe."
+        return L("As a guest, everything stays on this phone only. Sign in to keep your plan and your runs safe.")
     }
 
     // MARK: Alerts
@@ -206,40 +206,40 @@ struct ProfileAccountSection: View {
 
     private var alertTitle: String {
         switch alert {
-        case .confirmSignOut: return "Sign out?"
-        case .signOutUnsaved: return "Your latest changes aren't saved yet"
-        case .confirmDelete: return isSignedIn ? "Delete your account?" : "Erase everything?"
-        case .error, .none: return "Something went wrong"
+        case .confirmSignOut: return L("Sign out?")
+        case .signOutUnsaved: return L("Your latest changes aren't saved yet")
+        case .confirmDelete: return isSignedIn ? L("Delete your account?") : L("Erase everything?")
+        case .error, .none: return L("Something went wrong")
         }
     }
 
     @ViewBuilder private func alertButtons(_ item: ProfileAccountAlert) -> some View {
         switch item {
         case .confirmSignOut:
-            Button("Sign out", role: .destructive) { signOut(force: false) }
-            Button("Cancel", role: .cancel) {}
+            Button(L("Sign out"), role: .destructive) { signOut(force: false) }
+            Button(L("Cancel"), role: .cancel) {}
         case .signOutUnsaved:
-            Button("Sign out anyway", role: .destructive) { signOut(force: true) }
-            Button("Stay signed in", role: .cancel) {}
+            Button(L("Sign out anyway"), role: .destructive) { signOut(force: true) }
+            Button(L("Stay signed in"), role: .cancel) {}
         case .confirmDelete:
-            Button(isSignedIn ? "Delete everything" : "Erase everything", role: .destructive) { deleteAccount() }
-            Button("Cancel", role: .cancel) {}
+            Button(isSignedIn ? L("Delete everything") : L("Erase everything"), role: .destructive) { deleteAccount() }
+            Button(L("Cancel"), role: .cancel) {}
         case .error:
-            Button("OK", role: .cancel) {}
+            Button(L("OK"), role: .cancel) {}
         }
     }
 
     private func alertMessage(_ item: ProfileAccountAlert) -> String {
         switch item {
         case .confirmSignOut:
-            return "Your plan, your runs and your settings are saved in your account. They are removed from this phone and come back when you sign in again."
+            return L("Your plan, your runs and your settings are saved in your account. They are removed from this phone and come back when you sign in again.")
         case .signOutUnsaved:
-            return "We couldn't reach your account, so what you changed most recently is only on this phone. If you sign out now, those changes are lost."
+            return L("We couldn't reach your account, so what you changed most recently is only on this phone. If you sign out now, those changes are lost.")
         case .confirmDelete:
             if isSignedIn {
-                return "Your account, your plan, your runs and your conversations with your coach are permanently deleted. This cannot be undone."
+                return L("Your account, your plan, your runs and your conversations with your coach are permanently deleted. This cannot be undone.")
             }
-            return "Your plan, your runs and your conversations with your coach are removed from this phone. This cannot be undone."
+            return L("Your plan, your runs and your conversations with your coach are removed from this phone. This cannot be undone.")
         case .error(let message):
             return message
         }
@@ -255,7 +255,7 @@ struct ProfileAccountSection: View {
                 // Let the sign-in sheet close before the alert appears.
                 try? await Task.sleep(nanoseconds: 500_000_000)
                 Haptics.error()
-                alert = .error("That's a different account. Sign out first to switch accounts.")
+                alert = .error(L("That's a different account. Sign out first to switch accounts."))
             }
             return
         }
@@ -284,11 +284,11 @@ struct ProfileAccountSection: View {
                 Haptics.success()
                 syncNote = nil
             case .notSignedIn:
-                syncNote = auth.sessionExpired ? "Sign in again to sync." : nil
+                syncNote = auth.sessionExpired ? L("Sign in again to sync.") : nil
             case .failed(let failure):
                 Haptics.error()
                 syncNote = failure == .offline
-                    ? "No connection. Your changes are kept on this phone and sent when you're back online."
+                    ? L("No connection. Your changes are kept on this phone and sent when you're back online.")
                     : failure.userMessage
             }
         }
@@ -335,7 +335,7 @@ struct ProfileFooterSection: View {
     var body: some View {
         Section {
             #if DEBUG
-            Button("Restart onboarding", role: .destructive) {
+            Button(L("Restart onboarding"), role: .destructive) {
                 Haptics.warning()
                 store.eraseEverything()
             }
@@ -355,7 +355,7 @@ struct ProfileFooterSection: View {
         let info = Bundle.main.infoDictionary
         let version = info?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = info?["CFBundleVersion"] as? String
-        if let build, build != version { return "Version \(version) (\(build))" }
-        return "Version \(version)"
+        if let build, build != version { return L("Version %@ (%@)", version, build) }
+        return L("Version %@", version)
     }
 }

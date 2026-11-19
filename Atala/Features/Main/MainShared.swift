@@ -30,7 +30,7 @@ struct MainRunSummaryHost: View {
 
     var body: some View {
         RunSummaryView(run: run)
-            .navigationTitle("Run summary")
+            .navigationTitle(L("Run summary"))
             .navigationBarTitleDisplayMode(.inline)
             .modifier(MainHidesTabBar())
     }
@@ -120,20 +120,20 @@ struct MainWorkoutStats: View {
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             if workout.kind.isRun {
-                MainStat(value: Fmt.km(workout.distanceKm), label: "Distance", labelColor: labelColor)
-                MainStat(value: Fmt.minutes(workout.durationMin), label: "Duration", labelColor: labelColor)
-                MainStat(value: paceText, label: "Target pace", labelColor: labelColor)
+                MainStat(value: Fmt.km(workout.distanceKm), label: L("Distance"), labelColor: labelColor)
+                MainStat(value: Fmt.minutes(workout.durationMin), label: L("Duration"), labelColor: labelColor)
+                MainStat(value: paceText, label: L("Target pace"), labelColor: labelColor)
             } else {
-                MainStat(value: Fmt.minutes(workout.durationMin), label: "Duration", labelColor: labelColor)
-                MainStat(value: "\(exerciseCount)", label: "Exercises", labelColor: labelColor)
-                MainStat(value: "\(workout.effort) of 10", label: "Effort", labelColor: labelColor)
+                MainStat(value: Fmt.minutes(workout.durationMin), label: L("Duration"), labelColor: labelColor)
+                MainStat(value: "\(exerciseCount)", label: L("Exercises"), labelColor: labelColor)
+                MainStat(value: L("%@ of 10", workout.effort), label: L("Effort"), labelColor: labelColor)
             }
         }
     }
 
     private var paceText: String {
         if let pace = workout.targetPace { return "\(Fmt.pace(pace))/km" }
-        return "Free"
+        return L("Free")
     }
 
     private var exerciseCount: Int {
@@ -147,9 +147,9 @@ struct MainStatusBadge: View {
     var body: some View {
         switch status {
         case .done:
-            badge("Done", systemName: "checkmark", tint: Theme.green, background: Theme.greenTint)
+            badge(L("Done"), systemName: "checkmark", tint: Theme.green, background: Theme.greenTint)
         case .missed:
-            badge("Missed", systemName: "xmark", tint: Theme.orangeDeep, background: Theme.orangeTint)
+            badge(L("Missed"), systemName: "xmark", tint: Theme.orangeDeep, background: Theme.orangeTint)
         case .planned:
             EmptyView()
         }
@@ -175,7 +175,7 @@ struct MainProgressBar: View {
     /// 0...1
     let fraction: Double
     var tint: Color = Theme.orange
-    var label: String = "Progress"
+    var label: String = L("Progress")
 
     var body: some View {
         GeometryReader { geo in
@@ -188,7 +188,7 @@ struct MainProgressBar: View {
         .frame(height: 6)
         .accessibilityElement()
         .accessibilityLabel(label)
-        .accessibilityValue("\(Int((clamped * 100).rounded())) percent")
+        .accessibilityValue(L("%@ percent", Int((clamped * 100).rounded())))
     }
 
     private var clamped: Double { min(max(fraction, 0), 1) }

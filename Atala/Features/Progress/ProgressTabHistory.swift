@@ -11,12 +11,12 @@ struct ProgressTabHistory: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            MainSectionTitle(title: "History", trailing: countText)
+            MainSectionTitle(title: L("History"), trailing: countText)
                 .padding(.bottom, 4)
             if store.runs.isEmpty {
                 MainEmptyState(systemName: "figure.run",
-                               title: "No runs yet",
-                               message: "Your runs will appear here. Start one with the + button, or bring in the ones you already have in Apple Health.")
+                               title: L("No runs yet"),
+                               message: L("Your runs will appear here. Start one with the + button, or bring in the ones you already have in Apple Health."))
             }
             ForEach(visibleRuns) { run in
                 NavigationLink {
@@ -28,7 +28,7 @@ struct ProgressTabHistory: View {
                 .hapticOnTap()
             }
             if store.runs.count > collapsedCount {
-                Button(showAll ? "Show fewer" : "Show all \(store.runs.count) runs") {
+                Button(showAll ? L("Show fewer") : L("Show all %@ runs", store.runs.count)) {
                     Haptics.tap()
                     showAll.toggle()
                 }
@@ -58,7 +58,7 @@ struct ProgressTabHistory: View {
     }
 
     private var countText: String? {
-        store.runs.isEmpty ? nil : "\(store.runs.count) \(store.runs.count == 1 ? "run" : "runs")"
+        store.runs.isEmpty ? nil : (store.runs.count == 1 ? L("%@ run", store.runs.count) : L("%@ runs", store.runs.count))
     }
 
     private var importButton: some View {
@@ -74,7 +74,7 @@ struct ProgressTabHistory: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Theme.orange)
                 }
-                Text(importing ? "Importing…" : "Import from Apple Health")
+                Text(importing ? L("Importing…") : L("Import from Apple Health"))
             }
         }
         .buttonStyle(SecondaryButtonStyle())
@@ -84,7 +84,7 @@ struct ProgressTabHistory: View {
     private func importFromHealth() {
         guard !importing else { return }
         guard HealthKitService.shared.isAvailable else {
-            importMessage = "Apple Health is not available on this device."
+            importMessage = L("Apple Health is not available on this device.")
             return
         }
         importing = true
@@ -102,11 +102,11 @@ struct ProgressTabHistory: View {
                 Haptics.success()
             }
             if !granted {
-                importMessage = "Atala could not read Apple Health. You can allow it in the Health app, under Sharing."
+                importMessage = L("Atala could not read Apple Health. You can allow it in the Health app, under Sharing.")
             } else if added == 0 {
-                importMessage = "No new runs found in Apple Health."
+                importMessage = L("No new runs found in Apple Health.")
             } else {
-                importMessage = "\(added) \(added == 1 ? "run" : "runs") imported from Apple Health."
+                importMessage = added == 1 ? L("%@ run imported from Apple Health.", added) : L("%@ runs imported from Apple Health.", added)
             }
         }
     }
@@ -120,7 +120,7 @@ private struct ProgressTabRunRow: View {
         HStack(spacing: 12) {
             IconTile(systemName: ProgressTabStats.sourceSymbol(run.source), size: 38)
             VStack(alignment: .leading, spacing: 1) {
-                Text(run.title.isEmpty ? "Run" : run.title)
+                Text(run.title.isEmpty ? L("Run") : L(run.title))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                     .lineLimit(1)

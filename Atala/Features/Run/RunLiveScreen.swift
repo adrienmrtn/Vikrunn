@@ -66,24 +66,24 @@ struct RunLiveScreen: View {
     }
 
     private var pillText: String {
-        if !tracker.hasSteps { return "Free run" }
-        if tracker.stepsComplete { return "Session complete" }
+        if !tracker.hasSteps { return L("Free run") }
+        if tracker.stepsComplete { return L("Session complete") }
         return RunFormat.pill(at: tracker.stepIndex, in: tracker.steps)
     }
 
     private var nextText: String {
-        if !tracker.hasSteps { return tracker.isSimulating ? "Simulated GPS" : gpsText }
-        if tracker.stepsComplete { return "Finish when you like" }
+        if !tracker.hasSteps { return tracker.isSimulating ? L("Simulated GPS") : gpsText }
+        if tracker.stepsComplete { return L("Finish when you like") }
         return RunFormat.next(after: tracker.stepIndex, in: tracker.steps)
     }
 
     private var gpsText: String {
         switch tracker.gps {
-        case .good: return "GPS good"
-        case .fair: return "GPS fair"
-        case .poor: return "GPS weak"
-        case .denied: return "Location off"
-        case .unknown: return "Looking for GPS"
+        case .good: return L("GPS good")
+        case .fair: return L("GPS fair")
+        case .poor: return L("GPS weak")
+        case .denied: return L("Location off")
+        case .unknown: return L("Looking for GPS")
         }
     }
 
@@ -91,17 +91,17 @@ struct RunLiveScreen: View {
 
     private var primary: (caption: String, value: String, unit: String?, footnote: String) {
         if let step, let remaining = tracker.stepRemainingSeconds {
-            return ("Time remaining", Fmt.duration(remaining), nil, "of \(RunFormat.spokenAmount(step))")
+            return (L("Time remaining"), Fmt.duration(remaining), nil, L("of %@", RunFormat.spokenAmount(step)))
         }
         if let step, let remaining = tracker.stepRemainingMeters {
-            let footnote = "of \(RunFormat.amount(step))"
+            let footnote = L("of %@", RunFormat.amount(step))
             if remaining >= 1000 {
-                return ("Distance remaining", String(format: "%.2f", remaining / 1000), "km", footnote)
+                return (L("Distance remaining"), String(format: "%.2f", remaining / 1000), "km", footnote)
             }
-            return ("Distance remaining", "\(Int(remaining.rounded()))", "m", footnote)
+            return (L("Distance remaining"), "\(Int(remaining.rounded()))", "m", footnote)
         }
-        let footnote = tracker.stepsComplete ? "Everything planned is done" : "Run the way you feel"
-        return ("Distance", String(format: "%.2f", tracker.distance / 1000), "km", footnote)
+        let footnote = tracker.stepsComplete ? L("Everything planned is done") : L("Run the way you feel")
+        return (L("Distance"), String(format: "%.2f", tracker.distance / 1000), "km", footnote)
     }
 
     private var primaryNumber: some View {
@@ -138,7 +138,7 @@ struct RunLiveScreen: View {
     private var paceCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Pace")
+                Text(L("Pace"))
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.muted)
                 Spacer()
@@ -160,9 +160,9 @@ struct RunLiveScreen: View {
             }
             Divider().overlay(Theme.hairline)
             RunStatsRow(items: [
-                (value: Fmt.duration(tracker.elapsed), label: "Total time"),
-                (value: RunFormat.distance(tracker.distance), label: "Distance"),
-                (value: Fmt.pace(tracker.averagePace), label: "Average pace"),
+                (value: Fmt.duration(tracker.elapsed), label: L("Total time")),
+                (value: RunFormat.distance(tracker.distance), label: L("Distance")),
+                (value: Fmt.pace(tracker.averagePace), label: L("Average pace")),
             ])
         }
         .padding(18)
@@ -171,26 +171,26 @@ struct RunLiveScreen: View {
 
     private var paceHint: (text: String, color: Color) {
         let pace = tracker.currentPace
-        guard let step else { return ("By feel", Theme.green) }
+        guard let step else { return (L("By feel"), Theme.green) }
         guard let fast = step.paceFast, let slow = step.paceSlow else {
-            return (step.kind == .work ? "By feel" : "Easy, as planned", Theme.green)
+            return (step.kind == .work ? L("By feel") : L("Easy, as planned"), Theme.green)
         }
-        guard pace > 0 else { return ("Target \(Fmt.pace(slow)) to \(Fmt.pace(fast))", Theme.muted) }
-        if pace < fast - 5 { return ("Too fast", Theme.orangeDeep) }
-        if pace > slow + 5 { return (step.kind == .work ? "Too slow" : "Nice and easy", step.kind == .work ? Theme.orangeDeep : Theme.green) }
-        return (step.kind == .work ? "On target" : "Easy, as planned", Theme.green)
+        guard pace > 0 else { return (L("Target %@ to %@", Fmt.pace(slow), Fmt.pace(fast)), Theme.muted) }
+        if pace < fast - 5 { return (L("Too fast"), Theme.orangeDeep) }
+        if pace > slow + 5 { return (step.kind == .work ? L("Too slow") : L("Nice and easy"), step.kind == .work ? Theme.orangeDeep : Theme.green) }
+        return (step.kind == .work ? L("On target") : L("Easy, as planned"), Theme.green)
     }
 
     private var bubbleText: String {
         if !voice.lastCue.isEmpty { return voice.lastCue }
-        return tracker.hasSteps ? "Here we go. I'll guide you step by step." : "Off you go. Run the way you feel."
+        return tracker.hasSteps ? L("Here we go. I'll guide you step by step.") : L("Off you go. Run the way you feel.")
     }
 
     // MARK: Controls
 
     private var controls: some View {
         HStack {
-            RunRoundButton(symbol: "lock.fill", label: "Lock the screen") {
+            RunRoundButton(symbol: "lock.fill", label: L("Lock the screen")) {
                 Haptics.tap()
                 locked = true
             }
@@ -206,9 +206,9 @@ struct RunLiveScreen: View {
                     .background(Theme.ink, in: Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Pause")
+            .accessibilityLabel(L("Pause"))
             Spacer()
-            RunRoundButton(symbol: "forward.end.fill", label: "Skip to the next step") { tracker.skipStep() }
+            RunRoundButton(symbol: "forward.end.fill", label: L("Skip to the next step")) { tracker.skipStep() }
                 .opacity(tracker.canSkipStep ? 1 : 0)
                 .disabled(!tracker.canSkipStep)
         }

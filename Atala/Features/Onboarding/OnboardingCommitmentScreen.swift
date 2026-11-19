@@ -38,8 +38,8 @@ struct OnboardingSignaturePad: View {
                     isDrawing = false
                 }
         )
-        .accessibilityLabel("Signature area")
-        .accessibilityHint("Draw your signature with your finger")
+        .accessibilityLabel(L("Signature area"))
+        .accessibilityHint(L("Draw your signature with your finger"))
     }
 }
 
@@ -56,25 +56,30 @@ struct OnboardingCommitmentScreen: View {
     private var frequency: String {
         let count = OnboardingCopy.sessionsPerWeek(store.answers)
         switch count {
-        case 1: return "once a week"
-        case 2: return "twice a week"
-        default: return "\(count) times a week"
+        case 1: return L("once a week")
+        case 2: return L("twice a week")
+        default: return L("%@ times a week", count)
         }
     }
 
-    /// "I, Max, will show up 3 times a week for 8 weeks."
+    /// "I, Max, will show up 3 times a week for 8 weeks." The parts between two `*` are green:
+    /// the markers stay in the translations, so each language puts them where they belong.
     private var pledge: Text {
-        Text("I, \(store.firstName), will show up ")
-            + Text(frequency).foregroundColor(Theme.green)
-            + Text(" for ")
-            + Text(OnboardingCopy.weeks(weekCount)).foregroundColor(Theme.green)
-            + Text(".")
+        let sentence = L("I, %@, will show up *%@* for *%@*.",
+                         store.firstName, frequency, OnboardingCopy.weeks(weekCount))
+        let parts: [String] = sentence.components(separatedBy: "*")
+        var result = Text(verbatim: "")
+        for index in parts.indices {
+            let piece = Text(verbatim: parts[index])
+            result = result + (index % 2 == 1 ? piece.foregroundColor(Theme.green) : piece)
+        }
+        return result
     }
 
     var body: some View {
-        OnboardingScaffold(title: "Before you go, promise yourself you'll reach your goals.",
-                           subtitle: "Sign it. The runners who commit are the ones who show up.",
-                           buttonTitle: "I promise",
+        OnboardingScaffold(title: L("Before you go, promise yourself you'll reach your goals."),
+                           subtitle: L("Sign it. The runners who commit are the ones who show up."),
+                           buttonTitle: L("I promise"),
                            buttonHaptic: .strong,
                            canContinue: !strokes.isEmpty,
                            tinted: true) {
@@ -98,7 +103,7 @@ struct OnboardingCommitmentScreen: View {
                 .lineSpacing(5)
                 .fixedSize(horizontal: false, vertical: true)
             signatureArea
-            Text("\(Fmt.day(Date(), "d MMMM yyyy")) · between you and you, never shared")
+            Text(L("%@ · between you and you, never shared", Fmt.day(Date(), "d MMMM yyyy")))
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.muted)
         }
@@ -112,7 +117,7 @@ struct OnboardingCommitmentScreen: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(Color(hex: 0xFAFAF8))
             if strokes.isEmpty {
-                Text("Sign here with your finger")
+                Text(L("Sign here with your finger"))
                     .font(.system(size: 14))
                     .foregroundStyle(Theme.faint)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -124,7 +129,7 @@ struct OnboardingCommitmentScreen: View {
                 .stroke(Theme.faint, style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
                 .allowsHitTesting(false)
             if !strokes.isEmpty {
-                Button("Clear") {
+                Button(L("Clear")) {
                     Haptics.tap()
                     strokes = []
                 }

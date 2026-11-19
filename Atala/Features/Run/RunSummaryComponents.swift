@@ -24,13 +24,13 @@ struct RunRouteMap: View {
             MapPolyline(coordinates: coordinates)
                 .stroke(Theme.orange, lineWidth: 4)
             if let start = coordinates.first {
-                Annotation("Start", coordinate: start) {
+                Annotation(L("Start"), coordinate: start) {
                     RunRouteDot(color: Theme.green)
                 }
                 .annotationTitles(.hidden)
             }
             if let end = coordinates.last {
-                Annotation("Finish", coordinate: end) {
+                Annotation(L("Finish"), coordinate: end) {
                     RunRouteDot(color: Theme.ink)
                 }
                 .annotationTitles(.hidden)
@@ -42,7 +42,7 @@ struct RunRouteMap: View {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .stroke(Theme.cardBorder, lineWidth: 1)
         )
-        .accessibilityLabel("Map of your route")
+        .accessibilityLabel(L("Map of your route"))
     }
 }
 
@@ -76,11 +76,11 @@ struct RunRepsCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Your \(splits.count) fast reps")
+                Text(L("Your %@ fast reps", splits.count))
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(Theme.ink)
                 Spacer(minLength: 8)
-                Text("\(onTargetCount) of \(splits.count) on target")
+                Text(L("%@ of %@ on target", onTargetCount, splits.count))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(onTargetCount * 2 >= splits.count ? Theme.green : Theme.orangeDeep)
             }
@@ -140,18 +140,18 @@ struct RunRepsCard: View {
         var text: String
         if showsTime {
             let averageTime = splits.reduce(0) { $0 + $1.durationSec } / max(1, splits.count)
-            text = "Average \(Fmt.duration(averageTime)), that is \(Fmt.pace(averagePace)) per km."
+            text = L("Average %@, that is %@ per km.", Fmt.duration(averageTime), Fmt.pace(averagePace))
         } else {
-            text = "Average \(Fmt.pace(averagePace)) per km."
+            text = L("Average %@ per km.", Fmt.pace(averagePace))
         }
         if let first = splits.first, let fast = first.paceFast, let slow = first.paceSlow {
-            text += " Target: \(Fmt.pace(fast)) to \(Fmt.pace(slow))."
+            text += " " + L("Target: %@ to %@.", Fmt.pace(fast), Fmt.pace(slow))
         }
         return text
     }
 
     private var accessibilitySummary: String {
-        "\(splits.count) fast reps, \(onTargetCount) on target. Fastest pace \(Fmt.pace(fastest)) per kilometre."
+        L("%@ fast reps, %@ on target. Fastest pace %@ per kilometre.", splits.count, onTargetCount, Fmt.pace(fastest))
     }
 }
 

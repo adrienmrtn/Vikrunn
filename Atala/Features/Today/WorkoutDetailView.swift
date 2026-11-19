@@ -56,7 +56,7 @@ struct WorkoutDetailView: View {
 
     /// Inline title of the system bar: the kind of session.
     private var barTitle: String {
-        store.workout(id: workoutID)?.kind.title ?? "Session"
+        store.workout(id: workoutID)?.kind.title ?? L("Session")
     }
 
     /// The illustration is the first element of the scroll content, right under the system bar,
@@ -123,7 +123,7 @@ struct WorkoutDetailView: View {
     private var moreMenu: some View {
         if let workout = store.workout(id: workoutID), workout.status == .done, !workout.kind.isRun {
             Menu {
-                Button("Mark as not done") {
+                Button(L("Mark as not done")) {
                     Haptics.tap()
                     store.setStatus(.planned, for: workout.id)
                     store.refreshMissed()
@@ -131,19 +131,19 @@ struct WorkoutDetailView: View {
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
-            .accessibilityLabel("More options")
+            .accessibilityLabel(L("More options"))
         } else if let workout = store.workout(id: workoutID), store.planCanMove(workout) {
             Button {
                 Haptics.tap()
                 // Moving sessions is part of Atala Pro.
                 if purchases.isPro { showMove = true } else { showPaywall = true }
             } label: {
-                Label("Move", systemImage: "calendar")
+                Label(L("Move"), systemImage: "calendar")
                     .labelStyle(.titleAndIcon)
                     .font(.system(size: 15, weight: .semibold))
             }
             .foregroundStyle(Theme.ink)
-            .accessibilityLabel("Move this session to another day")
+            .accessibilityLabel(L("Move this session to another day"))
         }
     }
 
@@ -151,7 +151,7 @@ struct WorkoutDetailView: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .center, spacing: 8) {
-                    Text("\(Fmt.day(workout.date)) · effort \(workout.effort) of 10")
+                    Text(L("%@ · effort %@ of 10", Fmt.day(workout.date), workout.effort))
                         .font(.system(size: 13))
                         .foregroundStyle(Color(hex: 0x5A5A5A))
                         .lineLimit(1)
@@ -181,7 +181,7 @@ struct WorkoutDetailView: View {
 
     private func whySection(_ workout: Workout) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Why this session")
+            Text(L("Why this session"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Theme.ink)
             Text(workout.why)
@@ -195,7 +195,7 @@ struct WorkoutDetailView: View {
 
     private func linkedRun(_ run: RunRecord) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Your run")
+            Text(L("Your run"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Theme.ink)
             NavigationLink {
@@ -204,10 +204,10 @@ struct WorkoutDetailView: View {
                 HStack(spacing: 12) {
                     IconTile(systemName: "checkmark", size: 40)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("\(Fmt.km(run.distanceKm)) in \(Fmt.duration(run.durationSec))")
+                        Text(L("%@ in %@", Fmt.km(run.distanceKm), Fmt.duration(run.durationSec)))
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(Theme.ink)
-                        Text("\(Fmt.pace(run.avgPace))/km on average · see the summary")
+                        Text(L("%@/km on average · see the summary", Fmt.pace(run.avgPace)))
                             .font(.system(size: 13))
                             .foregroundStyle(Theme.muted)
                             .lineLimit(1)
@@ -248,32 +248,32 @@ struct WorkoutDetailView: View {
             Button {
                 showPaywall = true
             } label: {
-                Label("Unlock with Atala Pro", systemImage: "lock.fill")
+                Label(L("Unlock with Atala Pro"), systemImage: "lock.fill")
             }
             .buttonStyle(PrimaryButtonStyle())
         } else if !workout.kind.isRun {
             // Strength and stretching, planned or missed: a guided session, or a simple tick.
-            Button("Mark as done") {
+            Button(L("Mark as done")) {
                 Haptics.success()
                 store.setStatus(.done, for: workout.id)
             }
             .buttonStyle(SecondaryButtonStyle(haptic: nil))
-            Button("Start") {
+            Button(L("Start")) {
                 // Guided strength and stretching sessions are part of Atala Pro.
                 if purchases.isPro { showGuided = true } else { showPaywall = true }
             }
             .buttonStyle(PrimaryButtonStyle())
         } else if workout.status == .missed {
-            Button("I did it") {
+            Button(L("I did it")) {
                 showManualEntry = true
             }
             .buttonStyle(PrimaryButtonStyle())
         } else {
-            Button("I already did it") {
+            Button(L("I already did it")) {
                 showManualEntry = true
             }
             .buttonStyle(SecondaryButtonStyle())
-            Button("Start") {
+            Button(L("Start")) {
                 showRun = true
             }
             .buttonStyle(PrimaryButtonStyle())
@@ -283,9 +283,9 @@ struct WorkoutDetailView: View {
     private var missing: some View {
         VStack(spacing: 8) {
             MainEmptyState(systemName: "calendar.badge.exclamationmark",
-                           title: "Session not found",
-                           message: "This session is no longer in your plan.",
-                           actionTitle: "Back") {
+                           title: L("Session not found"),
+                           message: L("This session is no longer in your plan."),
+                           actionTitle: L("Back")) {
                 dismiss()
             }
         }

@@ -14,17 +14,17 @@ private struct OnboardingWelcomeSlide: Identifiable {
         UIImage(named: photo) != nil
     }
 
-    static let all: [OnboardingWelcomeSlide] = [
+    static var all: [OnboardingWelcomeSlide] { [
         OnboardingWelcomeSlide(id: 0, illustration: "welcome_1", photo: "welcome_photo_1",
-                               title: "Run like you belong",
-                               text: "Atala is the coach behind runners who show up, from a first 5K to a half marathon."),
+                               title: L("Run like you belong"),
+                               text: L("Atala is the coach behind runners who show up, from a first 5K to a half marathon.")),
         OnboardingWelcomeSlide(id: 1, illustration: "welcome_2", photo: "welcome_photo_2",
-                               title: "A plan that fits your life",
-                               text: "Pick the days you can run. Your plan is built around them."),
+                               title: L("A plan that fits your life"),
+                               text: L("Pick the days you can run. Your plan is built around them.")),
         OnboardingWelcomeSlide(id: 2, illustration: "welcome_3", photo: "welcome_photo_3",
-                               title: "A coach who tells you why",
-                               text: "Every session has its reason, every question its answer."),
-    ]
+                               title: L("A coach who tells you why"),
+                               text: L("Every session has its reason, every question its answer.")),
+    ] }
 }
 
 /// Screen 1: three swipeable slides, then "Get started" or "I already have an account".
@@ -70,10 +70,10 @@ struct OnboardingWelcomeScreen: View {
                 finishSignIn(account)
             }
         }
-        .alert("We couldn't open your account", isPresented: signInErrorShown) {
-            Button("OK", role: .cancel) {}
+        .alert(L("We couldn't open your account"), isPresented: signInErrorShown) {
+            Button(L("OK"), role: .cancel) {}
         } message: {
-            Text(signInError ?? "Please try again.")
+            Text(signInError ?? L("Please try again."))
         }
     }
 
@@ -190,15 +190,15 @@ struct OnboardingWelcomeScreen: View {
         }
         .animation(.easeInOut(duration: 0.25), value: page)
         .accessibilityElement()
-        .accessibilityLabel("Slide \((page ?? 0) + 1) of \(OnboardingWelcomeSlide.all.count)")
+        .accessibilityLabel(L("Slide %@ of %@", (page ?? 0) + 1, OnboardingWelcomeSlide.all.count))
     }
 
     private var buttons: some View {
         VStack(spacing: 4) {
-            PrimaryButton(title: "Get started") {
+            PrimaryButton(title: L("Get started")) {
                 nav.next(store)
             }
-            Button("I already have an account") {
+            Button(L("I already have an account")) {
                 Haptics.tap()
                 showSignIn = true
             }
@@ -223,11 +223,11 @@ struct OnboardingFirstNameScreen: View {
     }
 
     var body: some View {
-        OnboardingScaffold(title: "What's your first name?",
+        OnboardingScaffold(title: L("What's your first name?"),
                            canContinue: !trimmed.isEmpty,
                            onContinue: submit) {
             VStack(alignment: .leading, spacing: 8) {
-                TextField("First name", text: $store.answers.firstName)
+                TextField(L("First name"), text: $store.answers.firstName)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                     .textContentType(.givenName)

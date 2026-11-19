@@ -13,10 +13,10 @@ enum SyncFailure: Error, Equatable {
 
     var userMessage: String {
         switch self {
-        case .offline: return "We couldn't reach your account. Check your connection and try again."
-        case .sessionExpired: return "Your session has expired. Please sign in again."
-        case .server: return "Our server is having a moment. Please try again shortly."
-        case .interrupted: return "That was interrupted. Please try again."
+        case .offline: return L("We couldn't reach your account. Check your connection and try again.")
+        case .sessionExpired: return L("Your session has expired. Please sign in again.")
+        case .server: return L("Our server is having a moment. Please try again shortly.")
+        case .interrupted: return L("That was interrupted. Please try again.")
         }
     }
 }

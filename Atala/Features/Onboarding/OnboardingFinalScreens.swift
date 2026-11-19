@@ -104,13 +104,13 @@ struct OnboardingPermissionsScreen: View {
     @State private var asked = false
 
     var body: some View {
-        OnboardingScaffold(title: "Let Atala follow your runs") {
+        OnboardingScaffold(title: L("Let Atala follow your runs")) {
             OnboardingLinkGraphic(symbol: "location.fill", tint: Theme.orange, linked: location.isAllowed)
                 .animation(.spring(response: 0.45, dampingFraction: 0.7), value: location.isAllowed)
             VStack(alignment: .leading, spacing: 12) {
-                OnboardingBenefitRow(text: "Your distance and pace, live")
-                OnboardingBenefitRow(text: "\(store.coach.name)'s voice when you're too fast or too slow")
-                OnboardingBenefitRow(text: "Your route on a map after every run")
+                OnboardingBenefitRow(text: L("Your distance and pace, live"))
+                OnboardingBenefitRow(text: L("%@'s voice when you're too fast or too slow", store.coach.name))
+                OnboardingBenefitRow(text: L("Your route on a map after every run"))
             }
             locationButton
             Text(locationFootnote)
@@ -126,16 +126,16 @@ struct OnboardingPermissionsScreen: View {
     }
 
     private var locationButtonTitle: String {
-        if location.isAllowed { return "Location allowed" }
-        if location.isRefused { return "Open Settings" }
-        return "Allow location"
+        if location.isAllowed { return L("Location allowed") }
+        if location.isRefused { return L("Open Settings") }
+        return L("Allow location")
     }
 
     private var locationFootnote: String {
         if location.isRefused {
-            return "Location is off for Atala. Turn it on in Settings, or log your runs by hand."
+            return L("Location is off for Atala. Turn it on in Settings, or log your runs by hand.")
         }
-        return "Only while you're running with the app. You can say no and log your runs by hand."
+        return L("Only while you're running with the app. You can say no and log your runs by hand.")
     }
 
     private var locationButton: some View {
@@ -179,33 +179,35 @@ struct OnboardingHealthConnectScreen: View {
     private var available: Bool { HealthKitService.shared.isAvailable }
 
     private var connectTitle: String {
-        if connected { return "Connected" }
-        if !available { return "Not available on this device" }
-        return isAsking ? "Connecting…" : "Connect Apple Health"
+        if connected { return L("Connected") }
+        if !available { return L("Not available on this device") }
+        return isAsking ? L("Connecting…") : L("Connect Apple Health")
     }
 
     private var footnote: String {
-        if wasRefused { return "Access was not granted. You can turn it on later in your profile." }
+        if wasRefused { return L("Access was not granted. You can turn it on later in your profile.") }
         if let importedCount {
             if importedCount == 0 {
-                return "Connected. No run found in the last 60 days: your history starts with your first session."
+                return L("Connected. No run found in the last 60 days: your history starts with your first session.")
             }
-            return "\(importedCount) \(importedCount == 1 ? "run" : "runs") from the last 60 days added to your history."
+            return importedCount == 1
+                ? L("%@ run from the last 60 days added to your history.", importedCount)
+                : L("%@ runs from the last 60 days added to your history.", importedCount)
         }
-        return "Optional. You can turn it off at any time in your profile."
+        return L("Optional. You can turn it off at any time in your profile.")
     }
 
     var body: some View {
-        OnboardingScaffold(title: "Connect Apple Health",
-                           buttonTitle: "Start",
+        OnboardingScaffold(title: L("Connect Apple Health"),
+                           buttonTitle: L("Start"),
                            canContinue: !isAsking,
                            onContinue: { store.finishOnboarding() }) {
             OnboardingLinkGraphic(symbol: "heart.fill", tint: Color(hex: 0xFF2D55), linked: connected)
                 .animation(.spring(response: 0.45, dampingFraction: 0.7), value: connected)
             VStack(alignment: .leading, spacing: 12) {
-                OnboardingBenefitRow(text: "Your past runs fill your history from day one")
-                OnboardingBenefitRow(text: "Runs from your watch count in your plan")
-                OnboardingBenefitRow(text: "Your heart rate on every run summary")
+                OnboardingBenefitRow(text: L("Your past runs fill your history from day one"))
+                OnboardingBenefitRow(text: L("Runs from your watch count in your plan"))
+                OnboardingBenefitRow(text: L("Your heart rate on every run summary"))
             }
             connectButton
             Text(footnote)
@@ -246,7 +248,7 @@ struct OnboardingHealthConnectScreen: View {
                 Circle()
                     .fill(Theme.greenSoft)
                     .frame(width: 8, height: 8)
-                Text("Your first session · \(Fmt.day(workout.date, "EEEE d MMMM"))")
+                Text(L("Your first session · %@", Fmt.day(workout.date, "EEEE d MMMM")))
                     .font(.system(size: 13))
                     .foregroundStyle(Color(hex: 0x5A5A5A))
             }
@@ -254,9 +256,9 @@ struct OnboardingHealthConnectScreen: View {
                 .font(Theme.title(24))
                 .foregroundStyle(Theme.ink)
             HStack(spacing: 0) {
-                metric(Fmt.km(workout.distanceKm), "Distance")
-                metric(Fmt.minutes(workout.durationMin), "Duration")
-                metric(workout.targetPace.map { "\(Fmt.pace($0))/km" } ?? "Free", "Target pace")
+                metric(Fmt.km(workout.distanceKm), L("Distance"))
+                metric(Fmt.minutes(workout.durationMin), L("Duration"))
+                metric(workout.targetPace.map { "\(Fmt.pace($0))/km" } ?? L("Free"), L("Target pace"))
             }
         }
         .padding(18)

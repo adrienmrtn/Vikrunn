@@ -33,24 +33,26 @@ final class VoiceCoach: NSObject, ObservableObject {
         synthesizer.delegate = self
     }
 
-    /// The most natural English voice installed on the phone: a premium or enhanced one when the
-    /// user downloaded it (Settings, Accessibility, Spoken Content, Voices), the standard one otherwise.
+    /// The most natural voice installed on the phone for the app's language: a premium or enhanced
+    /// one when the user downloaded it (Settings, Accessibility, Spoken Content, Voices), the
+    /// standard one otherwise.
     nonisolated private static func bestVoice() -> AVSpeechSynthesisVoice? {
         func rank(_ voice: AVSpeechSynthesisVoice) -> Int {
-            var score = 0
             switch voice.quality {
-            case .premium: score += 20
-            case .enhanced: score += 10
-            default: break
+            case .premium: return 20
+            case .enhanced: return 10
+            default: return 0
             }
-            if voice.language == "en-US" { score += 2 }
-            return score
         }
-        let english = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.hasPrefix("en") }
-        if let best = english.max(by: { rank($0) < rank($1) }), rank(best) >= 10 {
+        let tag = AppLanguage.localeIdentifier.replacingOccurrences(of: "_", with: "-")
+        let base = String(tag.prefix(2))
+        let candidates = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.hasPrefix(base) }
+        let regional = candidates.filter { $0.language == tag }
+        let pool = regional.isEmpty ? candidates : regional
+        if let best = pool.max(by: { rank($0) < rank($1) }), rank(best) >= 10 {
             return best
         }
-        return AVSpeechSynthesisVoice(language: "en-US")
+        return AVSpeechSynthesisVoice(language: tag) ?? pool.first
     }
 
     // MARK: Cues
@@ -188,8 +190,8 @@ final class VoiceCoach: NSObject, ObservableObject {
             wasOffTarget = false
             guard settings.announceSteps else { return }
             say(clips: [.complete],
-                speech: "Session complete. Well done. Stop whenever you are ready.",
-                display: "Session complete. Well done. Stop whenever you're ready.",
+                speech: L("Session complete. Well done. Stop whenever you are ready."),
+                display: L("Session complete. Well done. Stop whenever you're ready."),
                 settings: settings)
 
         case .kilometre(let count):
@@ -203,13 +205,13 @@ final class VoiceCoach: NSObject, ObservableObject {
     }
 
     private func announceKilometre(_ count: Int, tracker: RunTracker, settings: VoiceSettings) {
-        let unit = count == 1 ? "kilometre" : "kilometres"
         let pace = tracker.averagePace
-        var speech = "\(count) \(unit). Time, \(RunFormat.spokenDuration(tracker.elapsed))."
-        var display = "\(count) km in \(Fmt.duration(tracker.elapsed))."
+        let spokenTime = RunFormat.spokenDuration(tracker.elapsed)
+        var speech = count == 1 ? L("%@ kilometre. Time, %@.", count, spokenTime) : L("%@ kilometres. Time, %@.", count, spokenTime)
+        var display = L("%@ km in %@.", count, Fmt.duration(tracker.elapsed))
         if pace > 0 {
-            speech += " Average pace, \(Fmt.pace(pace)) per kilometre."
-            display += " Average \(Fmt.pace(pace)) /km."
+            speech += " " + L("Average pace, %@ per kilometre.", Fmt.pace(pace))
+            display += " " + L("Average %@ /km.", Fmt.pace(pace))
         }
         if (1...VoiceClip.lastKilometre).contains(count) {
             // The recorded voice gives the kilometre and a word of encouragement; the time and
@@ -236,18 +238,18 @@ final class VoiceCoach: NSObject, ObservableObject {
             let target = Fmt.pace((fast + slow) / 2)
             if tooFast {
                 say(clips: [.fast],
-                    speech: "A little too fast. Ease off towards \(target) per kilometre.",
-                    display: "A little too fast. Ease off towards \(target) /km.",
+                    speech: L("A little too fast. Ease off towards %@ per kilometre.", target),
+                    display: L("A little too fast. Ease off towards %@ /km.", target),
                     settings: settings)
             } else {
                 say(clips: [.slow],
-                    speech: "A little too slow. Pick it up towards \(target) per kilometre.",
-                    display: "A little too slow. Pick it up towards \(target) /km.",
+                    speech: L("A little too slow. Pick it up towards %@ per kilometre.", target),
+                    display: L("A little too slow. Pick it up towards %@ /km.", target),
                     settings: settings)
             }
         } else if wasOffTarget {
             wasOffTarget = false
-            show("Back on target. Hold this pace.")
+            show(L("Back on target. Hold this pace."))
         }
     }
 

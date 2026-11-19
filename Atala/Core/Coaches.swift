@@ -10,19 +10,19 @@ struct Coach: Identifiable, Hashable {
     var fullAsset: String { "coach\(id)_full" }
 
     /// The coaches offered for now. Identifiers are kept as they were, so saved choices still match.
-    static let all: [Coach] = [
-        Coach(id: 1, name: "Awa", trait: "Sets the pace"),
-        Coach(id: 3, name: "Mei", trait: "Lively and playful"),
-        Coach(id: 4, name: "Karim", trait: "Steady and reassuring"),
-    ]
+    static var all: [Coach] { [
+        Coach(id: 1, name: "Awa", trait: L("Sets the pace")),
+        Coach(id: 3, name: "Mei", trait: L("Lively and playful")),
+        Coach(id: 4, name: "Karim", trait: L("Steady and reassuring")),
+    ] }
 
     /// Coaches set aside for now (their pictures stay in the catalog). Someone who had chosen one
     /// of them gets the first available coach. Move a line back into `all` to bring a coach back.
-    static let retired: [Coach] = [
-        Coach(id: 2, name: "Thomas", trait: "Calm and precise"),
-        Coach(id: 5, name: "Claire", trait: "Thirty years of running"),
-        Coach(id: 6, name: "Idriss", trait: "Direct and motivating"),
-    ]
+    static var retired: [Coach] { [
+        Coach(id: 2, name: "Thomas", trait: L("Calm and precise")),
+        Coach(id: 5, name: "Claire", trait: L("Thirty years of running")),
+        Coach(id: 6, name: "Idriss", trait: L("Direct and motivating")),
+    ] }
 
     static func by(id: Int) -> Coach { all.first { $0.id == id } ?? all[0] }
 }

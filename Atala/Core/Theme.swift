@@ -260,7 +260,7 @@ struct ProgressHeader: View {
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
-                .accessibilityLabel("Back")
+                .accessibilityLabel(L("Back"))
                 .padding(.leading, -12)
             } else {
                 Color.clear.frame(width: 32, height: 44)
@@ -351,12 +351,12 @@ enum Fmt {
     }
 
     static func minutes(_ min: Int) -> String {
-        min >= 60 ? String(format: "%d h %02d", min / 60, min % 60) : "\(min) min"
+        min >= 60 ? L("%@ h %@", min / 60, String(format: "%02d", min % 60)) : L("%@ min", min)
     }
 
     static func day(_ date: Date, _ format: String = "EEEE d MMMM") -> String {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US")
+        f.locale = AppLanguage.locale
         f.dateFormat = format
         return f.string(from: date)
     }

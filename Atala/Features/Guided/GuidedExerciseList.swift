@@ -16,7 +16,7 @@ struct GuidedExerciseList: View {
                     GuidedExerciseRow(exercise: exercise)
                 }
                 .buttonStyle(.plain)
-                .accessibilityHint("Shows how to do it")
+                .accessibilityHint(L("Shows how to do it"))
             }
         }
         .sheet(item: $shown) { info in
@@ -71,23 +71,23 @@ struct GuidedHowToSheet: View {
             VStack(alignment: .leading, spacing: 20) {
                 header
                 frames
-                section("How to do it") {
+                section(L("How to do it")) {
                     ForEach(Array(info.steps.enumerated()), id: \.offset) { index, step in
                         line(marker: "\(index + 1)", text: step)
                     }
                 }
-                section("Keep in mind") {
+                section(L("Keep in mind")) {
                     ForEach(Array(info.cues.enumerated()), id: \.offset) { _, cue in
                         line(marker: nil, text: cue)
                     }
                 }
-                section("Common mistake") {
+                section(L("Common mistake")) {
                     Text(info.mistake)
                         .font(.system(size: 15))
                         .foregroundStyle(Theme.body)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                section("Muscles") {
+                section(L("Muscles")) {
                     Text(info.muscles)
                         .font(.system(size: 15))
                         .foregroundStyle(Theme.body)
@@ -135,14 +135,14 @@ struct GuidedHowToSheet: View {
                     .background(Theme.surface, in: Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Close")
+            .accessibilityLabel(L("Close"))
         }
     }
 
     private var frames: some View {
         HStack(spacing: 10) {
-            framePanel(name: info.imageStart, caption: "Start")
-            framePanel(name: info.imageEnd, caption: info.kind == .stretch ? "Stretch" : "Effort")
+            framePanel(name: info.imageStart, caption: L("Start"))
+            framePanel(name: info.imageEnd, caption: info.kind == .stretch ? L("Stretch") : L("Effort"))
         }
     }
 

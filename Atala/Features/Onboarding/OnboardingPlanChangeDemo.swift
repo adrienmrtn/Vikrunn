@@ -15,12 +15,12 @@ struct OnboardingPlanChangeExample: Equatable {
 
     var fromName: String { Weekday.long(fromDay) }
     var toName: String { Weekday.long(toDay) }
-    var userLine: String { "I can't run this \(fromName)" }
+    var userLine: String { L("I can't run this %@", fromName) }
 
     static func make(from answers: OnboardingAnswers) -> OnboardingPlanChangeExample {
         let ticked: [Int] = Array(Set(answers.runDays.filter { (1...7).contains($0) })).sorted()
         guard !ticked.isEmpty else {
-            return OnboardingPlanChangeExample(fromDay: 4, toDay: 5, title: "Easy run")
+            return OnboardingPlanChangeExample(fromDay: 4, toDay: 5, title: L("Easy run"))
         }
         let longDay: Int = answers.longRunDay ?? ticked[ticked.count - 1]
         let easyDays: [Int] = ticked.filter { $0 != longDay }
@@ -32,7 +32,7 @@ struct OnboardingPlanChangeExample: Equatable {
         } else if let first = easyDays.first {
             from = first
         }
-        let title: String = (from == longDay || ticked.count == 1) ? "Long run" : "Easy run"
+        let title: String = (from == longDay || ticked.count == 1) ? L("Long run") : L("Easy run")
 
         // The nearest free day after it, then before it; with a full week, simply the day after.
         var to: Int = from == 7 ? 6 : from + 1
@@ -64,7 +64,7 @@ struct OnboardingPlanChangeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Text("Plan change")
+                Text(L("Plan change"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Theme.muted)
                 Spacer(minLength: 8)
@@ -85,7 +85,7 @@ struct OnboardingPlanChangeCard: View {
                 resolvedLabel(choice)
                     .transition(.opacity)
             } else {
-                Text("The rest of your week stays as it is")
+                Text(L("The rest of your week stays as it is"))
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -109,10 +109,10 @@ struct OnboardingPlanChangeCard: View {
         if let choice {
             switch choice {
             case .applied:
-                pill("Applied", symbol: "checkmark", tint: Theme.green, background: Theme.greenTint)
+                pill(L("Applied"), symbol: "checkmark", tint: Theme.green, background: Theme.greenTint)
                     .transition(.scale(scale: 0.6).combined(with: .opacity))
             case .kept:
-                pill("Plan kept", symbol: "minus", tint: Theme.muted, background: Theme.surface)
+                pill(L("Plan kept"), symbol: "minus", tint: Theme.muted, background: Theme.surface)
                     .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
         }
@@ -137,7 +137,7 @@ struct OnboardingPlanChangeCard: View {
         return HStack(alignment: .firstTextBaseline, spacing: 6) {
             Image(systemName: applied ? "checkmark.circle.fill" : "minus.circle")
                 .font(.system(size: 14, weight: .semibold))
-            Text(applied ? "Applied. The rest of your week did not move." : "Plan kept. Nothing was changed.")
+            Text(applied ? L("Applied. The rest of your week did not move.") : L("Plan kept. Nothing was changed."))
                 .font(.system(size: 13, weight: .semibold))
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -153,7 +153,7 @@ struct OnboardingPlanChangeCard: View {
             Image(systemName: "arrow.right")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Theme.ink)
-                .accessibilityLabel("becomes")
+                .accessibilityLabel(L("becomes"))
             box(day: example.toName, title: example.title, dot: Theme.orange, background: Theme.orangeTint)
         }
     }
@@ -192,7 +192,7 @@ struct OnboardingPlanChangeCard: View {
             Text(example.title)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Theme.ink)
-            Text("Moved from \(example.fromName)")
+            Text(L("Moved from %@", example.fromName))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Theme.green)
         }
@@ -210,7 +210,7 @@ struct OnboardingPlanChangeCard: View {
                 Haptics.success()
                 onChoose(.applied)
             }) {
-                Text("Apply")
+                Text(L("Apply"))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
@@ -223,7 +223,7 @@ struct OnboardingPlanChangeCard: View {
                 Haptics.tap()
                 onChoose(.kept)
             }) {
-                Text("Keep my plan")
+                Text(L("Keep my plan"))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                     .lineLimit(1)

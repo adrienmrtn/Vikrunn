@@ -81,8 +81,18 @@ struct GuidedPrescription: Equatable {
         return GuidedTiming.getReady + sets * oneSet + (sets - 1) * restSec
     }
 
-    /// "3 × 12", "3 × 40 s", "45 s each side".
+    /// "3 × 12", "3 × 40 s", "45 s each side", in the app's language.
     var amountText: String {
+        if let reps {
+            if sets > 1 { return perSide ? L("%@ × %@ each side", sets, reps) : "\(sets) × \(reps)" }
+            return perSide ? L("%@ reps each side", reps) : L("%@ reps", reps)
+        }
+        if sets > 1 { return perSide ? L("%@ × %@ s each side", sets, holdSec) : L("%@ × %@ s", sets, holdSec) }
+        return perSide ? L("%@ s each side", holdSec) : L("%@ s", holdSec)
+    }
+
+    /// The same in English, for the saved step label (`GuidedLabelAmount.parse` reads it back).
+    private var baseAmountText: String {
         var text: String
         if let reps {
             text = sets > 1 ? "\(sets) × \(reps)" : "\(reps) reps"
@@ -93,7 +103,7 @@ struct GuidedPrescription: Equatable {
         return text
     }
 
-    var label: String { "\(info.name), \(amountText)" }
+    var label: String { "\(info.baseName), \(baseAmountText)" }
 
     /// The step saved in the plan for this exercise.
     var workoutStep: WorkoutStep {

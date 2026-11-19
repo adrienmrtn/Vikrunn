@@ -24,7 +24,7 @@ enum SampleData {
     static func runs(for plan: TrainingPlan?) -> [RunRecord] {
         let calendar = Calendar.plan
         let easy = plan?.paces.easy ?? 350
-        let samples: [(Int, Double, String)] = [(-2, 6.1, "Easy run"), (-4, 8.4, "6 × 800 m"), (-6, 12.2, "Long run"), (-9, 5.6, "Easy run"), (-11, 7.9, "Tempo")]
+        let samples: [(Int, Double, String)] = [(-2, 6.1, L("Easy run")), (-4, 8.4, "6 × 800 m"), (-6, 12.2, L("Long run")), (-9, 5.6, L("Easy run")), (-11, 7.9, L("Tempo"))]
         return samples.map { offset, km, title in
             RunRecord(title: title,
                       date: calendar.date(byAdding: .day, value: offset, to: Date()) ?? Date(),

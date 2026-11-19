@@ -60,7 +60,7 @@ struct RunSummaryView: View {
         .background(Color.white.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
             BottomBar {
-                PrimaryButton(title: "Done") { close() }
+                PrimaryButton(title: L("Done")) { close() }
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -86,10 +86,10 @@ struct RunSummaryView: View {
                 HStack(spacing: 14) {
                     IconTile(systemName: "lock.fill", size: 44)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Pace per kilometre and elevation")
+                        Text(L("Pace per kilometre and elevation"))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(Theme.ink)
-                        Text("See the detail of every run with Atala Pro")
+                        Text(L("See the detail of every run with Atala Pro"))
                             .font(.system(size: 13))
                             .foregroundStyle(Theme.muted)
                     }
@@ -125,15 +125,15 @@ struct RunSummaryView: View {
         let day = Fmt.day(shown.date)
         switch shown.source {
         case .gps: return day
-        case .manual: return "\(day) · Entered by hand"
-        case .health: return "\(day) · From Apple Health"
+        case .manual: return L("%@ · Entered by hand", day)
+        case .health: return L("%@ · From Apple Health", day)
         }
     }
 
     private var titleLine: String {
         let record = shown
-        let title = record.title.isEmpty ? "Run" : record.title
-        if let id = record.workoutID, store.workout(id: id) != nil { return "\(title), done" }
+        let title = record.title.isEmpty ? L("Run") : L(record.title)
+        if let id = record.workoutID, store.workout(id: id) != nil { return L("%@, done", title) }
         return title
     }
 
@@ -142,20 +142,20 @@ struct RunSummaryView: View {
     private func statsCard(_ analysis: RunAnalysis) -> some View {
         let columns: [GridItem] = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
         return LazyVGrid(columns: columns, alignment: .leading, spacing: 16) {
-            RunSummaryStat(value: RunFormat.distance(shown.distanceM), label: "Distance", large: true)
-            RunSummaryStat(value: Fmt.duration(shown.durationSec), label: "Duration", large: true)
-            RunSummaryStat(value: "\(Fmt.pace(shown.avgPace))/km", label: "Average pace", large: false)
+            RunSummaryStat(value: RunFormat.distance(shown.distanceM), label: L("Distance"), large: true)
+            RunSummaryStat(value: Fmt.duration(shown.durationSec), label: L("Duration"), large: true)
+            RunSummaryStat(value: "\(Fmt.pace(shown.avgPace))/km", label: L("Average pace"), large: false)
             if let heartRate = shown.avgHeartRate {
-                RunSummaryStat(value: "\(heartRate) bpm", label: "Average heart rate", large: false)
+                RunSummaryStat(value: "\(heartRate) bpm", label: L("Average heart rate"), large: false)
             }
             if let peak = shown.maxHeartRate {
-                RunSummaryStat(value: "\(peak) bpm", label: "Max heart rate", large: false)
+                RunSummaryStat(value: "\(peak) bpm", label: L("Max heart rate"), large: false)
             }
             if purchases.isPro, let gain = analysis.elevationGainM {
-                RunSummaryStat(value: "+\(gain) m", label: "Elevation gain", large: false)
+                RunSummaryStat(value: "+\(gain) m", label: L("Elevation gain"), large: false)
             }
             if purchases.isPro, let fastest = analysis.fastestSplit {
-                RunSummaryStat(value: "\(Fmt.pace(fastest.pace))/km", label: "Fastest kilometre", large: false)
+                RunSummaryStat(value: "\(Fmt.pace(fastest.pace))/km", label: L("Fastest kilometre"), large: false)
             }
         }
         .padding(18)
@@ -200,7 +200,7 @@ struct RunSummaryView: View {
                 )
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text("How it felt")
+                Text(L("How it felt"))
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.muted)
                 Text(feeling.title)
@@ -242,27 +242,24 @@ private struct RunSummaryStat: View {
 enum RunSummaryCoach {
     static func line(for run: RunRecord) -> String {
         if run.feeling == .pain {
-            return "Thank you for telling me. Rest for the next few days and skip anything that hurts. "
-                + "If it is still there after that, or if it gets worse, please see a health professional. "
-                + "I can lighten your plan in the meantime, just ask me."
+            return L("Thank you for telling me. Rest for the next few days and skip anything that hurts. If it is still there after that, or if it gets worse, please see a health professional. I can lighten your plan in the meantime, just ask me.")
         }
         let reps = run.splits.filter { $0.kind == .work && $0.distanceM > 0 }
         if reps.count >= 2 {
             return repsLine(reps, feeling: run.feeling)
         }
         if run.distanceM < 50 {
-            return "No distance was recorded this time (location off, or an indoor run). "
-                + "Your time, \(Fmt.duration(run.durationSec)), still counts."
+            return L("No distance was recorded this time (location off, or an indoor run). Your time, %@, still counts.", Fmt.duration(run.durationSec))
         }
         let distance = RunFormat.distance(run.distanceM)
         let pace = Fmt.pace(run.avgPace)
         switch run.feeling {
         case .some(.easy):
-            return "That looked comfortable: \(distance) at \(pace)/km. Exactly how an easy day should feel."
+            return L("That looked comfortable: %@ at %@/km. Exactly how an easy day should feel.", distance, pace)
         case .some(.hard):
-            return "A tough one, and you saw it through: \(distance). Sleep well and keep the next run really easy."
+            return L("A tough one, and you saw it through: %@. Sleep well and keep the next run really easy.", distance)
         default:
-            return "\(distance) in \(Fmt.duration(run.durationSec)), at \(pace)/km. One more in the bank."
+            return L("%@ in %@, at %@/km. One more in the bank.", distance, Fmt.duration(run.durationSec), pace)
         }
     }
 
@@ -275,20 +272,20 @@ enum RunSummaryCoach {
 
         var text: String
         if onTarget == reps.count {
-            text = "\(reps.count) steady reps, all on target"
-            text += lastIsFastest ? ", and the last one was your fastest." : ". Rep \(fastestNumber) was your fastest."
+            text = lastIsFastest
+                ? L("%@ steady reps, all on target, and the last one was your fastest.", reps.count)
+                : L("%@ steady reps, all on target. Rep %@ was your fastest.", reps.count, fastestNumber)
         } else if onTarget * 2 >= reps.count {
-            text = "\(onTarget) of \(reps.count) reps on target. "
-            text += lastIsFastest
-                ? "You finished with your fastest one, a good sign."
-                : "Rep \(fastestNumber) was your fastest. Next time, aim for the same pace from first to last."
+            text = lastIsFastest
+                ? L("%@ of %@ reps on target. You finished with your fastest one, a good sign.", onTarget, reps.count)
+                : L("%@ of %@ reps on target. Rep %@ was your fastest. Next time, aim for the same pace from first to last.", onTarget, reps.count, fastestNumber)
         } else {
-            text = "The pace was hard to hold today, and that happens. We will come back to it with fresh legs."
+            text = L("The pace was hard to hold today, and that happens. We will come back to it with fresh legs.")
         }
         if feeling == .hard {
-            text += " It cost you a lot, so the next run stays really easy."
+            text += " " + L("It cost you a lot, so the next run stays really easy.")
         } else {
-            text += " Keep your next run easy to recover."
+            text += " " + L("Keep your next run easy to recover.")
         }
         return text
     }

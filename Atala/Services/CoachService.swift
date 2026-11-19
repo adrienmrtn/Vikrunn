@@ -152,6 +152,7 @@ enum CoachService {
             "firstName": store.firstName,
             "coachName": store.coach.name,
             "tone": store.answers.tone.rawValue,
+            "language": AppLanguage.current,
             "today": dayString(today),
             "weekday": weekdayName(today),
             "workouts": workouts,

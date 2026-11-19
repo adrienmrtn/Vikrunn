@@ -25,7 +25,7 @@ struct CoachChatProposalCard: View {
         let lines = self.lines
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Text("Plan change")
+                Text(L("Plan change"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Theme.muted)
                 Spacer(minLength: 8)
@@ -43,7 +43,7 @@ struct CoachChatProposalCard: View {
 
             if proposal.status == .pending {
                 if lines.isEmpty {
-                    Text("This suggestion has expired: your plan has changed since.")
+                    Text(L("This suggestion has expired: your plan has changed since."))
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.muted)
                 } else {
@@ -57,10 +57,10 @@ struct CoachChatProposalCard: View {
                     buttons
                 }
             } else if proposal.status == .applied {
-                stateLabel("Applied. Your plan is up to date in Plan and Today.",
+                stateLabel(L("Applied. Your plan is up to date in Plan and Today."),
                            symbol: "checkmark.circle.fill", color: Theme.green)
             } else {
-                stateLabel("Plan kept. Nothing was changed.", symbol: "minus.circle", color: Theme.muted)
+                stateLabel(L("Plan kept. Nothing was changed."), symbol: "minus.circle", color: Theme.muted)
             }
         }
         .padding(14)
@@ -81,9 +81,9 @@ struct CoachChatProposalCard: View {
         case .pending:
             EmptyView()
         case .applied:
-            pill("Applied", symbol: "checkmark", tint: Theme.green, background: Theme.greenTint)
+            pill(L("Applied"), symbol: "checkmark", tint: Theme.green, background: Theme.greenTint)
         case .declined:
-            pill("Plan kept", symbol: "minus", tint: Theme.muted, background: Theme.surface)
+            pill(L("Plan kept"), symbol: "minus", tint: Theme.muted, background: Theme.surface)
         }
     }
 
@@ -121,7 +121,7 @@ struct CoachChatProposalCard: View {
             Image(systemName: "arrow.right")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Theme.ink)
-                .accessibilityLabel("becomes")
+                .accessibilityLabel(L("becomes"))
             box(day: line.afterDay, title: line.afterTitle, dot: Theme.orange, background: Theme.orangeTint)
         }
     }
@@ -179,7 +179,7 @@ struct CoachChatProposalCard: View {
     private var buttons: some View {
         HStack(spacing: 8) {
             Button(action: { apply() }) {
-                Text("Apply")
+                Text(L("Apply"))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
@@ -189,7 +189,7 @@ struct CoachChatProposalCard: View {
             }
             .buttonStyle(.plain)
             Button(action: { keep() }) {
-                Text("Keep my plan")
+                Text(L("Keep my plan"))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                     .frame(maxWidth: .infinity)
@@ -245,7 +245,7 @@ struct CoachChatProposalCard: View {
         let beforeDay = CoachChatPlanText.day(workout.date)
         if change.remove {
             return CoachChatChangeLine(id: change.id, beforeDay: beforeDay, beforeTitle: before,
-                                       afterDay: beforeDay, afterTitle: "Removed", removed: false, note: "")
+                                       afterDay: beforeDay, afterTitle: L("Removed"), removed: false, note: "")
         }
         let after = CoachChatPlanText.detail(title: change.newTitle ?? workout.title,
                                              kind: change.newKind ?? workout.kind,
@@ -264,21 +264,21 @@ struct CoachChatProposalCard: View {
         }
         if change.remove {
             return CoachChatChangeLine(id: change.id, beforeDay: previousDay, beforeTitle: "",
-                                       afterDay: previousDay, afterTitle: change.previousDetail ?? "Session",
-                                       removed: true, note: "Removed from your plan")
+                                       afterDay: previousDay, afterTitle: change.previousDetail ?? L("Session"),
+                                       removed: true, note: L("Removed from your plan"))
         }
         guard let workout = store.workout(id: change.workoutID) else { return nil }
         let now = CoachChatPlanText.detail(of: workout)
         var notes: [String] = []
         if let date = change.previousDate, !Calendar.plan.isDate(date, inSameDayAs: workout.date) {
-            notes.append("Moved from \(previousDay)")
+            notes.append(L("Moved from %@", previousDay))
         }
         if let detail = change.previousDetail, detail != now {
-            notes.append("Was \(detail)")
+            notes.append(L("Was %@", detail))
         }
         return CoachChatChangeLine(id: change.id, beforeDay: previousDay, beforeTitle: change.previousDetail ?? "",
                                    afterDay: CoachChatPlanText.day(workout.date), afterTitle: now,
-                                   removed: false, note: notes.isEmpty ? "Updated" : notes.joined(separator: " · "))
+                                   removed: false, note: notes.isEmpty ? L("Updated") : notes.joined(separator: " · "))
     }
 }
 

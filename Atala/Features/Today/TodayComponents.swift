@@ -10,7 +10,7 @@ struct TodaySessionCard: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
                 if restDay {
-                    Text("Rest day")
+                    Text(L("Rest day"))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(Theme.green)
                         .padding(.horizontal, 8)
@@ -39,7 +39,7 @@ struct TodaySessionCard: View {
             NavigationLink {
                 WorkoutDetailView(workoutID: workout.id)
             } label: {
-                Text("View session")
+                Text(L("View session"))
             }
             // Inside a scroll view: the haptic follows the tap, not the press.
             .buttonStyle(PrimaryButtonStyle(haptic: nil))
@@ -51,7 +51,7 @@ struct TodaySessionCard: View {
 
     private var caption: String {
         if isToday { return workout.kind.title }
-        return "Next · \(Fmt.day(workout.date, "EEEE d MMM")) · \(workout.kind.title)"
+        return L("Next · %@ · %@", Fmt.day(workout.date, "EEEE d MMM"), workout.kind.title)
     }
 }
 
@@ -134,7 +134,7 @@ struct TodayWeekStrip: View {
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(Weekday.long(offset + 1)) \(number), \(stateLabel(dayState))")
+        .accessibilityLabel(L("%@ %@, %@", Weekday.long(offset + 1), number, stateLabel(dayState)))
     }
 
     @ViewBuilder
@@ -159,10 +159,10 @@ struct TodayWeekStrip: View {
 
     private func stateLabel(_ dayState: DayState) -> String {
         switch dayState {
-        case .none: return "no session"
-        case .planned: return "session planned"
-        case .done: return "done"
-        case .missed: return "missed"
+        case .none: return L("no session")
+        case .planned: return L("session planned")
+        case .done: return L("done")
+        case .missed: return L("missed")
         }
     }
 }
@@ -173,7 +173,7 @@ struct TodayExtraSessions: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            MainSectionTitle(title: "Also today")
+            MainSectionTitle(title: L("Also today"))
             ForEach(workouts) { workout in
                 NavigationLink {
                     WorkoutDetailView(workoutID: workout.id)
@@ -219,10 +219,10 @@ struct TodayWeekVolume: View {
         let runsDone = runs.filter { $0.status == .done }.count
         let missed = week.workouts.filter { $0.status == .missed }.count
         VStack(alignment: .leading, spacing: 8) {
-            MainSectionTitle(title: "This week",
-                             trailing: "\(Self.number(done)) of \(Fmt.km(planned))")
+            MainSectionTitle(title: L("This week"),
+                             trailing: L("%@ of %@", Self.number(done), Fmt.km(planned)))
             MainProgressBar(fraction: planned > 0 ? done / planned : 0,
-                            tint: Theme.green, label: "Weekly volume")
+                            tint: Theme.green, label: L("Weekly volume"))
             Text(Self.summary(runsDone: runsDone, runs: runs.count, missed: missed))
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.muted)
@@ -234,9 +234,11 @@ struct TodayWeekVolume: View {
     }
 
     private static func summary(runsDone: Int, runs: Int, missed: Int) -> String {
-        var text = "\(runsDone) of \(runs) \(runs == 1 ? "run" : "runs") done"
-        if missed > 0 { text += " · \(missed) missed" }
-        return text
+        if missed > 0 {
+            return runs == 1 ? L("%@ of %@ run done · %@ missed", runsDone, runs, missed)
+                             : L("%@ of %@ runs done · %@ missed", runsDone, runs, missed)
+        }
+        return runs == 1 ? L("%@ of %@ run done", runsDone, runs) : L("%@ of %@ runs done", runsDone, runs)
     }
 }
 
@@ -276,16 +278,16 @@ struct TodayRaceCountdown: View {
 
     private func title(goal: GoalType, days: Int) -> String {
         switch days {
-        case 0: return "\(goal.title): race day is today"
-        case 1: return "\(goal.title) tomorrow"
-        default: return "\(goal.title) in \(days) days"
+        case 0: return L("%@: race day is today", goal.title)
+        case 1: return L("%@ tomorrow", goal.title)
+        default: return L("%@ in %@ days", goal.title, days)
         }
     }
 
     private func detail(plan: TrainingPlan, raceDate: Date) -> String {
-        var text = Fmt.day(raceDate, "EEEE d MMMM")
+        let text = Fmt.day(raceDate, "EEEE d MMMM")
         if let target = plan.targetSeconds {
-            text += " · goal \(Fmt.goalTime(target))"
+            return L("%@ · goal %@", text, Fmt.goalTime(target))
         }
         return text
     }

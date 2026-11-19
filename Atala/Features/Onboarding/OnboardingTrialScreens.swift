@@ -27,23 +27,28 @@ struct OnboardingTrialScreen: View {
     private var benefits: [String] {
         let weeks = store.plan?.weeks.count ?? PlanEngine.maxWeeks
         return [
-            "Your \(OnboardingCopy.weeks(weeks)) of plan, session by session",
-            "\(store.coach.name) to explain every run and answer your questions",
-            "Voice guidance during your runs",
+            L("Your %@ of plan, session by session", OnboardingCopy.weeks(weeks)),
+            L("%@ to explain every run and answer your questions", store.coach.name),
+            L("Voice guidance during your runs"),
         ]
+    }
+
+    /// The part between asterisks is the one shown in colour.
+    private var headline: (text: String, highlight: String?) {
+        OnboardingMarkedSentence.parse(L("That's why we really want you to try Atala Pro *for free.*"))
     }
 
     var body: some View {
         let list = benefits
         return OnboardingScaffold(buttonsVisible: stage >= Self.stageDelays.count) {
             CoachAvatar(coach: store.coach, size: 96)
-            OnboardingEmphasisText(text: "That's why we really want you to try Atala Pro for free.",
+            OnboardingEmphasisText(text: headline.text,
                                    size: 32,
                                    lineSpacing: 5,
-                                   highlight: "for free.",
+                                   highlight: headline.highlight,
                                    onFinished: { emphasised = true })
                 .accessibilityAddTraits(.isHeader)
-            Text("So we can reach your goal together. \(OnboardingPaywallOffer.trialDays) days, every feature, nothing to pay today.")
+            Text(L("So we can reach your goal together. %@ days, every feature, nothing to pay today.", OnboardingPaywallOffer.trialDays))
                 .font(.system(size: 17))
                 .foregroundStyle(Color(hex: 0x5A5A5A))
                 .lineSpacing(5)
@@ -90,18 +95,18 @@ struct OnboardingTimelineScreen: View {
     private var items: [OnboardingTimelineItem] {
         let days = OnboardingPaywallOffer.trialDays
         return [
-            OnboardingTimelineItem(id: 0, symbol: "lock.open.fill", color: Theme.green, title: "Today",
-                                   text: "You unlock everything: your full plan, your coach, voice guidance."),
-            OnboardingTimelineItem(id: 1, symbol: "figure.run", color: Theme.yellow, title: "During your trial",
-                                   text: "Run your first sessions with your coach and see how it feels."),
-            OnboardingTimelineItem(id: 2, symbol: "star.fill", color: Theme.orange, title: "In \(days) days",
-                                   text: "Your subscription starts and you carry on with Atala. Cancel before and you pay nothing."),
+            OnboardingTimelineItem(id: 0, symbol: "lock.open.fill", color: Theme.green, title: L("Today"),
+                                   text: L("You unlock everything: your full plan, your coach, voice guidance.")),
+            OnboardingTimelineItem(id: 1, symbol: "figure.run", color: Theme.yellow, title: L("During your trial"),
+                                   text: L("Run your first sessions with your coach and see how it feels.")),
+            OnboardingTimelineItem(id: 2, symbol: "star.fill", color: Theme.orange, title: L("In %@ days", days),
+                                   text: L("Your subscription starts and you carry on with Atala. Cancel before and you pay nothing.")),
         ]
     }
 
     var body: some View {
         let list = items
-        return OnboardingScaffold(title: "How your free trial works",
+        return OnboardingScaffold(title: L("How your free trial works"),
                                   buttonsVisible: stage >= Self.stageDelays.count) {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(list) { item in

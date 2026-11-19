@@ -52,6 +52,18 @@ struct OnboardingWordFlowLayout: Layout {
     }
 }
 
+/// A translated sentence whose emphasised part sits between two asterisks, as in
+/// "Atala is *not just a coach.*": the sentence without the marks, and the part to highlight.
+/// Without exactly two asterisks, the whole sentence comes back and nothing is highlighted.
+enum OnboardingMarkedSentence {
+    static func parse(_ marked: String) -> (text: String, highlight: String?) {
+        let parts: [String] = marked.components(separatedBy: "*")
+        guard parts.count == 3 else { return (parts.joined(), nil) }
+        let phrase: String = parts[1].trimmingCharacters(in: .whitespaces)
+        return (parts.joined(), phrase.isEmpty ? nil : phrase)
+    }
+}
+
 /// Text that appears word by word, as if the coach were speaking. The full paragraph is laid out
 /// from the start, so nothing around it moves. `onFinished` is called once, after the last word.
 /// With Reduce Motion the text shows at once and `onFinished` is called immediately.

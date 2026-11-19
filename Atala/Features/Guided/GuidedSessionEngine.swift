@@ -3,8 +3,8 @@ import SwiftUI
 
 enum GuidedSide: String, Equatable {
     case left, right
-    var title: String { self == .left ? "Left leg" : "Right leg" }
-    var spoken: String { self == .left ? "left leg" : "right leg" }
+    var title: String { self == .left ? L("Left leg") : L("Right leg") }
+    var spoken: String { self == .left ? L("left leg") : L("right leg") }
 }
 
 enum GuidedSegmentKind: Equatable {

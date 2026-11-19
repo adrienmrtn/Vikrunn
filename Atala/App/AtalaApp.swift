@@ -42,6 +42,7 @@ struct AtalaApp: App {
 struct RootView: View {
     @EnvironmentObject private var store: AppStore
     @ObservedObject private var purchases = PurchaseService.shared
+    @ObservedObject private var language = LanguageModel.shared
     @Environment(\.scenePhase) private var scenePhase
     /// Not saved: a new process starts with the splash again.
     @State private var splashDone = false
@@ -77,6 +78,10 @@ struct RootView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.35), value: store.hasCompletedOnboarding)
+            // A new language rebuilds every screen, so each sentence is read again.
+            .id(language.code)
+            .environment(\.locale, AppLanguage.locale)
+            .environment(\.layoutDirection, AppLanguage.isRightToLeft ? .rightToLeft : .leftToRight)
             if !splashDone {
                 // The splash fades itself out, then asks to be removed.
                 AtalaSplashView(onFinished: { splashDone = true })
@@ -84,7 +89,7 @@ struct RootView: View {
             }
         }
         .authSyncPrompts()
-        .task(id: "\(store.answers.coachID)|\(scenePhase == .active)") {
+        .task(id: "\(store.answers.coachID)|\(language.code)|\(scenePhase == .active)") {
             // The coach's recorded voice in the app's language: downloaded once, then kept.
             VoicePack.prepare(coachID: store.answers.coachID)
         }

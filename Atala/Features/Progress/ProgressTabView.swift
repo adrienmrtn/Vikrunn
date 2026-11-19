@@ -41,7 +41,7 @@ struct ProgressTabView: View {
                 .mainStagedEntrance(.progress)
             }
             .background(Color.white)
-            .navigationTitle("Progress")
+            .navigationTitle(L("Progress"))
             .navigationBarTitleDisplayMode(.large)
         }
     }
@@ -53,8 +53,8 @@ struct ProgressTabView: View {
         let percent = settled.isEmpty ? "--" : "\(Int((Double(done) / Double(settled.count) * 100).rounded())) %"
         return HStack(alignment: .top, spacing: 8) {
             MainStat(value: String(format: "%.1f km/h", plan.vmaKmh), label: "VMA")
-            MainStat(value: "\(done) of \(settled.count)", label: "Sessions done")
-            MainStat(value: percent, label: "Consistency")
+            MainStat(value: L("%@ of %@", done, settled.count), label: L("Sessions done"))
+            MainStat(value: percent, label: L("Consistency"))
         }
         .padding(.top, 10)
         .overlay(alignment: .top) {
@@ -65,11 +65,11 @@ struct ProgressTabView: View {
     private var totalsRow: some View {
         let seconds = store.runs.reduce(0) { $0 + $1.durationSec }
         return VStack(alignment: .leading, spacing: 10) {
-            MainSectionTitle(title: "Totals")
+            MainSectionTitle(title: L("Totals"))
             HStack(alignment: .top, spacing: 8) {
-                MainStat(value: Fmt.km(store.totalKm), label: "Distance")
-                MainStat(value: "\(store.runs.count)", label: store.runs.count == 1 ? "Run" : "Runs")
-                MainStat(value: Fmt.minutes(seconds / 60), label: "Time running")
+                MainStat(value: Fmt.km(store.totalKm), label: L("Distance"))
+                MainStat(value: "\(store.runs.count)", label: store.runs.count == 1 ? L("Run") : L("Runs"))
+                MainStat(value: Fmt.minutes(seconds / 60), label: L("Time running"))
             }
         }
     }
@@ -88,10 +88,10 @@ private struct ProgressTabPredictionPanel: View {
                     level(plan: plan)
                 }
             } else {
-                Text("No prediction yet")
+                Text(L("No prediction yet"))
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(Theme.ink)
-                Text("Build your plan to see where you stand today and where it can take you.")
+                Text(L("Build your plan to see where you stand today and where it can take you."))
                     .font(.system(size: 13))
                     .foregroundStyle(Color(hex: 0x5A5A5A))
                     .fixedSize(horizontal: false, vertical: true)
@@ -106,7 +106,7 @@ private struct ProgressTabPredictionPanel: View {
     @ViewBuilder
     private func prediction(plan: TrainingPlan, current: Int) -> some View {
         let goal = plan.targetSeconds ?? plan.predictedSeconds
-        Text("\(plan.goal.title) · your level today")
+        Text(L("%@ · your level today", plan.goal.title))
             .font(.system(size: 13))
             .foregroundStyle(Color(hex: 0x5A5A5A))
         HStack(alignment: .firstTextBaseline) {
@@ -125,7 +125,7 @@ private struct ProgressTabPredictionPanel: View {
         }
         if let goal {
             MainProgressBar(fraction: current > 0 ? Double(goal) / Double(current) : 0,
-                            label: "Level compared with the goal")
+                            label: L("Level compared with the goal"))
                 .padding(.top, 4)
         }
         Text(footnote(plan: plan))
@@ -136,35 +136,35 @@ private struct ProgressTabPredictionPanel: View {
 
     @ViewBuilder
     private func level(plan: TrainingPlan) -> some View {
-        Text("Your level today")
+        Text(L("Your level today"))
             .font(.system(size: 13))
             .foregroundStyle(Color(hex: 0x5A5A5A))
         Text(String(format: "%.1f km/h", plan.vmaKmh))
             .font(.system(size: 38, weight: .bold))
             .tracking(-1.4)
             .foregroundStyle(Theme.ink)
-        Text("Estimated VMA · easy pace \(Fmt.pace(plan.paces.easy))/km")
+        Text(L("Estimated VMA · easy pace %@/km", Fmt.pace(plan.paces.easy)))
             .font(.system(size: 12))
             .foregroundStyle(Color(hex: 0x5A5A5A))
     }
 
     private func gapText(current: Int, goal: Int) -> String {
         let gap = current - goal
-        if gap <= 0 { return "Goal within reach" }
-        return "− \(Fmt.duration(gap)) to the goal"
+        if gap <= 0 { return L("Goal within reach") }
+        return L("− %@ to the goal", Fmt.duration(gap))
     }
 
     private func footnote(plan: TrainingPlan) -> String {
         if let target = plan.targetSeconds {
             if let predicted = plan.predictedSeconds, predicted != target {
-                return "Goal \(Fmt.goalTime(target)) · the plan aims for \(Fmt.goalTime(predicted)) on race day"
+                return L("Goal %@ · the plan aims for %@ on race day", Fmt.goalTime(target), Fmt.goalTime(predicted))
             }
-            return "Goal \(Fmt.goalTime(target))"
+            return L("Goal %@", Fmt.goalTime(target))
         }
         if let predicted = plan.predictedSeconds {
-            return "The plan aims for \(Fmt.goalTime(predicted)) at the end"
+            return L("The plan aims for %@ at the end", Fmt.goalTime(predicted))
         }
-        return "Your prediction sharpens as you log runs."
+        return L("Your prediction sharpens as you log runs.")
     }
 }
 
@@ -183,8 +183,8 @@ private struct ProgressTabVolumeChart: View {
         // Counted from the runs themselves, so it stays right once the plan is over.
         let thisWeek: Double = store.mainKmThisWeek
         VStack(alignment: .leading, spacing: 12) {
-            MainSectionTitle(title: "Weekly volume",
-                             trailing: "\(Self.number(thisWeek)) km this week")
+            MainSectionTitle(title: L("Weekly volume"),
+                             trailing: L("%@ km this week", Self.number(thisWeek)))
             HStack(alignment: .bottom, spacing: 10) {
                 ForEach(Array(plan.weeks.enumerated()), id: \.element.id) { index, week in
                     column(number: index + 1,
@@ -195,8 +195,8 @@ private struct ProgressTabVolumeChart: View {
                 }
             }
             HStack(spacing: 14) {
-                legend(color: plannedColor, title: "Planned")
-                legend(color: Theme.green, title: "Done")
+                legend(color: plannedColor, title: L("Planned"))
+                legend(color: Theme.green, title: L("Done"))
             }
         }
     }
@@ -215,7 +215,7 @@ private struct ProgressTabVolumeChart: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: chartHeight, alignment: .bottom)
-            Text("W\(number)")
+            Text(L("W%@", number))
                 .font(.system(size: 11, weight: isCurrent ? .semibold : .regular))
                 .foregroundStyle(isCurrent ? Theme.ink : Theme.muted)
                 .lineLimit(1)
@@ -223,7 +223,7 @@ private struct ProgressTabVolumeChart: View {
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Week \(number): \(Self.number(done)) of \(Self.number(planned)) kilometres")
+        .accessibilityLabel(L("Week %@: %@ of %@ kilometres", number, Self.number(done), Self.number(planned)))
     }
 
     private func legend(color: Color, title: String) -> some View {

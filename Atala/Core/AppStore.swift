@@ -163,7 +163,7 @@ final class AppStore: ObservableObject {
     // MARK: Coach and profile
 
     var coach: Coach { Coach.by(id: answers.coachID) }
-    var firstName: String { answers.firstName.isEmpty ? "Runner" : answers.firstName }
+    var firstName: String { answers.firstName.isEmpty ? L("Runner") : answers.firstName }
 
     // MARK: Plan
 

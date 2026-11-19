@@ -20,11 +20,11 @@ struct PlanTabWeekSection: View {
                 headerRow
             }
             .buttonStyle(.plain)
-            .accessibilityHint(isExpanded ? "Hides the sessions" : "Shows the sessions")
+            .accessibilityHint(isExpanded ? L("Hides the sessions") : L("Shows the sessions"))
             if isExpanded {
                 VStack(spacing: 0) {
                     if week.workouts.isEmpty {
-                        Text("No session this week.")
+                        Text(L("No session this week."))
                             .font(.system(size: 14))
                             .foregroundStyle(Theme.muted)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -72,30 +72,30 @@ struct PlanTabWeekSection: View {
     }
 
     private var collapsedSummary: String {
-        var text = Fmt.km(week.plannedKm)
         if hasStarted {
-            text += " · \(doneCount) of \(week.workouts.count)"
+            return L("%@ · %@ of %@", Fmt.km(week.plannedKm), doneCount, week.workouts.count)
         }
-        return text
+        return Fmt.km(week.plannedKm)
     }
 
     private var totalsText: String {
         let done = store.mainDoneKm(in: week)
         let doneText = abs(done - done.rounded()) < 0.05 ? "\(Int(done.rounded()))" : String(format: "%.1f", done)
-        var text = "\(doneText) of \(Fmt.km(week.plannedKm)) run · \(doneCount) of \(week.workouts.count) sessions done"
-        if missedCount > 0 { text += " · \(missedCount) missed" }
-        return text
+        if missedCount > 0 {
+            return L("%@ of %@ run · %@ of %@ sessions done · %@ missed", doneText, Fmt.km(week.plannedKm), doneCount, week.workouts.count, missedCount)
+        }
+        return L("%@ of %@ run · %@ of %@ sessions done", doneText, Fmt.km(week.plannedKm), doneCount, week.workouts.count)
     }
 
     // MARK: Rows
 
     private var headerRow: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text("Week \(number) · \(week.phase.title)")
+            Text(L("Week %@ · %@", number, week.phase.title))
                 .font(.system(size: isExpanded ? 17 : 15, weight: isExpanded ? .bold : .regular))
                 .foregroundStyle(titleColor)
             if isCurrent && !isExpanded {
-                Text("Now")
+                Text(L("Now"))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Theme.orangeDeep)
                     .padding(.horizontal, 7)
@@ -108,7 +108,7 @@ struct PlanTabWeekSection: View {
                     .foregroundStyle(Theme.yellowDeep)
                     .padding(5)
                     .background(Theme.yellowTint, in: Circle())
-                    .accessibilityLabel("Needs Atala Pro")
+                    .accessibilityLabel(L("Needs Atala Pro"))
             }
             Spacer(minLength: 8)
             Text(isExpanded ? Fmt.km(week.plannedKm) : collapsedSummary)
@@ -180,13 +180,13 @@ struct PlanTabSessionRow: View {
                 Image(systemName: "checkmark")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.green)
-                    .accessibilityLabel("Done")
+                    .accessibilityLabel(L("Done"))
             }
             if locked {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.yellowDeep)
-                    .accessibilityLabel("Needs Atala Pro")
+                    .accessibilityLabel(L("Needs Atala Pro"))
             } else {
                 Text(workout.mainAmountText)
                     .font(.system(size: 13, weight: isToday ? .semibold : .regular))

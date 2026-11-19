@@ -57,18 +57,18 @@ enum StreakEngine {
     }
 
     static func weeks(_ count: Int) -> String {
-        count == 1 ? "1 week" : "\(count) weeks"
+        count == 1 ? L("1 week") : L("%@ weeks", count)
     }
 
     /// One line that says what to do next.
     static func nudge(for streak: Streak) -> String {
         if streak.current == 0 {
-            return "Finish one session this week to start your streak."
+            return L("Finish one session this week to start your streak.")
         }
         if streak.activeThisWeek {
-            return "This week is in the bank. Show up next week to make it \(streak.current + 1)."
+            return L("This week is in the bank. Show up next week to make it %@.", streak.current + 1)
         }
-        return "One session this week keeps your streak alive."
+        return L("One session this week keeps your streak alive.")
     }
 }
 

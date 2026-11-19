@@ -117,7 +117,7 @@ struct GiftOfferView: View {
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
-                    .accessibilityLabel("Close")
+                    .accessibilityLabel(L("Close"))
                     .opacity(stage >= 4 ? 1 : 0)
                 }
                 .padding(.horizontal, 8)
@@ -135,10 +135,10 @@ struct GiftOfferView: View {
         .task {
             await play()
         }
-        .alert("We couldn't complete that", isPresented: errorShown) {
-            Button("OK", role: .cancel) {}
+        .alert(L("We couldn't complete that"), isPresented: errorShown) {
+            Button(L("OK"), role: .cancel) {}
         } message: {
-            Text(errorText ?? "Please try again.")
+            Text(errorText ?? L("Please try again."))
         }
     }
 
@@ -175,14 +175,14 @@ struct GiftOfferView: View {
 
     private var offer: some View {
         VStack(spacing: 14) {
-            Text("We have a gift for you, \(store.firstName)")
+            Text(L("We have a gift for you, %@", store.firstName))
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(Color.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
             if discountPercent > 0 {
-                Text("\(discountPercent)% OFF")
+                Text(L("%@% OFF", discountPercent))
                     .font(.system(size: 13, weight: .bold))
                     .kerning(1)
                     .foregroundStyle(Theme.forest)
@@ -191,13 +191,13 @@ struct GiftOfferView: View {
                     .background(Theme.yellow, in: Capsule())
             }
             VStack(spacing: 4) {
-                Text("Access your full plan for only")
+                Text(L("Access your full plan for only"))
                     .font(.system(size: 17))
                     .foregroundStyle(Theme.greenOnDark)
                 (Text(weeklyPrice).font(.system(size: 46, weight: .bold))
-                    + Text(" /week").font(.system(size: 20, weight: .semibold)))
+                    + Text(L(" /week")).font(.system(size: 20, weight: .semibold)))
                     .foregroundColor(Color.white)
-                (Text("Billed \(yearlyPrice) a year, instead of ")
+                (Text(L("Billed %@ a year, instead of ", yearlyPrice))
                     + Text(fullPrice).strikethrough()
                     + Text("."))
                     .font(.system(size: 15))
@@ -211,7 +211,7 @@ struct GiftOfferView: View {
     private var buttons: some View {
         VStack(spacing: 6) {
             Button(action: claim) {
-                Text(isBuying ? "One moment…" : "Claim my gift")
+                Text(isBuying ? L("One moment…") : L("Claim my gift"))
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(Theme.forest)
                     .frame(maxWidth: .infinity)
@@ -220,14 +220,14 @@ struct GiftOfferView: View {
             }
             .buttonStyle(.plain)
             .disabled(isBuying)
-            Button("No thanks", action: close)
+            Button(L("No thanks"), action: close)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color.white.opacity(0.85))
                 .frame(height: 44)
                 .disabled(isBuying)
             Text(gift != nil
-                 ? "Yearly subscription, no free trial. Renews automatically, cancel any time."
-                 : "Price shown as an example. Nothing is charged in this version.")
+                 ? L("Yearly subscription, no free trial. Renews automatically, cancel any time.")
+                 : L("Price shown as an example. Nothing is charged in this version."))
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.greenOnDark)
                 .multilineTextAlignment(.center)

@@ -17,27 +17,27 @@ struct RunFeelingScreen: View {
 
     private var stats: [SessionCompleteStat] {
         [
-            SessionCompleteStat(value: distanceM, label: "Distance",
+            SessionCompleteStat(value: distanceM, label: L("Distance"),
                                 format: { RunFormat.distance($0) }),
-            SessionCompleteStat(value: Double(durationSec), label: "Time",
+            SessionCompleteStat(value: Double(durationSec), label: L("Time"),
                                 format: { Fmt.duration(Int($0.rounded())) }),
-            SessionCompleteStat(value: Double(averagePace), label: "Average pace",
+            SessionCompleteStat(value: Double(averagePace), label: L("Average pace"),
                                 format: { "\(Fmt.pace(Int($0.rounded())))/km" }),
         ]
     }
 
     private var coachLine: String {
         feeling == .pain
-            ? "Thank you for telling me. Take it easy for the rest of the day."
-            : "Well done, that one is in the bank. How was it?"
+            ? L("Thank you for telling me. Take it easy for the rest of the day.")
+            : L("Well done, that one is in the bank. How was it?")
     }
 
     var body: some View {
-        SessionCompleteScreen(dataLine: "\(RunFormat.distance(distanceM)) in \(Fmt.duration(durationSec))",
+        SessionCompleteScreen(dataLine: L("%@ in %@", RunFormat.distance(distanceM), Fmt.duration(durationSec)),
                               stats: stats,
                               coach: coach,
                               coachLine: coachLine,
-                              buttonTitle: "See my summary",
+                              buttonTitle: L("See my summary"),
                               onPrimary: { onDone(feeling) }) {
             VStack(spacing: 9) {
                 ForEach(Feeling.allCases) { option in
@@ -47,7 +47,7 @@ struct RunFeelingScreen: View {
                         feeling = feeling == option ? nil : option
                     }
                 }
-                Text("Your answer helps tune your next sessions.")
+                Text(L("Your answer helps tune your next sessions."))
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.muted)
                     .multilineTextAlignment(.center)
@@ -58,7 +58,7 @@ struct RunFeelingScreen: View {
     }
 
     private func subtitle(for option: Feeling) -> String {
-        option == .pain ? "I'd rather tell \(coach.name)" : option.subtitle
+        option == .pain ? L("I'd rather tell %@", coach.name) : option.subtitle
     }
 }
 

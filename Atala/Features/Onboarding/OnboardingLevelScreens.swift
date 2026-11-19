@@ -15,17 +15,17 @@ enum OnboardingRunnerLevel: Equatable {
 
 /// Wording of the level screens.
 enum OnboardingLevelCopy {
-    static let beginnerHeadline = "Starting is the hardest part."
-    static let beginnerPraise = "You just did it."
-    static let beginnerPromise = "In a few months, you'll be fit, with better cardio than ever."
+    static var beginnerHeadline: String { L("Starting is the hardest part.") }
+    static var beginnerPraise: String { L("You just did it.") }
+    static var beginnerPromise: String { L("In a few months, you'll be fit, with better cardio than ever.") }
 
-    static let intermediateHeadline = "Tired of the same loop?"
-    static let intermediateBody = "Your plan changes every week: easy runs, intervals, long runs, strength."
-    static let intermediateClosing = "And I tell you why each one matters."
+    static var intermediateHeadline: String { L("Tired of the same loop?") }
+    static var intermediateBody: String { L("Your plan changes every week: easy runs, intervals, long runs, strength.") }
+    static var intermediateClosing: String { L("And I tell you why each one matters.") }
 
-    static let advancedHeadline = "More training isn't better training."
-    static let advancedBody = "I manage your load week by week, so you progress without overtraining."
-    static let advancedChartCaption = "Your weekly load builds, then eases off"
+    static var advancedHeadline: String { L("More training isn't better training.") }
+    static var advancedBody: String { L("I manage your load week by week, so you progress without overtraining.") }
+    static var advancedChartCaption: String { L("Your weekly load builds, then eases off") }
 }
 
 /// The coach's avatar and name above what they say.
@@ -39,7 +39,7 @@ private struct OnboardingLevelCoachHeader: View {
                 Text(coach.name)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Theme.ink)
-                Text("Your coach")
+                Text(L("Your coach"))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Theme.green)
             }
@@ -209,8 +209,8 @@ private struct OnboardingLevelLoadChart: View {
             }
             .frame(height: Self.height, alignment: .bottom)
             HStack(spacing: 14) {
-                legend("Build", color: Theme.green)
-                legend("Lighter week", color: Theme.greenTint)
+                legend(L("Build"), color: Theme.green)
+                legend(L("Lighter week"), color: Theme.greenTint)
             }
         }
         .padding(18)

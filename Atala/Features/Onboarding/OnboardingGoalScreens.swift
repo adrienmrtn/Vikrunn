@@ -17,7 +17,7 @@ struct OnboardingGoalScreen: View {
     }
 
     var body: some View {
-        OnboardingScaffold(title: "What's your goal?",
+        OnboardingScaffold(title: L("What's your goal?"),
                            canContinue: store.answers.goal != nil) {
             VStack(spacing: 9) {
                 ForEach(GoalType.allCases) { goal in
@@ -60,23 +60,23 @@ struct OnboardingRaceScreen: View {
     private var weeksNote: String {
         let noun = OnboardingCopy.goalNoun(store.answers.goal)
         if weeksAway <= 2 {
-            return "That's in \(OnboardingCopy.weeks(weeksAway)): very soon. I'll keep you fresh for your \(noun)."
+            return L("That's in %@: very soon. I'll keep you fresh for your %@.", OnboardingCopy.weeks(weeksAway), noun)
         }
-        return "That's in \(OnboardingCopy.weeks(weeksAway)): I'll build your whole plan towards that day."
+        return L("That's in %@: I'll build your whole plan towards that day.", OnboardingCopy.weeks(weeksAway))
     }
 
     var body: some View {
-        OnboardingScaffold(title: "A race in sight?",
+        OnboardingScaffold(title: L("A race in sight?"),
                            canContinue: hasRace != nil) {
             VStack(spacing: 9) {
-                OptionCard(title: "Yes, I have a date",
-                           subtitle: "I set the whole plan on race day",
+                OptionCard(title: L("Yes, I have a date"),
+                           subtitle: L("I set the whole plan on race day"),
                            selected: hasRace == true,
                            action: { choose(true) }) {
                     VignetteImage(name: "vignette_race_date")
                 }
-                OptionCard(title: "Not yet",
-                           subtitle: "We start with an 8-week plan",
+                OptionCard(title: L("Not yet"),
+                           subtitle: L("We start with an 8-week plan"),
                            selected: hasRace == false,
                            action: { choose(false) }) {
                     VignetteImage(name: "vignette_race_none")
@@ -92,7 +92,7 @@ struct OnboardingRaceScreen: View {
     private var dateField: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Race date")
+                Text(L("Race date"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                 HStack {
@@ -100,10 +100,10 @@ struct OnboardingRaceScreen: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(Theme.ink)
                     Spacer(minLength: 8)
-                    DatePicker("Race date", selection: dateBinding, in: range, displayedComponents: .date)
+                    DatePicker(L("Race date"), selection: dateBinding, in: range, displayedComponents: .date)
                         .labelsHidden()
                         .datePickerStyle(.compact)
-                        .environment(\.locale, Locale(identifier: "en_US"))
+                        .environment(\.locale, AppLanguage.locale)
                         .environment(\.calendar, Calendar.plan)
                 }
                 .padding(.horizontal, 16)
@@ -118,7 +118,7 @@ struct OnboardingRaceScreen: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Theme.green)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("A plan covers \(PlanEngine.maxWeeks) weeks at most. If your race is further away, choose \"Not yet\": we start building now.")
+            Text(L("A plan covers %@ weeks at most. If your race is further away, choose \"Not yet\": we start building now.", PlanEngine.maxWeeks))
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.muted)
                 .lineSpacing(3)
@@ -166,11 +166,11 @@ struct OnboardingWhyScreen: View {
 
     private var title: String {
         switch store.answers.goal ?? .regular {
-        case .fiveK: return "Why this 5K?"
-        case .tenK: return "Why this 10K?"
-        case .half: return "Why this half marathon?"
-        case .regular: return "Why do you want to run regularly?"
-        case .shape: return "Why do you want to get in shape?"
+        case .fiveK: return L("Why this 5K?")
+        case .tenK: return L("Why this 10K?")
+        case .half: return L("Why this half marathon?")
+        case .regular: return L("Why do you want to run regularly?")
+        case .shape: return L("Why do you want to get in shape?")
         }
     }
 

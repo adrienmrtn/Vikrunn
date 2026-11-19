@@ -73,8 +73,8 @@ enum RunReminders {
                 // Free plan, after the free week: one nudge ever, then silence.
                 guard !UserDefaults.standard.bool(forKey: lockNudgeKey) else { break }
                 UserDefaults.standard.set(true, forKey: lockNudgeKey)
-                content.title = "Your plan is waiting"
-                content.body = "\(workout.title) is next. Unlock Atala Pro and pick up where you left off."
+                content.title = L("Your plan is waiting")
+                content.body = L("%@ is next. Unlock Atala Pro and pick up where you left off.", workout.title)
             } else {
                 content.title = title(for: workout)
                 content.body = body(for: workout, coach: coach)
@@ -91,25 +91,25 @@ enum RunReminders {
     /// "Easy run · 5 km today"
     private static func title(for workout: Workout) -> String {
         if workout.kind.isRun, workout.distanceKm > 0 {
-            return "\(workout.title) · \(Fmt.km(workout.distanceKm)) today"
+            return L("%@ · %@ today", workout.title, Fmt.km(workout.distanceKm))
         }
-        return "\(workout.title) today"
+        return L("%@ today", workout.title)
     }
 
     private static func body(for workout: Workout, coach: String) -> String {
         switch workout.kind {
         case .easy, .free:
-            return "\(coach) here. Keep it easy today: you should be able to talk the whole way."
+            return L("%@ here. Keep it easy today: you should be able to talk the whole way.", coach)
         case .long:
-            return "\(coach) here. Long run day: slow and steady, the distance does the work."
+            return L("%@ here. Long run day: slow and steady, the distance does the work.", coach)
         case .intervals, .tempo, .racePace:
-            return "\(coach) here. A quality session today. Warm up well, I'll guide you through it."
+            return L("%@ here. A quality session today. Warm up well, I'll guide you through it.", coach)
         case .race:
-            return "\(coach) here. This is your day. Start calm and trust your training."
+            return L("%@ here. This is your day. Start calm and trust your training.", coach)
         case .strength:
-            return "\(coach) here. A short strength session today: it keeps you running without pain."
+            return L("%@ here. A short strength session today: it keeps you running without pain.", coach)
         case .stretching:
-            return "\(coach) here. A few minutes of stretching today, your legs will thank you."
+            return L("%@ here. A few minutes of stretching today, your legs will thank you.", coach)
         }
     }
 }

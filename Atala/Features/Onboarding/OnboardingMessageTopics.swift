@@ -9,20 +9,20 @@ struct OnboardingChatTopic: Identifiable, Equatable {
     /// The answer ends with the "Plan change" card (Apply / Keep my plan).
     let opensPlanChange: Bool
 
-    static let opening = "Ask me anything, any time. Try one of the questions below."
-    static let proposalLine = "No problem. Here is what I suggest:"
-    static let closingLine = "That's how it works. You always have the last word."
+    static var opening: String { L("Ask me anything, any time. Try one of the questions below.") }
+    static var proposalLine: String { L("No problem. Here is what I suggest:") }
+    static var closingLine: String { L("That's how it works. You always have the last word.") }
 
     /// The questions offered, in the order of the choices. The last one is the live example: its
     /// wording follows the days the user ticked ("I can't run this Thursday").
     static func all(example: OnboardingPlanChangeExample) -> [OnboardingChatTopic] {
         [
-            OnboardingChatTopic(id: 0, question: "How should I warm up today?", answers: [
-                "Five minutes of easy jogging, then leg swings, high knees and a few relaxed strides.",
-                "Before a hard session, add two short accelerations so your first rep doesn't come as a shock.",
+            OnboardingChatTopic(id: 0, question: L("How should I warm up today?"), answers: [
+                L("Five minutes of easy jogging, then leg swings, high knees and a few relaxed strides."),
+                L("Before a hard session, add two short accelerations so your first rep doesn't come as a shock."),
             ], opensPlanChange: false),
-            OnboardingChatTopic(id: 1, question: "What if I miss a session?", answers: [
-                "Nothing breaks. It's simply marked as missed, and the rest of your plan stays as it is.",
+            OnboardingChatTopic(id: 1, question: L("What if I miss a session?"), answers: [
+                L("Nothing breaks. It's simply marked as missed, and the rest of your plan stays as it is."),
             ], opensPlanChange: false),
             OnboardingChatTopic(id: 2, question: example.userLine, answers: [
                 proposalLine,
@@ -63,7 +63,7 @@ struct OnboardingTypingBubble: View {
         .padding(.horizontal, 14)
         .frame(height: 38)
         .background(Color(hex: 0xE9E9EB), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .accessibilityLabel("Typing")
+        .accessibilityLabel(L("Typing"))
     }
 }
 
@@ -76,7 +76,7 @@ struct OnboardingQuestionChips: View {
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 8) {
-            Text("Tap a question to ask it")
+            Text(L("Tap a question to ask it"))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.muted)
             ForEach(topics) { topic in
@@ -96,7 +96,7 @@ struct OnboardingQuestionChips: View {
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .accessibilityHint("Sends this question to your coach")
+                .accessibilityHint(L("Sends this question to your coach"))
             }
         }
         .frame(maxWidth: .infinity, alignment: .trailing)

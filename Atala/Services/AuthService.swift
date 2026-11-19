@@ -19,16 +19,16 @@ enum AuthError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .cancelled: return "Sign-in was cancelled."
-        case .notConfigured: return "Sign-in isn't available right now. Please try again later."
-        case .network: return "No connection. Check your network and try again."
-        case .invalidEmail: return "That e-mail address doesn't look right."
-        case .invalidCode: return "That code is wrong or has expired. Check it or ask for a new one."
-        case .tooManyAttempts: return "Too many attempts. Wait a minute and try again."
-        case .sessionExpired: return "Your session has expired. Please sign in again."
-        case .appleFailed: return "Sign in with Apple didn't work. Please try again."
-        case .googleFailed: return "Sign in with Google didn't work. Please try again."
-        case .providerUnavailable: return "This way of signing in isn't switched on yet. Please use another one."
+        case .cancelled: return L("Sign-in was cancelled.")
+        case .notConfigured: return L("Sign-in isn't available right now. Please try again later.")
+        case .network: return L("No connection. Check your network and try again.")
+        case .invalidEmail: return L("That e-mail address doesn't look right.")
+        case .invalidCode: return L("That code is wrong or has expired. Check it or ask for a new one.")
+        case .tooManyAttempts: return L("Too many attempts. Wait a minute and try again.")
+        case .sessionExpired: return L("Your session has expired. Please sign in again.")
+        case .appleFailed: return L("Sign in with Apple didn't work. Please try again.")
+        case .googleFailed: return L("Sign in with Google didn't work. Please try again.")
+        case .providerUnavailable: return L("This way of signing in isn't switched on yet. Please use another one.")
         case .server(let message): return message
         }
     }
@@ -241,7 +241,7 @@ final class AuthService: ObservableObject {
             }
             guard response.isSuccess else {
                 if response.status == 401 { throw AuthError.sessionExpired }
-                throw AuthError.server("We couldn't delete your account. Please try again in a moment.")
+                throw AuthError.server(L("We couldn't delete your account. Please try again in a moment."))
             }
         }
         sessionExpired = false
@@ -275,7 +275,7 @@ final class AuthService: ObservableObject {
         case "email_address_invalid":
             return .invalidEmail
         case "email_address_not_authorized":
-            return .server("We can't send a code to this address yet. Please use Apple or Google for now.")
+            return .server(L("We can't send a code to this address yet. Please use Apple or Google for now."))
         case "provider_disabled", "email_provider_disabled", "otp_disabled", "signup_disabled",
              "oauth_provider_not_supported":
             return .providerUnavailable
@@ -289,9 +289,9 @@ final class AuthService: ObservableObject {
             return .providerUnavailable
         }
         if response.status >= 500 {
-            return .server("Our server is having a moment. Please try again shortly.")
+            return .server(L("Our server is having a moment. Please try again shortly."))
         }
-        return .server("That didn't work (\(response.status)). Please try again.")
+        return .server(L("That didn't work (%@). Please try again.", response.status))
     }
 
     static func map(_ error: Error) -> AuthError {
@@ -303,7 +303,7 @@ final class AuthService: ObservableObject {
             case .http(let status, _):
                 if status == 429 { return .tooManyAttempts }
                 if status == 401 { return .sessionExpired }
-                return .server("That didn't work (\(status)). Please try again.")
+                return .server(L("That didn't work (%@). Please try again.", status))
             }
         }
         return .network

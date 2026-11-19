@@ -160,20 +160,20 @@ final class PurchaseService: ObservableObject {
         guard started,
               let offerings = try? await Purchases.shared.offerings(),
               let package = Self.package(for: plan, in: offerings) else {
-            return .failed("The subscription is not available right now. Please try again in a moment.")
+            return .failed(L("The subscription is not available right now. Please try again in a moment."))
         }
         do {
             let result = try await Purchases.shared.purchase(package: package)
             if result.userCancelled { return .cancelled }
             apply(result.customerInfo)
-            return isPro ? .purchased : .failed("The purchase went through but Atala Pro is not active yet. Tap Restore purchases in a moment.")
+            return isPro ? .purchased : .failed(L("The purchase went through but Atala Pro is not active yet. Tap Restore purchases in a moment."))
         } catch {
             // Some versions of the SDK report a cancelled purchase as an error.
             if (error as? ErrorCode) == .purchaseCancelledError { return .cancelled }
             return .failed(error.localizedDescription)
         }
         #else
-        return .failed("Subscriptions are not available in this build.")
+        return .failed(L("Subscriptions are not available in this build."))
         #endif
     }
 

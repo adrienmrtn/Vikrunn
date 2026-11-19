@@ -21,12 +21,13 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
     case planMatters = 40
     case ready = 41
     case notifications = 42
+    case language = 43
 
     /// The screens in the order they are shown. `levelRisk` (raw value 34) and `reminder` were
     /// removed from the flow: their raw values stay reserved and a step saved on one of them
     /// resumes on the next screen.
     static let order: [OnboardingStep] = [
-        .welcome,
+        .welcome, .language,
         .firstName, .intro, .coach, .hello, .gender, .experience, .volume, .recent, .health, .mirror,
         .levelIntro, .levelFocus,
         .goalIntro, .goal, .race, .target, .why, .coachReply, .consistency,
@@ -109,6 +110,9 @@ final class OnboardingNavigator: ObservableObject {
         switch candidate {
         case .levelRisk:
             return true
+        case .health:
+            // The health question is out of the flow for now (no injury or medical wording at sign-up).
+            return true
         case .recent:
             // Nothing to ask someone who does not run yet.
             return store.answers.weeklyVolume == .notYet
@@ -179,7 +183,7 @@ final class OnboardingNavigator: ObservableObject {
     /// on the experience, the race screens on the goal), so the remaining steps stay evenly spaced.
     private func isLeftOutOfBar(_ item: OnboardingStep, store: AppStore) -> Bool {
         switch item {
-        case .recent, .levelIntro, .levelFocus, .race, .target:
+        case .recent, .health, .levelIntro, .levelFocus, .race, .target:
             return isSkipped(item, store: store)
         default:
             return false
@@ -247,7 +251,7 @@ struct OnboardingFlowHeader: View {
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
-            .accessibilityLabel("Back")
+            .accessibilityLabel(L("Back"))
             .padding(.leading, -12)
             .opacity(showsBack ? 1 : 0)
             .allowsHitTesting(showsBack)
@@ -341,6 +345,7 @@ struct OnboardingStepHost: View {
     @ViewBuilder private var profileScreens: some View {
         switch step {
         case .welcome: OnboardingWelcomeScreen()
+        case .language: OnboardingLanguageScreen()
         case .firstName: OnboardingFirstNameScreen()
         case .intro: OnboardingIntroScreen()
         case .coach: OnboardingCoachScreen()

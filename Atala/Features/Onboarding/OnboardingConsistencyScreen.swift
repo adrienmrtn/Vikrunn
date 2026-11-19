@@ -7,10 +7,11 @@ struct OnboardingConsistencyScreen: View {
     @State private var logoShown = false
     @State private var finished = false
 
-    private static let headline = "Being consistent is hard."
-    private static let promise = "That's why Atala exists: a coach in your pocket, always available, "
-        + "built to finally get you to your goal."
-    private static let promiseHighlight = "a coach in your pocket,"
+    private static var headline: String { L("Being consistent is hard.") }
+    /// The words between the two `*` are the highlighted ones: the markers stay in the translations.
+    private static var promise: String {
+        L("That's why Atala exists: *a coach in your pocket,* always available, built to finally get you to your goal.")
+    }
 
     /// The second sentence starts once the first one is lit.
     private static let promiseDelay: Double = 1.3
@@ -28,7 +29,6 @@ struct OnboardingConsistencyScreen: View {
                                    startDelay: 0.42)
             OnboardingEmphasisText(text: Self.promise,
                                    size: 26, lineSpacing: 6,
-                                   highlight: Self.promiseHighlight,
                                    wordInterval: 0.105,
                                    startDelay: Self.promiseDelay,
                                    onFinished: { finished = true })

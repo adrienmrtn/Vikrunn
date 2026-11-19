@@ -71,7 +71,7 @@ struct CoachChatTypingRow: View {
         }
         .onAppear { pulsing = true }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(coach.name) is writing")
+        .accessibilityLabel(L("%@ is writing", coach.name))
     }
 }
 
@@ -87,10 +87,10 @@ struct CoachChatEmptyState: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .bottom, spacing: 12) {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Ask \(coachName) anything")
+                    Text(L("Ask %@ anything", coachName))
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(Theme.ink)
-                    Text("Your plan, a session, your paces, a busy week or tired legs. Write whenever you need.")
+                    Text(L("Your plan, a session, your paces, a busy week or tired legs. Write whenever you need."))
                         .font(.system(size: 14))
                         .foregroundStyle(Theme.muted)
                         .lineSpacing(3)
@@ -106,7 +106,7 @@ struct CoachChatEmptyState: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Theme.green)
                     .accessibilityHidden(true)
-                Text("\(coachName) can suggest a change to your plan. Nothing moves until you tap Apply.")
+                Text(L("%@ can suggest a change to your plan. Nothing moves until you tap Apply.", coachName))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Theme.green)
                     .lineSpacing(2)

@@ -155,17 +155,17 @@ struct MainNextPlanButton: View {
     @State private var confirm = false
 
     var body: some View {
-        Button("Build my next plan") { confirm = true }
+        Button(L("Build my next plan")) { confirm = true }
             .buttonStyle(PrimaryButtonStyle())
-            .confirmationDialog("Build your next plan?", isPresented: $confirm, titleVisibility: .visible) {
-                Button("Build it with the same goal") {
+            .confirmationDialog(L("Build your next plan?"), isPresented: $confirm, titleVisibility: .visible) {
+                Button(L("Build it with the same goal")) {
                     Haptics.success()
                     store.mainBuildNextPlan()
                 }
-                Button("Change my goal first") { chrome.showProfile = true }
-                Button("Cancel", role: .cancel) {}
+                Button(L("Change my goal first")) { chrome.showProfile = true }
+                Button(L("Cancel"), role: .cancel) {}
             } message: {
-                Text("A new plan of up to \(PlanEngine.maxWeeks) weeks starts this week, from your level today. Your runs stay in your history.")
+                Text(L("A new plan of up to %@ weeks starts this week, from your level today. Your runs stay in your history.", PlanEngine.maxWeeks))
             }
     }
 }
@@ -198,18 +198,15 @@ struct MainPlanEndedCard: View {
     }
 
     private var title: String {
-        raceWasRun ? "Race done. Well run." : "Plan complete"
+        raceWasRun ? L("Race done. Well run.") : L("Plan complete")
     }
 
     private var message: String {
         let done = store.allWorkouts.filter { $0.status == .done }.count
         let total = store.allWorkouts.count
-        var text = "You did \(done) of the \(total) sessions of this plan."
         if raceWasRun {
-            text += " Take a few easy days, then start again whenever you are ready."
-        } else {
-            text += " Your next plan starts from your level today."
+            return L("You did %@ of the %@ sessions of this plan. Take a few easy days, then start again whenever you are ready.", done, total)
         }
-        return text
+        return L("You did %@ of the %@ sessions of this plan. Your next plan starts from your level today.", done, total)
     }
 }

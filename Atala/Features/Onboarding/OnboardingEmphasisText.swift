@@ -6,11 +6,14 @@ import SwiftUI
 /// `onFinished` is called once, after the last word. With Reduce Motion the sentence is bold at
 /// once and `onFinished` is called immediately.
 struct OnboardingEmphasisText: View {
+    /// The sentence. A phrase written between two `*` ("try Atala *for free* today") is the
+    /// highlighted one: the markers are not shown, and translations keep them around their own words.
     let text: String
     var size: CGFloat = 28
     var lineSpacing: CGFloat = 4
     var centered: Bool = false
-    /// Words of this phrase (first occurrence) take `highlightColor` once emphasised.
+    /// Words of this phrase (first occurrence) take `highlightColor` once emphasised. Not needed,
+    /// and ignored, when `text` carries `*` markers.
     var highlight: String? = nil
     var highlightColor: Color = Theme.green
     var restingWeight: Font.Weight = .light
@@ -26,12 +29,32 @@ struct OnboardingEmphasisText: View {
     @State private var lit = 0
     @State private var finished = false
 
+    /// `text` cut at its `*` markers: before, highlighted, after. nil without a pair of markers.
+    private var marked: [String]? {
+        let parts: [String] = text.components(separatedBy: "*")
+        return parts.count == 3 ? parts : nil
+    }
+
+    /// The sentence without its markers.
+    private var plainText: String {
+        text.replacingOccurrences(of: "*", with: "")
+    }
+
+    private static func split(_ value: String) -> [String] {
+        value.split(separator: " ").map { String($0) }
+    }
+
     private var words: [String] {
-        text.split(separator: " ").map { String($0) }
+        guard let marked else { return Self.split(plainText) }
+        return Self.split(marked[0]) + Self.split(marked[1]) + Self.split(marked[2])
     }
 
     /// Indices of the words of `highlight` inside `list`.
     private func highlightRange(in list: [String]) -> Range<Int> {
+        if let marked {
+            let start = Self.split(marked[0]).count
+            return start..<(start + Self.split(marked[1]).count)
+        }
         guard let highlight else { return 0..<0 }
         let phrase = highlight.split(separator: " ").map { String($0) }
         guard !phrase.isEmpty, phrase.count <= list.count else { return 0..<0 }
@@ -53,7 +76,7 @@ struct OnboardingEmphasisText: View {
         }
         .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(text)
+        .accessibilityLabel(plainText)
         .task {
             await sweep()
         }

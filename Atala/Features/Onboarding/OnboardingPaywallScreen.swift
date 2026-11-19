@@ -148,7 +148,7 @@ struct PaywallView: View {
             if restored {
                 onFinished()
             } else {
-                purchaseError = "No active Atala Pro subscription was found for this Apple Account."
+                purchaseError = L("No active Atala Pro subscription was found for this Apple Account.")
             }
         }
     }
@@ -158,20 +158,20 @@ struct PaywallView: View {
         let weeks = store.plan?.weeks.count ?? PlanEngine.maxWeeks
         return [
             OnboardingPaywallFeature(id: 0, symbol: "calendar",
-                                     title: "Your personal plan",
-                                     detail: "\(OnboardingCopy.weeks(weeks)) built around your days and your level"),
+                                     title: L("Your personal plan"),
+                                     detail: L("%@ built around your days and your level", OnboardingCopy.weeks(weeks))),
             OnboardingPaywallFeature(id: 1, symbol: "bubble.left.and.bubble.right.fill",
-                                     title: "\(store.coach.name), your coach, 24/7",
-                                     detail: "Ask anything, move a session, lighten a week"),
+                                     title: L("%@, your coach, 24/7", store.coach.name),
+                                     detail: L("Ask anything, move a session, lighten a week")),
             OnboardingPaywallFeature(id: 2, symbol: "waveform",
-                                     title: "Voice guidance on every run",
-                                     detail: "Your pace and your intervals, in your ears"),
+                                     title: L("Voice guidance on every run"),
+                                     detail: L("Your pace and your intervals, in your ears")),
             OnboardingPaywallFeature(id: 3, symbol: "figure.cooldown",
-                                     title: "Warm-ups, strength and stretching",
-                                     detail: "Guided sessions to help you stay injury-free"),
+                                     title: L("Warm-ups, strength and stretching"),
+                                     detail: L("Get every warm-up and stretch you need")),
             OnboardingPaywallFeature(id: 4, symbol: "chart.line.uptrend.xyaxis",
-                                     title: "Progress you can see",
-                                     detail: "Splits, elevation, personal bests and streaks"),
+                                     title: L("Progress you can see"),
+                                     detail: L("Splits, elevation, personal bests and streaks")),
         ]
     }
 
@@ -211,10 +211,10 @@ struct PaywallView: View {
             // The monthly card can go away once the real offers load: fall back to the yearly plan.
             if !offered { plan = .yearly }
         }
-        .alert("We couldn't complete that", isPresented: purchaseErrorShown) {
-            Button("OK", role: .cancel) {}
+        .alert(L("We couldn't complete that"), isPresented: purchaseErrorShown) {
+            Button(L("OK"), role: .cancel) {}
         } message: {
-            Text(purchaseError ?? "Please try again.")
+            Text(purchaseError ?? L("Please try again."))
         }
     }
 
@@ -237,7 +237,7 @@ struct PaywallView: View {
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
-            .accessibilityLabel("Close")
+            .accessibilityLabel(L("Close"))
             .opacity(closeShown ? 1 : 0)
             .allowsHitTesting(closeShown)
             .accessibilityHidden(!closeShown)
@@ -249,9 +249,9 @@ struct PaywallView: View {
 
     private var headline: some View {
         VStack(alignment: .leading, spacing: 8) {
-            (Text("\(store.firstName), finally get the ")
-                + Text("guidance").foregroundColor(Theme.green)
-                + Text(" you've been looking for."))
+            (Text(L("%@, finally get the ", store.firstName))
+                + Text(L("guidance")).foregroundColor(Theme.green)
+                + Text(L(" you've been looking for.")))
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(Theme.ink)
                 .lineSpacing(3)
@@ -289,27 +289,27 @@ struct PaywallView: View {
     private var offerCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             planCard(.yearly,
-                     title: "Yearly",
-                     price: "\(yearlyPerMonth) a month",
-                     detail: "\(yearlyPrice) billed yearly",
-                     badge: trialDays.map { "\($0) DAYS FREE" },
-                     saving: yearlySaving.map { "Save \($0)%" })
+                     title: L("Yearly"),
+                     price: L("%@ a month", yearlyPerMonth),
+                     detail: L("%@ billed yearly", yearlyPrice),
+                     badge: trialDays.map { L("%@ DAYS FREE", $0) },
+                     saving: yearlySaving.map { L("Save %@%", $0) })
             if showsMonthly {
                 planCard(.monthly,
-                         title: "Monthly",
-                         price: "\(monthPrice) a month",
-                         detail: "Billed every month, no free trial",
+                         title: L("Monthly"),
+                         price: L("%@ a month", monthPrice),
+                         detail: L("Billed every month, no free trial"),
                          badge: nil,
                          saving: nil)
             }
             Text(startsWithTrial
-                 ? "Cancel any time before the trial ends and you pay nothing."
-                 : "Renews automatically. Cancel any time in your App Store settings.")
+                 ? L("Cancel any time before the trial ends and you pay nothing.")
+                 : L("Renews automatically. Cancel any time in your App Store settings."))
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.body)
                 .fixedSize(horizontal: false, vertical: true)
             if !purchases.canPurchase {
-                Text("Prices shown as an example. Nothing is charged in this version.")
+                Text(L("Prices shown as an example. Nothing is charged in this version."))
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -376,10 +376,10 @@ struct PaywallView: View {
         VStack(spacing: 10) {
             Button(action: startTrial) {
                 VStack(spacing: 2) {
-                    Text(isBuying ? "One moment…" : (startsWithTrial ? "Start my free trial" : "Subscribe"))
+                    Text(isBuying ? L("One moment…") : (startsWithTrial ? L("Start my free trial") : L("Subscribe")))
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(Color.white)
-                    Text("Easy to cancel, at any time")
+                    Text(L("Easy to cancel, at any time"))
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.greenOnDark)
                 }
@@ -392,19 +392,19 @@ struct PaywallView: View {
             HStack(spacing: 6) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 11))
-                Text("Secured by the App Store")
+                Text(L("Secured by the App Store"))
                     .font(.system(size: 12))
                 if purchases.canPurchase {
                     Text("·")
                         .font(.system(size: 12))
-                    Button("Restore purchases", action: restorePurchases)
+                    Button(L("Restore purchases"), action: restorePurchases)
                         .font(.system(size: 12, weight: .semibold))
                         .disabled(isBuying)
                 }
             }
             .foregroundStyle(Theme.muted)
             // Apple asks for both links next to the price of a subscription.
-            Text("[Terms of use](https://vikstudios.com/atala/terms) · [Privacy policy](https://vikstudios.com/atala)")
+            Text(LocalizedStringKey(L("[Terms of use](https://vikstudios.com/atala/terms) · [Privacy policy](https://vikstudios.com/atala)")))
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.muted)
                 .tint(Theme.ink)

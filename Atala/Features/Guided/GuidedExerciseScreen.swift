@@ -3,27 +3,27 @@ import SwiftUI
 /// Words shown and spoken during a guided session.
 enum GuidedWording {
     static func position(_ exercise: GuidedPrescription, index: Int, count: Int) -> String {
-        "\(exercise.info.kind.title) · \(index + 1) of \(count)"
+        L("%@ · %@ of %@", exercise.info.kind.title, index + 1, count)
     }
 
     /// Short status on the right of the header.
     static func status(_ segment: GuidedSegment, _ exercise: GuidedPrescription) -> String {
         switch segment.kind {
-        case .getReady: return "Get ready"
-        case .switchSide: return "Switch sides"
-        case .rest: return "Rest"
+        case .getReady: return L("Get ready")
+        case .switchSide: return L("Switch sides")
+        case .rest: return L("Rest")
         case .work:
-            if exercise.sets > 1 { return "Set \(segment.setNumber) of \(exercise.sets)" }
-            return exercise.isTimed ? "Hold" : "At your pace"
+            if exercise.sets > 1 { return L("Set %@ of %@", segment.setNumber, exercise.sets) }
+            return exercise.isTimed ? L("Hold") : L("At your pace")
         }
     }
 
     /// Small line above the exercise name.
     static func eyebrow(_ segment: GuidedSegment, _ exercise: GuidedPrescription) -> String {
         switch segment.kind {
-        case .getReady: return segment.exerciseIndex == 0 ? "First up" : "Next"
-        case .switchSide: return "Other side"
-        case .rest: return "Next: set \(segment.setNumber + 1) of \(exercise.sets)"
+        case .getReady: return segment.exerciseIndex == 0 ? L("First up") : L("Next")
+        case .switchSide: return L("Other side")
+        case .rest: return L("Next: set %@ of %@", segment.setNumber + 1, exercise.sets)
         case .work: return exercise.info.muscles
         }
     }
@@ -32,8 +32,8 @@ enum GuidedWording {
     static func lines(_ segment: GuidedSegment, _ exercise: GuidedPrescription) -> [String] {
         switch segment.kind {
         case .getReady: return [exercise.info.summary]
-        case .switchSide: return ["Same thing on the other side. Take your time."]
-        case .rest: return ["Shake it out and breathe.", "Stop if anything hurts."]
+        case .switchSide: return [L("Same thing on the other side. Take your time.")]
+        case .rest: return [L("Shake it out and breathe."), L("Stop if anything hurts.")]
         case .work:
             let lines = exercise.isTimed ? exercise.info.cues + exercise.info.steps : exercise.info.cues
             return lines.isEmpty ? [exercise.info.summary] : lines
@@ -71,19 +71,27 @@ enum GuidedWording {
     static func announcement(_ segment: GuidedSegment, _ exercise: GuidedPrescription) -> String {
         switch segment.kind {
         case .getReady:
-            let lead = segment.exerciseIndex == 0 ? "First up" : "Next"
-            if let side = segment.side { return "\(lead): \(exercise.info.name), \(side.spoken)." }
-            return "\(lead): \(exercise.info.name)."
+            let first = segment.exerciseIndex == 0
+            if let side = segment.side {
+                return first ? L("First up: %@, %@.", exercise.info.name, side.spoken)
+                             : L("Next: %@, %@.", exercise.info.name, side.spoken)
+            }
+            return first ? L("First up: %@.", exercise.info.name) : L("Next: %@.", exercise.info.name)
         case .switchSide:
-            if let side = segment.side { return "Switch sides. \(side.title)." }
-            return "Switch sides."
+            if let side = segment.side { return L("Switch sides. %@.", side.title) }
+            return L("Switch sides.")
         case .rest:
-            return "Rest. \(segment.durationSec ?? exercise.restSec) seconds."
+            return L("Rest. %@ seconds.", segment.durationSec ?? exercise.restSec)
         case .work:
-            let lead = exercise.sets > 1 && segment.setNumber > 1 ? "Set \(segment.setNumber)." : "Go."
-            if let seconds = segment.durationSec { return "\(lead) Hold for \(seconds) seconds." }
-            if let reps = segment.reps { return "\(lead) \(reps) reps." }
-            return lead
+            let numbered = exercise.sets > 1 && segment.setNumber > 1
+            if let seconds = segment.durationSec {
+                return numbered ? L("Set %@. Hold for %@ seconds.", segment.setNumber, seconds)
+                                : L("Go. Hold for %@ seconds.", seconds)
+            }
+            if let reps = segment.reps {
+                return numbered ? L("Set %@. %@ reps.", segment.setNumber, reps) : L("Go. %@ reps.", reps)
+            }
+            return numbered ? L("Set %@.", segment.setNumber) : L("Go.")
         }
     }
 }
@@ -173,7 +181,7 @@ struct GuidedExerciseScreen: View {
                 HStack(spacing: 6) {
                     Image(systemName: "info.circle")
                         .font(.system(size: 14, weight: .semibold))
-                    Text("How to")
+                    Text(L("How to"))
                         .font(.system(size: 14, weight: .bold))
                 }
                 .foregroundStyle(Theme.ink)
@@ -186,7 +194,7 @@ struct GuidedExerciseScreen: View {
             .buttonStyle(.plain)
             .padding(.top, 7)
             .padding(.trailing, 12)
-            .accessibilityLabel("How to do this exercise")
+            .accessibilityLabel(L("How to do this exercise"))
         }
     }
 
@@ -226,10 +234,10 @@ struct GuidedExerciseScreen: View {
         if let remaining = engine.remainingSeconds {
             VStack(spacing: 8) {
                 GuidedTimerRing(progress: engine.segmentProgress, text: "\(remaining)",
-                                caption: remaining == 1 ? "second" : "seconds",
+                                caption: remaining == 1 ? L("second") : L("seconds"),
                                 tint: segment.kind == .work ? Theme.green : Theme.orange)
                 if segment.kind == .rest {
-                    Button("Skip rest") { engine.completeSegment() }
+                    Button(L("Skip rest")) { engine.completeSegment() }
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Theme.ink)
                         .frame(minWidth: 120, minHeight: 44)
@@ -243,7 +251,7 @@ struct GuidedExerciseScreen: View {
                         .monospacedDigit()
                         .tracking(-2)
                         .foregroundStyle(Theme.ink)
-                    Text("of \(reps) reps")
+                    Text(L("of %@ reps", reps))
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(Theme.muted)
                 }
@@ -254,7 +262,7 @@ struct GuidedExerciseScreen: View {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 15, weight: .bold))
-                        Text("Done")
+                        Text(L("Done"))
                             .font(.system(size: 17, weight: .semibold))
                     }
                     .foregroundStyle(.white)
@@ -262,7 +270,7 @@ struct GuidedExerciseScreen: View {
                     .background(Theme.green, in: Capsule())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Set done")
+                .accessibilityLabel(L("Set done"))
             }
         }
     }
@@ -271,7 +279,7 @@ struct GuidedExerciseScreen: View {
 
     private var controls: some View {
         HStack {
-            RunRoundButton(symbol: "backward.end.fill", label: "Previous exercise") {
+            RunRoundButton(symbol: "backward.end.fill", label: L("Previous exercise")) {
                 engine.previousExercise()
             }
             Spacer()
@@ -286,9 +294,9 @@ struct GuidedExerciseScreen: View {
                     .background(Theme.ink, in: Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Pause")
+            .accessibilityLabel(L("Pause"))
             Spacer()
-            RunRoundButton(symbol: "forward.end.fill", label: "Next exercise") {
+            RunRoundButton(symbol: "forward.end.fill", label: L("Next exercise")) {
                 engine.nextExercise()
             }
         }

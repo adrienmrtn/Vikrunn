@@ -32,44 +32,41 @@ struct OnboardingProjectionScreen: View {
     private func title(_ plan: TrainingPlan) -> String {
         let weeks = OnboardingCopy.weeks(plan.weeks.count)
         if plan.goal.isOpenEnded {
-            return "\(weeks) to make running a habit"
+            return L("%@ to make running a habit", weeks)
         }
         let gain = gainSeconds(plan)
         if gain >= 60 {
             let minutes = gain / 60
-            return "You can gain \(minutes) \(minutes == 1 ? "minute" : "minutes") in \(weeks)"
+            return minutes == 1 ? L("You can gain %@ minute in %@", minutes, weeks) : L("You can gain %@ minutes in %@", minutes, weeks)
         }
         if gain > 0 {
-            return "You can gain \(gain) seconds in \(weeks)"
+            return L("You can gain %@ seconds in %@", gain, weeks)
         }
-        return "\(weeks) to be ready for your \(OnboardingCopy.goalNoun(plan.goal))"
+        return L("%@ to be ready for your %@", weeks, OnboardingCopy.goalNoun(plan.goal))
     }
 
     private func endLabel(_ plan: TrainingPlan) -> String {
         if let race = plan.raceDate {
-            return "On \(Fmt.day(race, "d MMMM"))"
+            return L("On %@", Fmt.day(race, "d MMMM"))
         }
-        return "In \(OnboardingCopy.weeks(plan.weeks.count))"
+        return L("In %@", OnboardingCopy.weeks(plan.weeks.count))
     }
 
     private func verdict(_ plan: TrainingPlan) -> String {
         if plan.goal.isOpenEnded {
-            return "A steady build-up, never more than you can absorb"
+            return L("A steady build-up, never more than you can absorb")
         }
         if let target = plan.targetSeconds, let aimed = plan.predictedSeconds, aimed > target {
-            return "Ambitious: I aim for \(Fmt.goalTime(aimed)) first"
+            return L("Ambitious: I aim for %@ first", Fmt.goalTime(aimed))
         }
-        return "Realistic goal for your level"
+        return L("Realistic goal for your level")
     }
 
     private func note(_ plan: TrainingPlan) -> String {
-        let start: String
         if let result = store.answers.recentResult {
-            start = "I start from your \(OnboardingCopy.distanceName(result.distanceKm)) in \(Fmt.goalTime(result.seconds))"
-        } else {
-            start = "I start from what you told me about your running"
+            return L("I start from your %@ in %@ and build up gently, with strength and stretching every week.", OnboardingCopy.distanceName(result.distanceKm), Fmt.goalTime(result.seconds))
         }
-        return "\(start) and build up gently, with strength and stretching every week."
+        return L("I start from what you told me about your running and build up gently, with strength and stretching every week.")
     }
 
     // MARK: Pieces
@@ -92,7 +89,7 @@ struct OnboardingProjectionScreen: View {
         return VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(usesTimes ? "Today" : "First week")
+                    Text(usesTimes ? L("Today") : L("First week"))
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.greenOnDark)
                     Text(format(Int(startValue.rounded())))
@@ -111,7 +108,7 @@ struct OnboardingProjectionScreen: View {
                     .accessibilityHidden(true)
                 Spacer(minLength: 8)
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(usesTimes ? endLabel(plan) : "Biggest week")
+                    Text(usesTimes ? endLabel(plan) : L("Biggest week"))
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.greenOnDark)
                     OnboardingCountingValue(value: counted ? endValue : startValue, format: format)
@@ -148,13 +145,13 @@ struct OnboardingProjectionScreen: View {
         return HStack(spacing: 10) {
             statTile(index: 3, symbol: "calendar", target: Double(plan.weeks.count),
                      format: { "\($0)" },
-                     label: plan.weeks.count == 1 ? "week of plan" : "weeks of plan")
+                     label: plan.weeks.count == 1 ? L("week of plan") : L("weeks of plan"))
             statTile(index: 4, symbol: "figure.run", target: Double(sessions),
                      format: { "\($0)" },
-                     label: sessions == 1 ? "session a week" : "sessions a week")
+                     label: sessions == 1 ? L("session a week") : L("sessions a week"))
             statTile(index: 5, symbol: "chart.bar.fill", target: plan.peakKm,
                      format: { Fmt.km(Double($0), decimals: 0) },
-                     label: "the biggest week")
+                     label: L("the biggest week"))
         }
     }
 
@@ -199,17 +196,17 @@ struct OnboardingReview: Identifiable {
 
 // Reviews supplied by the team. They must come from real users: keep the wording they gave.
 enum OnboardingSampleReviews {
-    static let reviews: [OnboardingReview] = [
+    static var reviews: [OnboardingReview] { [
         OnboardingReview(id: 1,
-                         text: "I finally ran 10 km under 45 minutes with Atala. It helped so much.",
+                         text: L("I finally ran 10 km under 45 minutes with Atala. It helped so much."),
                          author: "Marie", photo: AtalaPhotos.woman),
         OnboardingReview(id: 2,
-                         text: "Atala helped me lose 10 kg in just a few months. I strongly recommend it.",
+                         text: L("Atala helped me lose 10 kg in just a few months. I strongly recommend it."),
                          author: "Thomas", photo: AtalaPhotos.man),
         OnboardingReview(id: 3,
-                         text: "A friend recommended Atala. I didn't know you could have a coach this good at this price.",
+                         text: L("A friend recommended Atala. I didn't know you could have a coach this good at this price."),
                          author: "Luis", photo: AtalaPhotos.trio),
-    ]
+    ] }
 }
 
 /// Screen 23: what runners say.
@@ -222,7 +219,7 @@ struct OnboardingReviewsScreen: View {
     }
 
     var body: some View {
-        OnboardingScaffold(title: "Runners love their Atala coach",
+        OnboardingScaffold(title: L("Runners love their Atala coach"),
                            buttonsVisible: stage >= Self.delays.count) {
             ratingHeader
                 .onboardingStaged(0, stage: stage)
