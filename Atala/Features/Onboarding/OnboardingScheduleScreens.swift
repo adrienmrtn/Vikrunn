@@ -145,7 +145,7 @@ struct OnboardingConstraintsScreen: View {
         case .pastInjury: return L("Your coach keeps it in mind")
         case .travel: return L("Tell your coach, sessions can move")
         case .treadmill: return L("You can log those runs by hand")
-        case .strength: return L("Good news: it protects you from injury")
+        case .strength: return L("Good news: it makes you a stronger runner")
         case .irregularSleep: return L("Easy runs stay truly easy")
         }
     }
@@ -164,7 +164,7 @@ struct OnboardingConstraintsScreen: View {
         OnboardingScaffold(title: L("Anything else to know?"),
                            subtitle: L("Optional.")) {
             VStack(spacing: 9) {
-                ForEach(Constraint.allCases) { constraint in
+                ForEach(Constraint.allCases.filter { $0 != .pastInjury }) { constraint in
                     OptionCard(title: constraint.title,
                                subtitle: subtitle(constraint),
                                selected: store.answers.constraints.contains(constraint),

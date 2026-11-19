@@ -168,7 +168,7 @@ struct PaywallView: View {
                                      detail: L("Your pace and your intervals, in your ears")),
             OnboardingPaywallFeature(id: 3, symbol: "figure.cooldown",
                                      title: L("Warm-ups, strength and stretching"),
-                                     detail: L("Guided sessions to help you stay injury-free")),
+                                     detail: L("Get every warm-up and stretch you need")),
             OnboardingPaywallFeature(id: 4, symbol: "chart.line.uptrend.xyaxis",
                                      title: L("Progress you can see"),
                                      detail: L("Splits, elevation, personal bests and streaks")),

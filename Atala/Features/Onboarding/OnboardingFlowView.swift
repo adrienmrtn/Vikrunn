@@ -110,6 +110,9 @@ final class OnboardingNavigator: ObservableObject {
         switch candidate {
         case .levelRisk:
             return true
+        case .health:
+            // The health question is out of the flow for now (no injury or medical wording at sign-up).
+            return true
         case .recent:
             // Nothing to ask someone who does not run yet.
             return store.answers.weeklyVolume == .notYet

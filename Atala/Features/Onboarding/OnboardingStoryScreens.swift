@@ -142,8 +142,8 @@ private struct OnboardingBeyondCoachPoint: Identifiable {
     let title: String
 
     static var all: [OnboardingBeyondCoachPoint] { [
-        OnboardingBeyondCoachPoint(id: 0, symbol: "shield.lefthalf.filled",
-                                   title: L("Prevent injuries")),
+        OnboardingBeyondCoachPoint(id: 0, symbol: "bolt.fill",
+                                   title: L("Run stronger, week after week")),
         OnboardingBeyondCoachPoint(id: 1, symbol: "figure.cooldown",
                                    title: L("Get every warm-up and stretch you need")),
         OnboardingBeyondCoachPoint(id: 2, symbol: "clock.badge.checkmark",
