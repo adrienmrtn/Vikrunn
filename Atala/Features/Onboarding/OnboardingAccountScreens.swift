@@ -122,11 +122,24 @@ struct OnboardingSignInScreen: View {
     }
 }
 
-/// Screen 25: staged loading while the plan is generated.
+/// Screen 25: staged loading while the plan is generated. The ring fills in one continuous,
+/// eased movement (its value is computed from the clock at every frame, never stepped), the
+/// checklist follows it, and the screen rests a moment on the finished ring before moving on.
 struct OnboardingLoadingScreen: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var nav: OnboardingNavigator
-    @State private var progress: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// When the ring started to fill. nil until the screen is on.
+    @State private var startedAt: Date?
+    /// The header, ring and lines have faded in.
+    @State private var appeared = false
+    /// The ring is full: the screen settles.
+    @State private var completed = false
+
+    /// Seconds the ring takes to fill.
+    private static let fillDuration: Double = 4.8
+    /// Seconds spent on the finished ring before the next screen.
+    private static let restDuration: Double = 0.9
 
     private var stages: [String] {
         let answers = store.answers
@@ -154,95 +167,154 @@ struct OnboardingLoadingScreen: View {
         return text
     }
 
+    /// 0...1 at `date`: slow start, steady middle, soft landing. Always moving forward.
+    private func progress(at date: Date) -> Double {
+        if completed { return 1 }
+        guard let startedAt else { return 0 }
+        let elapsed: Double = date.timeIntervalSince(startedAt)
+        let t: Double = min(max(elapsed / Self.fillDuration, 0), 1)
+        let eased: Double = t * t * (3 - 2 * t)
+        return 0.3 * t + 0.7 * eased
+    }
+
     var body: some View {
-        VStack(spacing: 26) {
-            BrandLogo(style: .full, height: 22)
-                .foregroundStyle(Theme.forest)
-            ring
-            VStack(spacing: 6) {
-                Text("\(Int((progress * 100).rounded())) %")
-                    .font(.system(size: 15, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.green)
-                Text(L("I'm building your plan"))
-                    .font(Theme.title(26))
-                    .foregroundStyle(Theme.ink)
-                    .accessibilityAddTraits(.isHeader)
-                Text(subtitle)
-                    .font(.system(size: 15))
-                    .foregroundStyle(Theme.muted)
-            }
-            .multilineTextAlignment(.center)
-            stageList
-            Spacer(minLength: 0)
+        TimelineView(.animation) { context in
+            content(progress: progress(at: context.date))
         }
         .padding(.horizontal, 28)
         .padding(.top, 48)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white.ignoresSafeArea())
         .task {
-            store.generatePlan()
-            let ticks = 80
-            for tick in 1...ticks {
-                try? await Task.sleep(nanoseconds: 55_000_000)
-                if Task.isCancelled { return }
-                withAnimation(.linear(duration: 0.06)) {
-                    progress = Double(tick) / Double(ticks)
-                }
-            }
-            try? await Task.sleep(nanoseconds: 450_000_000)
-            if Task.isCancelled { return }
-            nav.next(store)
+            await run()
         }
     }
 
-    private var ring: some View {
+    @MainActor
+    private func run() async {
+        store.generatePlan()
+        if reduceMotion {
+            appeared = true
+        } else {
+            withAnimation(.easeOut(duration: 0.5)) {
+                appeared = true
+            }
+        }
+        if startedAt == nil { startedAt = Date() }
+        try? await Task.sleep(nanoseconds: UInt64(Self.fillDuration * 1_000_000_000))
+        if Task.isCancelled { return }
+        withAnimation(.easeInOut(duration: 0.4)) {
+            completed = true
+        }
+        Haptics.success()
+        try? await Task.sleep(nanoseconds: UInt64(Self.restDuration * 1_000_000_000))
+        if Task.isCancelled { return }
+        nav.next(store)
+    }
+
+    private func content(progress: Double) -> some View {
+        let percent: Int = Int((progress * 100).rounded())
+        return VStack(spacing: 26) {
+            BrandLogo(style: .full, height: 22)
+                .foregroundStyle(Theme.forest)
+                .opacity(appeared ? 1 : 0)
+            ring(progress: progress, percent: percent)
+                .opacity(appeared ? 1 : 0)
+                .scaleEffect(appeared ? 1 : 0.94)
+            VStack(spacing: 6) {
+                Text("\(percent) %")
+                    .font(.system(size: 15, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.green)
+                    .accessibilityHidden(true)
+                Text(completed ? L("Your plan is ready") : L("I'm building your plan"))
+                    .font(Theme.title(26))
+                    .foregroundStyle(Theme.ink)
+                    .contentTransition(.opacity)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+                Text(subtitle)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .multilineTextAlignment(.center)
+            .opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : 8)
+            stageList(progress: progress)
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func ring(progress: Double, percent: Int) -> some View {
         ZStack {
             Circle()
                 .stroke(Theme.hairline, lineWidth: 8)
             Circle()
-                .trim(from: 0, to: max(0.01, progress))
+                .trim(from: 0, to: CGFloat(min(max(progress, 0.002), 1)))
                 .stroke(Theme.green, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             CoachAvatar(coach: store.coach, size: 136)
+                // A small breath when the ring closes.
+                .scaleEffect(completed && !reduceMotion ? 1.04 : 1)
+                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: completed)
         }
         .frame(width: 180, height: 180)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(L("Plan being built, %@ percent", Int((progress * 100).rounded())))
+        .accessibilityLabel(L("Plan being built, %@ percent", percent))
     }
 
-    private var stageList: some View {
-        let items = stages
+    private func stageList(progress: Double) -> some View {
+        let items: [String] = stages
+        let count: Double = Double(max(items.count, 1))
         return VStack(spacing: 0) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, text in
-                let done = progress >= Double(index + 1) / Double(items.count)
-                let active = !done && progress >= Double(index) / Double(items.count)
-                Divider().overlay(Theme.hairline)
-                HStack(spacing: 12) {
-                    stageMark(done: done)
-                    Text(text)
-                        .font(.system(size: 15, weight: active ? .semibold : .regular))
-                        .foregroundStyle(done || active ? Theme.ink : Theme.muted)
-                    Spacer(minLength: 0)
+                let done: Bool = progress >= Double(index + 1) / count
+                let active: Bool = !done && progress >= Double(index) / count
+                // Each line fades in a little after the one above it.
+                let entrance: Animation? = reduceMotion ? nil : Animation.easeOut(duration: 0.45).delay(0.15 + 0.09 * Double(index))
+                VStack(spacing: 0) {
+                    Divider().overlay(Theme.hairline)
+                    HStack(spacing: 12) {
+                        stageMark(done: done, active: active)
+                        // One weight for every state: the line never changes width.
+                        Text(text)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(done || active ? Theme.ink : Theme.faint)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .animation(.easeInOut(duration: 0.35), value: done || active)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(height: 50)
                 }
-                .frame(height: 50)
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : 10)
+                .animation(entrance, value: appeared)
             }
             Divider().overlay(Theme.hairline)
+                .opacity(appeared ? 1 : 0)
         }
     }
 
-    @ViewBuilder private func stageMark(done: Bool) -> some View {
-        if done {
+    /// Empty circle, then tinted while its step is running, then the tick grows into it. The
+    /// three marks stay in place, so nothing is inserted or removed.
+    private func stageMark(done: Bool, active: Bool) -> some View {
+        ZStack {
+            Circle()
+                .stroke(active ? Theme.green : Theme.controlBorder, lineWidth: 2)
+                .frame(width: 20, height: 20)
+                .opacity(done ? 0 : 1)
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 22))
                 .foregroundStyle(Theme.green)
-                .frame(width: 22, height: 22)
-                .transition(.scale.combined(with: .opacity))
-        } else {
-            Circle()
-                .stroke(Theme.controlBorder, lineWidth: 2)
-                .frame(width: 22, height: 22)
+                .scaleEffect(done ? 1 : 0.5)
+                .opacity(done ? 1 : 0)
         }
+        .frame(width: 22, height: 22)
+        .animation(.spring(response: 0.38, dampingFraction: 0.72), value: done)
+        .animation(.easeInOut(duration: 0.3), value: active)
+        .accessibilityHidden(true)
     }
 }
 
