@@ -227,7 +227,7 @@ private struct ProfileCoachSection: View {
         } header: {
             Text("Your coach")
         } footer: {
-            Text("The six coaches follow the same method. Only the face and the name change.")
+            Text("All coaches follow the same method. Only the face and the name change.")
         }
     }
 
