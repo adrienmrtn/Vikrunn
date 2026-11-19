@@ -67,6 +67,8 @@ struct BrandLogo: View {
 
 struct PrimaryButtonStyle: ButtonStyle {
     var enabled: Bool = true
+    /// Played when the button is pressed. Pass nil when the caller plays its own haptic.
+    var haptic: Haptics.Kind? = .confirm
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 16, weight: .semibold))
@@ -77,10 +79,13 @@ struct PrimaryButtonStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.85 : 1)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .modifier(HapticOnPress(isPressed: configuration.isPressed, kind: enabled ? haptic : nil))
     }
 }
 
 struct SecondaryButtonStyle: ButtonStyle {
+    /// Played when the button is pressed. Pass nil when the caller plays its own haptic.
+    var haptic: Haptics.Kind? = .tap
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 16, weight: .semibold))
@@ -90,17 +95,20 @@ struct SecondaryButtonStyle: ButtonStyle {
             .background(Color.white, in: Capsule())
             .overlay(Capsule().stroke(Theme.ink, lineWidth: 1))
             .opacity(configuration.isPressed ? 0.7 : 1)
+            .modifier(HapticOnPress(isPressed: configuration.isPressed, kind: haptic))
     }
 }
 
 struct PrimaryButton: View {
     let title: String
     var enabled: Bool = true
+    /// Played when the button is pressed (by the style). Pass nil when the action plays its own.
+    var haptic: Haptics.Kind? = .confirm
     let action: () -> Void
 
     var body: some View {
         Button(title, action: action)
-            .buttonStyle(PrimaryButtonStyle(enabled: enabled))
+            .buttonStyle(PrimaryButtonStyle(enabled: enabled, haptic: haptic))
             .disabled(!enabled)
     }
 }
@@ -175,7 +183,10 @@ struct OptionCard<Leading: View>: View {
     @ViewBuilder var leading: Leading
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            Haptics.select()
+            action()
+        }) {
             HStack(spacing: 14) {
                 leading
                 VStack(alignment: .leading, spacing: 2) {
@@ -239,7 +250,10 @@ struct ProgressHeader: View {
     var body: some View {
         HStack(spacing: 12) {
             if let onBack {
-                Button(action: onBack) {
+                Button(action: {
+                    Haptics.tap()
+                    onBack()
+                }) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(Theme.ink)
