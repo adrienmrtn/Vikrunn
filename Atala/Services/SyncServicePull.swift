@@ -184,6 +184,7 @@ extension SyncService {
             if let current = store.account, !current.isGuest, current.userID == account.userID,
                store.syncState.reconciled {
                 store.account = account
+                AuthService.shared.noteSignedIn()
                 _ = await runPull(store: store)
                 _ = await runPush(store: store)
                 return .continued
@@ -193,6 +194,7 @@ extension SyncService {
             store.syncTask?.cancel()
             store.syncTask = nil
             store.account = account
+            AuthService.shared.noteSignedIn()
             store.syncState = SyncState() // not matched yet: nothing is sent
             store.lastSyncedAt = nil
             return await reconcile(store: store, policy: policy, previous: previous)

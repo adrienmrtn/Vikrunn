@@ -285,6 +285,14 @@ struct PaywallView: View {
         }
     }
 
+    private var trialTerms: String {
+        if startsWithTrial, let days = trialDays {
+            return L("Free for %@ days, then %@ a year. Renews automatically. Cancel any time in your App Store settings.",
+                     days, yearlyPrice)
+        }
+        return L("Renews automatically. Cancel any time in your App Store settings.")
+    }
+
     /// The plans to choose from: yearly first and selected, monthly under it.
     private var offerCard: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -302,9 +310,8 @@ struct PaywallView: View {
                          badge: nil,
                          saving: nil)
             }
-            Text(startsWithTrial
-                 ? L("Cancel any time before the trial ends and you pay nothing.")
-                 : L("Renews automatically. Cancel any time in your App Store settings."))
+            // Apple asks for what is charged after a trial, and how to cancel, next to the price.
+            Text(trialTerms)
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.body)
                 .fixedSize(horizontal: false, vertical: true)
@@ -394,13 +401,11 @@ struct PaywallView: View {
                     .font(.system(size: 11))
                 Text(L("Secured by the App Store"))
                     .font(.system(size: 12))
-                if purchases.canPurchase {
-                    Text("·")
-                        .font(.system(size: 12))
-                    Button(L("Restore purchases"), action: restorePurchases)
-                        .font(.system(size: 12, weight: .semibold))
-                        .disabled(isBuying)
-                }
+                Text("·")
+                    .font(.system(size: 12))
+                Button(L("Restore purchases"), action: restorePurchases)
+                    .font(.system(size: 12, weight: .semibold))
+                    .disabled(isBuying)
             }
             .foregroundStyle(Theme.muted)
             // Apple asks for both links next to the price of a subscription.

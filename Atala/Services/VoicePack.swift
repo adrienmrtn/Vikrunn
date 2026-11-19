@@ -4,16 +4,18 @@ import Foundation
 /// Supabase (public bucket `coach-voice`); the app downloads the one it needs, once, and plays
 /// from the phone afterwards. Until a pack is complete the coach falls back to the English clips
 /// shipped with the app, then to the phone's synthesized voice.
+/// Empty file written in a pack's folder once every clip is there.
+private let voicePackMarker = ".complete"
+
 @MainActor
 enum VoicePack {
     private static let version = "v1"
-    private static let marker = ".complete"
     private static var ready: Set<String> = []
     private static var running: Set<String> = []
 
-    /// The two recorded voices: "m" for Karim, "f" for the other coaches.
+    /// The two recorded voices: "m" for the men, "f" for the women.
     static func voiceKey(coachID: Int) -> String {
-        coachID == 4 ? "m" : "f"
+        Coach.maleIDs.contains(coachID) ? "m" : "f"
     }
 
     /// A downloaded clip, nil while the pack of this language and voice is not complete.
@@ -48,7 +50,7 @@ enum VoicePack {
         let key = language + "/" + voice
         if ready.contains(key) { return true }
         guard let folder = folder(language: language, voice: voice),
-              FileManager.default.fileExists(atPath: folder.appendingPathComponent(marker).path) else { return false }
+              FileManager.default.fileExists(atPath: folder.appendingPathComponent(voicePackMarker).path) else { return false }
         ready.insert(key)
         return true
     }
@@ -90,7 +92,7 @@ enum VoicePack {
             return all
         }
         guard complete else { return false }
-        manager.createFile(atPath: folder.appendingPathComponent(marker).path, contents: Data())
+        manager.createFile(atPath: folder.appendingPathComponent(voicePackMarker).path, contents: Data())
         // The pack can be downloaded again: no need to carry it in the phone's backups.
         var values = URLResourceValues()
         values.isExcludedFromBackup = true

@@ -23,6 +23,8 @@ struct SignInOptionsSheet: View {
     @State private var infoText: String?
     @State private var email: String = ""
     @State private var code: String = ""
+    /// The code already sent for checking, so the same one is never submitted twice.
+    @State private var lastSubmitted: String?
     @FocusState private var focus: AuthSheetField?
     /// Height of the options content, measured on screen; the sheet is exactly that tall.
     @State private var fittedHeight: CGFloat = 380
@@ -343,6 +345,7 @@ struct SignInOptionsSheet: View {
 
     private func resendCode() {
         guard busy == nil else { return }
+        lastSubmitted = nil
         Haptics.tap()
         busy = .sendingCode
         errorText = nil
@@ -361,7 +364,8 @@ struct SignInOptionsSheet: View {
     }
 
     private func verifyCode() {
-        guard busy == nil, code.count >= 6 else { return }
+        guard busy == nil, code.count >= 6, code != lastSubmitted else { return }
+        lastSubmitted = code
         busy = .verifyingCode
         errorText = nil
         infoText = nil

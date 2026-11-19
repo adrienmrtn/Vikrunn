@@ -145,8 +145,8 @@ enum VoiceClip: Equatable {
         guard isRecorded else { return nil }
         let id = pickID(avoiding: last)
         if let url = VoicePack.localURL(id: id, coachID: coachID) { return (id, url) }
-        // The clips in the bundle: Awa's voice for every coach but Karim.
-        let bundled = "voice_c\(coachID == 4 ? 4 : 1)_\(id)"
+        // The clips in the bundle: the woman's voice is filed under coach 1, the man's under coach 4.
+        let bundled = "voice_c\(Coach.maleIDs.contains(coachID) ? 4 : 1)_\(id)"
         guard let url = Bundle.main.url(forResource: bundled, withExtension: "mp3") else { return nil }
         return (id, url)
     }

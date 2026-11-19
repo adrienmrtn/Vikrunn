@@ -149,7 +149,6 @@ enum CoachService {
                 "avgPace": Fmt.pace(run.avgPace),
             ]
             if let feeling = run.feeling { item["feeling"] = feeling.title }
-            if let heartRate = run.avgHeartRate { item["avgHeartRate"] = heartRate }
             recentRuns.append(item)
         }
 

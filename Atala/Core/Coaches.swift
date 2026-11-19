@@ -13,18 +13,26 @@ struct Coach: Identifiable, Hashable {
     static var all: [Coach] { [
         Coach(id: 1, name: "Awa", trait: L("Sets the pace")),
         Coach(id: 3, name: "Mei", trait: L("Lively and playful")),
-        Coach(id: 4, name: "Karim", trait: L("Steady and reassuring")),
+        Coach(id: 2, name: "Thomas", trait: L("Calm and precise")),
     ] }
 
     /// Coaches set aside for now (their pictures stay in the catalog). Someone who had chosen one
     /// of them gets the first available coach. Move a line back into `all` to bring a coach back.
     static var retired: [Coach] { [
-        Coach(id: 2, name: "Thomas", trait: L("Calm and precise")),
+        Coach(id: 4, name: "Karim", trait: L("Steady and reassuring")),
         Coach(id: 5, name: "Claire", trait: L("Thirty years of running")),
         Coach(id: 6, name: "Idriss", trait: L("Direct and motivating")),
     ] }
 
-    static func by(id: Int) -> Coach { all.first { $0.id == id } ?? all[0] }
+    /// The men, offered or set aside: they share the recorded male voice.
+    static let maleIDs: Set<Int> = [2, 4, 6]
+
+    /// A coach set aside is replaced by an offered one of the same voice, else by the first.
+    static func by(id: Int) -> Coach {
+        if let coach = all.first(where: { $0.id == id }) { return coach }
+        let male = maleIDs.contains(id)
+        return all.first { maleIDs.contains($0.id) == male } ?? all[0]
+    }
 }
 
 /// The static poses a coach can take. `wave` is the original full-body picture.

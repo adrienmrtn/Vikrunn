@@ -64,7 +64,7 @@ struct RootView: View {
 
     var body: some View {
         // Exercise pictures follow the chosen coach.
-        let _ = (GuidedExerciseCoach.coachID = store.answers.coachID)
+        let _ = (GuidedExerciseCoach.coachID = store.coach.id)
         ZStack {
             ZStack {
                 if store.hasCompletedOnboarding {
@@ -89,9 +89,9 @@ struct RootView: View {
             }
         }
         .authSyncPrompts()
-        .task(id: "\(store.answers.coachID)|\(language.code)|\(scenePhase == .active)") {
+        .task(id: "\(store.coach.id)|\(language.code)|\(scenePhase == .active)") {
             // The coach's recorded voice in the app's language: downloaded once, then kept.
-            VoicePack.prepare(coachID: store.answers.coachID)
+            VoicePack.prepare(coachID: store.coach.id)
         }
         .task(id: reminderKey) {
             await RunReminders.refresh(store: store)
