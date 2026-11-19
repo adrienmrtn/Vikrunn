@@ -152,6 +152,9 @@ struct ProWelcomePresenter: ViewModifier {
                     try? await Task.sleep(nanoseconds: UInt64(early * 1_000_000_000))
                     if Task.isCancelled { return }
                 }
+                // Never over the App Store rating request, made a moment after arriving.
+                await ReviewPromptState.waitBeforeOffer()
+                if Task.isCancelled { return }
                 // The paywall or the gift is still closing: wait until nothing is on screen.
                 for _ in 0..<8 {
                     try? await Task.sleep(nanoseconds: 800_000_000)

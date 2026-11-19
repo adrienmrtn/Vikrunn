@@ -146,7 +146,8 @@ struct OnboardingLoadingScreen: View {
         let sessions = OnboardingCopy.sessionsPerWeek(answers)
         var list: [String] = [
             L("Reading your answers"),
-            L("Working out your paces"),
+            // No pace talk for someone who does not run yet.
+            OnboardingNavigator.isNotRunningYet(answers) ? L("Planning a gentle start") : L("Working out your paces"),
             sessions == 1 ? L("Placing your session of the week") : L("Placing your %@ sessions a week", sessions),
             L("Adding strength and stretching"),
         ]
