@@ -21,12 +21,13 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
     case planMatters = 40
     case ready = 41
     case notifications = 42
+    case language = 43
 
     /// The screens in the order they are shown. `levelRisk` (raw value 34) and `reminder` were
     /// removed from the flow: their raw values stay reserved and a step saved on one of them
     /// resumes on the next screen.
     static let order: [OnboardingStep] = [
-        .welcome,
+        .welcome, .language,
         .firstName, .intro, .coach, .hello, .gender, .experience, .volume, .recent, .health, .mirror,
         .levelIntro, .levelFocus,
         .goalIntro, .goal, .race, .target, .why, .coachReply, .consistency,
@@ -341,6 +342,7 @@ struct OnboardingStepHost: View {
     @ViewBuilder private var profileScreens: some View {
         switch step {
         case .welcome: OnboardingWelcomeScreen()
+        case .language: OnboardingLanguageScreen()
         case .firstName: OnboardingFirstNameScreen()
         case .intro: OnboardingIntroScreen()
         case .coach: OnboardingCoachScreen()
