@@ -27,28 +27,42 @@ enum RunReminders {
         return status == .authorized || status == .provisional
     }
 
+    private static let lockNudgeKey = "atala.reminder.lockNudgeSent"
+
     /// Removes Atala's pending reminders and schedules the coming ones again, from the plan as it
     /// is now. Safe to call often: on launch, when the plan changes, when the subscription changes.
     static func refresh(store: AppStore) async {
         let center = UNUserNotificationCenter.current()
+        // Everything that waits comes first. From here to the end nothing is awaited, so two
+        // refreshes can never interleave: the last one to run decides what is scheduled.
+        let authorized = await isAuthorized()
         let pending = await center.pendingNotificationRequests()
+        if Task.isCancelled { return }
+
         let ours = pending.map { $0.identifier }.filter { $0.hasPrefix(prefix) }
         if !ours.isEmpty { center.removePendingNotificationRequests(withIdentifiers: ours) }
 
-        guard store.hasCompletedOnboarding, let plan = store.plan else { return }
-        // No reminder of any kind during a free trial.
-        guard !PurchaseService.shared.isInTrial else { return }
-        guard await isAuthorized() else { return }
+        let purchases = PurchaseService.shared
+        // A subscriber never needs the "your plan is waiting" nudge again.
+        if purchases.isPro { UserDefaults.standard.set(false, forKey: lockNudgeKey) }
 
-        let calendar = Calendar.current
+        guard authorized, store.hasCompletedOnboarding, let plan = store.plan else { return }
+        // No reminder of any kind during a free trial.
+        guard !purchases.isInTrial else { return }
+
+        let calendar = Calendar.plan
         let now = Date()
         let coach = store.coach.name
         var scheduled = 0
-        var lockNudgeDone = false
+        var daysTaken = Set<Date>()
 
         for workout in plan.allWorkouts where workout.status == .planned {
             guard scheduled < horizon else { break }
+            // One reminder a day: the first session of the day (runs come first in the plan).
+            let day = calendar.startOfDay(for: workout.date)
+            guard !daysTaken.contains(day) else { continue }
             var parts = calendar.dateComponents([.year, .month, .day], from: workout.date)
+            parts.calendar = calendar
             parts.hour = hour
             parts.minute = 0
             guard let fireDate = calendar.date(from: parts), fireDate > now else { continue }
@@ -56,9 +70,9 @@ enum RunReminders {
             let content = UNMutableNotificationContent()
             content.sound = .default
             if ProAccess.isLocked(workout, plan: plan) {
-                // Free plan, after the free week: one nudge, then silence.
-                guard !lockNudgeDone else { continue }
-                lockNudgeDone = true
+                // Free plan, after the free week: one nudge ever, then silence.
+                guard !UserDefaults.standard.bool(forKey: lockNudgeKey) else { break }
+                UserDefaults.standard.set(true, forKey: lockNudgeKey)
                 content.title = "Your plan is waiting"
                 content.body = "\(workout.title) is next. Unlock Atala Pro and pick up where you left off."
             } else {
@@ -68,7 +82,8 @@ enum RunReminders {
             let trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
             let request = UNNotificationRequest(identifier: prefix + workout.id.uuidString,
                                                 content: content, trigger: trigger)
-            try? await center.add(request)
+            center.add(request, withCompletionHandler: nil)
+            daysTaken.insert(day)
             scheduled += 1
         }
     }

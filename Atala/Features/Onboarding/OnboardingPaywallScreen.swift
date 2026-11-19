@@ -407,7 +407,7 @@ struct PaywallView: View {
             Text("[Terms of use](https://vikstudios.com/atala/terms) · [Privacy policy](https://vikstudios.com/atala)")
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.muted)
-                .tint(Theme.muted)
+                .tint(Theme.ink)
         }
         .padding(.horizontal, Theme.screenPadding)
         .padding(.top, 12)

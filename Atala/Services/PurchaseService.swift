@@ -70,6 +70,7 @@ final class PurchaseService: ObservableObject {
     private var started = false
 
     private static let placeholderKey = "atala.placeholder.pro"
+    private static let trialKey = "atala.pro.inTrial"
 
     /// True in a build without the RevenueCat package: nothing can be bought, and the paywall's
     /// main button stands in for a purchase so the free and the Pro sides can both be tried.
@@ -84,6 +85,8 @@ final class PurchaseService: ObservableObject {
     private init() {
         if Self.isPlaceholder {
             isPro = UserDefaults.standard.bool(forKey: Self.placeholderKey)
+        } else {
+            isInTrial = UserDefaults.standard.bool(forKey: Self.trialKey)
         }
     }
 
@@ -119,6 +122,7 @@ final class PurchaseService: ObservableObject {
         guard started else { return }
         isPro = false
         isInTrial = false
+        UserDefaults.standard.set(false, forKey: Self.trialKey)
         Task { @MainActor in
             if !Purchases.shared.isAnonymous {
                 _ = try? await Purchases.shared.logOut()
@@ -192,6 +196,9 @@ final class PurchaseService: ObservableObject {
         let entitlement = info.entitlements[Self.entitlementID]
         isPro = entitlement?.isActive == true
         isInTrial = isPro && entitlement?.periodType == .trial
+        // Kept on the phone: if the store cannot be reached at the next launch, someone in a
+        // free trial is still known as such (and gets no reminder).
+        UserDefaults.standard.set(isInTrial, forKey: Self.trialKey)
     }
 
     private static func package(for plan: PurchasePlan, in offerings: Offerings) -> Package? {

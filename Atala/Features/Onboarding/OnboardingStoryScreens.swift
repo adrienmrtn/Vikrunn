@@ -371,7 +371,9 @@ struct OnboardingNotificationsScreen: View {
             .background(Theme.surface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Examples of reminders from your coach")
-            Text("\(store.coach.name) reminds you on the morning of each session. Nothing else: no ads, no noise.")
+            Text(PurchaseService.shared.isInTrial
+                 ? "Once your free trial is over, \(store.coach.name) reminds you on the morning of each session. Nothing else: no ads, no noise."
+                 : "\(store.coach.name) reminds you on the morning of each session. Nothing else: no ads, no noise.")
                 .font(.system(size: 17))
                 .foregroundStyle(Theme.body)
                 .lineSpacing(5)

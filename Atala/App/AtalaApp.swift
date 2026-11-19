@@ -48,9 +48,17 @@ struct RootView: View {
 
     /// Everything the reminders depend on: when one of these changes, they are scheduled again.
     private var reminderKey: String {
-        let planned = store.allWorkouts.filter { $0.status == .planned }.count
+        // The sessions still to do and their days: a moved or finished session changes the key.
+        var planned = 0
+        var days = 0.0
+        for week in store.plan?.weeks ?? [] {
+            for workout in week.workouts where workout.status == .planned {
+                planned += 1
+                days += workout.date.timeIntervalSinceReferenceDate
+            }
+        }
         let plan = store.plan?.id.uuidString ?? "none"
-        return "\(plan)|\(planned)|\(purchases.isPro)|\(purchases.isInTrial)|\(store.hasCompletedOnboarding)|\(scenePhase == .active)"
+        return "\(plan)|\(planned)|\(days)|\(store.answers.coachID)|\(purchases.isPro)|\(purchases.isInTrial)|\(store.hasCompletedOnboarding)|\(scenePhase == .active)"
     }
 
     var body: some View {
