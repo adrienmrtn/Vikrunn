@@ -31,8 +31,10 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
         .levelIntro, .levelFocus,
         .goalIntro, .goal, .race, .target, .why, .coachReply, .consistency,
         .days, .longRun, .constraints, .message, .tone, .reviews, .community,
-        .signIn, .loading, .planReady, .ready, .commitment, .beyondCoach, .planMatters, .trial, .timeline, .paywall,
-        .permissions, .notifications, .healthConnect,
+        // Run reminders are asked for once the plan is ready, before the screens leading to the paywall.
+        .signIn, .loading, .planReady, .ready, .notifications,
+        .commitment, .beyondCoach, .planMatters, .trial, .timeline, .paywall,
+        .permissions, .healthConnect,
     ]
 
     private static let positions: [OnboardingStep: Int] = {
@@ -63,7 +65,7 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
     /// The paywall cannot be left backwards: no back button there, and `back` does nothing.
     var allowsBack: Bool {
         switch self {
-        case .welcome, .loading, .planReady, .paywall, .permissions, .notifications, .healthConnect: return false
+        case .welcome, .loading, .planReady, .paywall, .permissions, .healthConnect: return false
         default: return true
         }
     }
