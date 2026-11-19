@@ -17,6 +17,9 @@ struct AtalaApp: App {
                 .task {
                     // Launch: catch up with the account (no-op for a guest, silent when offline).
                     SyncService.resume(store: store)
+                    // Subscriptions: the account's identifier links purchases across devices.
+                    let account = store.account
+                    PurchaseService.shared.start(userID: account?.isGuest == false ? account?.userID : nil)
                 }
         }
         .onChange(of: scenePhase) { _, phase in

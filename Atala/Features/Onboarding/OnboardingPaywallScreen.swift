@@ -64,13 +64,68 @@ private struct OnboardingPaywallFeature: Identifiable {
     let detail: String
 }
 
-/// Screen 31: the paywall. Fake and non-blocking: the close cross and the main button both move on.
-/// There is no way back from it, and the cross only shows up after a few seconds.
+/// Screen 31: the paywall. With the RevenueCat package in the project, the main button buys the
+/// yearly plan and the prices come from the store; without it, the screen keeps its placeholder
+/// behaviour and the button simply moves on. The close cross always moves on, after a few seconds.
 struct OnboardingPaywallScreen: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var nav: OnboardingNavigator
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var closeShown = false
+    @ObservedObject private var purchases = PurchaseService.shared
+    @State private var isBuying = false
+    @State private var purchaseError: String?
+
+    private var trialDays: Int { purchases.trialDays ?? OnboardingPaywallOffer.trialDays }
+    private var monthlyPrice: String { purchases.monthlyPrice ?? OnboardingPaywallOffer.monthlyPrice }
+    private var yearlyPrice: String { purchases.yearlyPrice ?? OnboardingPaywallOffer.yearlyPrice }
+
+    private var purchaseErrorShown: Binding<Bool> {
+        Binding(
+            get: { purchaseError != nil },
+            set: { shown in
+                if !shown { purchaseError = nil }
+            }
+        )
+    }
+
+    /// Buys the yearly plan when the store is ready; otherwise moves on, as the placeholder did.
+    private func startTrial() {
+        Haptics.confirm()
+        guard purchases.canPurchase else {
+            nav.next(store)
+            return
+        }
+        guard !isBuying else { return }
+        isBuying = true
+        Task { @MainActor in
+            let outcome = await purchases.purchaseYearly()
+            isBuying = false
+            switch outcome {
+            case .purchased:
+                Haptics.success()
+                nav.next(store)
+            case .cancelled:
+                break
+            case .failed(let message):
+                purchaseError = message
+            }
+        }
+    }
+
+    private func restorePurchases() {
+        guard !isBuying else { return }
+        isBuying = true
+        Task { @MainActor in
+            let restored = await purchases.restore()
+            isBuying = false
+            if restored {
+                nav.next(store)
+            } else {
+                purchaseError = "No active Atala Pro subscription was found for this Apple Account."
+            }
+        }
+    }
 
     /// Seconds before the close cross appears.
     private static let closeDelay: Double = 5
@@ -124,6 +179,14 @@ struct OnboardingPaywallScreen: View {
         .background(Color.white.ignoresSafeArea())
         .task {
             await revealClose()
+        }
+        .task {
+            await purchases.refresh()
+        }
+        .alert("We couldn't complete that", isPresented: purchaseErrorShown) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(purchaseError ?? "Please try again.")
         }
     }
 
@@ -197,7 +260,7 @@ struct OnboardingPaywallScreen: View {
     private var offerCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .center) {
-                Text("\(OnboardingPaywallOffer.trialDays) DAYS FREE")
+                Text("\(trialDays) DAYS FREE")
                     .font(.system(size: 12, weight: .bold))
                     .kerning(0.8)
                     .foregroundStyle(Color.white)
@@ -210,18 +273,20 @@ struct OnboardingPaywallScreen: View {
                     .foregroundStyle(Theme.green)
                     .accessibilityHidden(true)
             }
-            (Text("Then \(OnboardingPaywallOffer.monthlyPrice)").font(.system(size: 22, weight: .bold))
+            (Text("Then \(monthlyPrice)").font(.system(size: 22, weight: .bold))
                 + Text(" a month").font(.system(size: 16, weight: .semibold)))
                 .foregroundColor(Theme.ink)
-            Text("\(OnboardingPaywallOffer.yearlyPrice) billed yearly. Cancel any time before the trial ends and you pay nothing.")
+            Text("\(yearlyPrice) billed yearly. Cancel any time before the trial ends and you pay nothing.")
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.body)
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Prices shown as an example. Nothing is charged in this version.")
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.muted)
-                .fixedSize(horizontal: false, vertical: true)
+            if !purchases.canPurchase {
+                Text("Prices shown as an example. Nothing is charged in this version.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -235,12 +300,9 @@ struct OnboardingPaywallScreen: View {
 
     private var callToAction: some View {
         VStack(spacing: 10) {
-            Button(action: {
-                Haptics.confirm()
-                nav.next(store)
-            }) {
+            Button(action: startTrial) {
                 VStack(spacing: 2) {
-                    Text("Start my free trial")
+                    Text(isBuying ? "One moment…" : "Start my free trial")
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(Color.white)
                     Text("Easy to cancel, at any time")
@@ -252,11 +314,19 @@ struct OnboardingPaywallScreen: View {
                 .background(Theme.green, in: Capsule())
             }
             .buttonStyle(.plain)
+            .disabled(isBuying)
             HStack(spacing: 6) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 11))
                 Text("Secured by the App Store")
                     .font(.system(size: 12))
+                if purchases.canPurchase {
+                    Text("·")
+                        .font(.system(size: 12))
+                    Button("Restore purchases", action: restorePurchases)
+                        .font(.system(size: 12, weight: .semibold))
+                        .disabled(isBuying)
+                }
             }
             .foregroundStyle(Theme.muted)
         }
