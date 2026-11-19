@@ -54,7 +54,8 @@ struct PlanTabWeekSection: View {
     // MARK: Data
 
     private func isLocked(_ workout: Workout) -> Bool {
-        !purchases.isPro && ProAccess.isLocked(workout, plan: store.plan)
+        // Only what is still to do: a session already done or missed keeps its normal row.
+        workout.status == .planned && !purchases.isPro && ProAccess.isLocked(workout, plan: store.plan)
     }
 
     /// The whole week is behind the lock (a week with nothing in it is not).

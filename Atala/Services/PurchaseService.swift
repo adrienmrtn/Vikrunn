@@ -90,6 +90,7 @@ final class PurchaseService: ObservableObject {
         guard Self.isPlaceholder else { return }
         UserDefaults.standard.set(active, forKey: Self.placeholderKey)
         isPro = active
+        if !active { ProWelcomeState.wasPlayed = false }
     }
 
     /// Starts the SDK once, then loads the offers and the subscription state.
@@ -132,6 +133,8 @@ final class PurchaseService: ObservableObject {
         guard started else { return }
         if let info = try? await Purchases.shared.customerInfo() {
             isPro = info.entitlements[Self.entitlementID]?.isActive == true
+            // Confirmed by the store: the next subscription gets its welcome again.
+            if !isPro { ProWelcomeState.wasPlayed = false }
         }
         guard let offerings = try? await Purchases.shared.offerings() else { return }
         var loaded: [PurchasePlan: PurchaseOffer] = [:]

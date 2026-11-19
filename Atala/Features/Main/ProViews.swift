@@ -69,7 +69,9 @@ struct ProJourneyCard: View {
     }
 
     private func freeWeekMessage(daysLeft: Int, locked: Int) -> String {
-        let waiting = "\(sessions(locked)) of your plan unlock with Atala Pro."
+        let waiting = locked == 0
+            ? "The rest of Atala unlocks with Atala Pro."
+            : "\(sessions(locked)) of your plan \(locked == 1 ? "unlocks" : "unlock") with Atala Pro."
         if daysLeft == 0 { return "Last free day. " + waiting }
         let days = daysLeft == 1 ? "1 free day" : "\(daysLeft) free days"
         return days + " left. Then " + waiting
@@ -132,7 +134,7 @@ struct ProJourneyCard: View {
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(Color.white)
                     Text(locked > 0
-                         ? "\(sessions(locked)) are waiting for you."
+                         ? "\(sessions(locked)) \(locked == 1 ? "is" : "are") waiting for you."
                          : "Your coach and your plan are waiting for you.")
                         .font(.system(size: 14))
                         .foregroundStyle(Theme.greenOnDark)
@@ -185,6 +187,8 @@ struct ProWelcomePresenter: ViewModifier {
     @EnvironmentObject private var store: AppStore
     @ObservedObject private var purchases = PurchaseService.shared
     @State private var shown = false
+    /// When the main screen appeared: the welcome never shows over the launch splash.
+    @State private var mountedAt = Date()
 
     func body(content: Content) -> some View {
         content
@@ -193,12 +197,14 @@ struct ProWelcomePresenter: ViewModifier {
                     .environmentObject(store)
             }
             .task(id: purchases.isPro) {
-                guard purchases.isPro else {
-                    // Not subscribed (any more): the next subscription is celebrated again.
-                    ProWelcomeState.wasPlayed = false
-                    return
+                // The flag is reset by PurchaseService once the store confirms there is no
+                // subscription: `isPro` is also false while the store has not answered yet.
+                guard purchases.isPro, !ProWelcomeState.wasPlayed else { return }
+                let early = GiftOfferSchedule.delay - Date().timeIntervalSince(mountedAt)
+                if early > 0 {
+                    try? await Task.sleep(nanoseconds: UInt64(early * 1_000_000_000))
+                    if Task.isCancelled { return }
                 }
-                guard !ProWelcomeState.wasPlayed else { return }
                 // The paywall or the gift is still closing: wait until nothing is on screen.
                 for _ in 0..<8 {
                     try? await Task.sleep(nanoseconds: 800_000_000)
