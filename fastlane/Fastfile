@@ -60,8 +60,19 @@ platform :ios do
       version.create_app_store_review_detail(attributes: { demo_account_required: false })
     end
 
+    # Contact for App Review, from repository secrets so that it stays out of this public repo.
+    # The notes for the reviewer are in metadata/review_information/notes.txt.
+    review_contact = {
+      first_name: ENV["ASC_REVIEW_FIRST_NAME"],
+      last_name: ENV["ASC_REVIEW_LAST_NAME"],
+      phone_number: ENV["ASC_REVIEW_PHONE"],
+      email_address: ENV["ASC_REVIEW_EMAIL"]
+    }.reject { |_, value| value.to_s.strip.empty? }
+    review_contact = nil if review_contact.empty? || !with_metadata
+
     deliver(
       api_key: api_key,
+      app_review_information: review_contact,
       metadata_path: metadata,
       screenshots_path: shots,
       languages: locales,
