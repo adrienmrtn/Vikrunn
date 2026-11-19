@@ -27,6 +27,7 @@ struct ProfileView: View {
                     ProfileVoiceSection()
                     ProfileHealthSection()
                     ProfileSubscriptionSection()
+                    ProfileHelpSection()
                     ProfileAccountSection()
                     ProfileFooterSection()
                 }

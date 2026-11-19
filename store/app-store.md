@@ -81,7 +81,7 @@ First release of Atala: your running plan, your coach and guided sessions.
 |---|---|
 | Privacy Policy URL | https://vikstudios.com/atala |
 | Terms of Use (EULA) | https://vikstudios.com/atala/terms (also paste it in the "License Agreement" field, or keep Apple's standard one and leave the link in the description) |
-| Support URL | **Missing** (a simple page with a contact e-mail is enough) |
+| Support URL | **Still needed as a web page**: App Store Connect only accepts an https address here, not an e-mail. Put a page on vikstudios.com that shows support@vikstudios.com and asks for the phone model, the subscription, the country and, for a bug, a screenshot (the same wording as the Help section of the app). |
 | Marketing URL | Optional |
 
 Also set the privacy policy URL on each of the three subscriptions (App Store Connect → Subscriptions → the product → Privacy Policy).
@@ -134,6 +134,6 @@ Done in the app:
 Still open:
 - "10,000 runners coached every day" is shown in the onboarding. Apple can ask for proof of figures like this one.
 - The three reviews in the onboarding must come from real users.
-- A Support URL.
+- A Support URL: a web page showing support@vikstudios.com (the e-mail itself is in the app, Profile → Help).
 - Screenshots for the listing, and for each of the three subscriptions (blank placeholders were uploaded).
 - The App Privacy questionnaire in App Store Connect (answers in the table above; add "Purchases").

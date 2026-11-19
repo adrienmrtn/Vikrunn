@@ -173,3 +173,68 @@ struct ProfileSubscriptionSection: View {
         }
     }
 }
+
+/// Help: what to put in the message, then the support address.
+struct ProfileHelpSection: View {
+    @State private var copied = false
+
+    var body: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Before you write, please include:")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.ink)
+                ProfileHelpLine(text: "Your phone model")
+                ProfileHelpLine(text: "Your subscription")
+                ProfileHelpLine(text: "Your country")
+                ProfileHelpLine(text: "For a bug, attach a screenshot or a screen recording")
+            }
+            .padding(.vertical, 4)
+            .accessibilityElement(children: .combine)
+            Button {
+                Haptics.tap()
+                if let url = AtalaLinks.supportMail {
+                    UIApplication.shared.open(url) { opened in
+                        // No mail app set up (the simulator, for instance): copy the address instead.
+                        if !opened {
+                            UIPasteboard.general.string = AtalaLinks.supportEmail
+                            copied = true
+                        }
+                    }
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "envelope.fill")
+                        .foregroundStyle(Theme.green)
+                    Text(AtalaLinks.supportEmail)
+                        .foregroundStyle(Theme.ink)
+                    Spacer()
+                    Text(copied ? "Copied" : "Write to us")
+                        .foregroundStyle(Theme.muted)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.faint)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } header: {
+            Text("Help")
+        }
+    }
+}
+
+private struct ProfileHelpLine: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text("•")
+                .foregroundStyle(Theme.muted)
+            Text(text)
+                .font(.system(size: 15))
+                .foregroundStyle(Theme.body)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
