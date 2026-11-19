@@ -15,6 +15,11 @@ android {
         targetSdk = 35
         versionCode = (System.getenv("ATALA_VERSION_CODE") ?: "1").toInt()
         versionName = "0.1.0"
+        // Google Maps key for the run summary map: Gradle property or environment variable
+        // ATALA_MAPS_API_KEY. Without it the summary draws the route on a plain background.
+        val mapsKey = (project.findProperty("ATALA_MAPS_API_KEY") as String?) ?: System.getenv("ATALA_MAPS_API_KEY") ?: ""
+        manifestPlaceholders["MAPS_API_KEY"] = mapsKey
+        buildConfigField("boolean", "HAS_MAPS_KEY", if (mapsKey.isBlank()) "false" else "true")
     }
 
     buildTypes {
@@ -67,6 +72,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.google.maps.android:maps-compose:6.2.1")
     implementation("com.revenuecat.purchases:purchases:8.10.6")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
