@@ -13,11 +13,7 @@ fun OnboardingIntroScreen() {
     OnboardingScaffold(title = L("Hey %@,", state.firstName), buttonTitle = L("Let's go")) {}
 }
 
-/** Step `Community`. Placeholder. */
-@Composable
-fun OnboardingCommunityScreen() {
-    OnboardingScaffold(title = L("Join the Atala community")) {}
-}
+// Step `Community`: OnboardingCommunityScreen lives in OnboardingProjectionScreens.kt (next to the reviews).
 
 /** Step `BeyondCoach` (the stars mark the emphasis). Placeholder. */
 @Composable
@@ -37,8 +33,4 @@ fun OnboardingReadyScreen() {
     OnboardingScaffold(title = L("Are you ready?"), buttonTitle = L("I'm ready"), buttonHaptic = HapticKind.Strong) {}
 }
 
-/** Notification permission (step `Notifications`). Placeholder. */
-@Composable
-fun OnboardingNotificationsScreen() {
-    OnboardingScaffold(title = L("Never miss a run")) {}
-}
+// Step `Notifications`: OnboardingNotificationsScreen lives in OnboardingFinalScreens.kt (next to the location permission).
