@@ -64,7 +64,7 @@ struct RunFlowView: View {
         case .feeling:
             RunFeelingScreen(distanceM: tracker.distance,
                              durationSec: tracker.elapsed,
-                             coachName: store.coach.name,
+                             coach: store.coach,
                              onDone: { feeling in showSummary(feeling: feeling) })
         case .summary:
             if let savedRun {
@@ -168,7 +168,7 @@ struct RunFlowView: View {
             close()
             return
         }
-        Haptics.success()
+        // Saved: the "Session complete" screen plays the success haptic when its check mark lands.
         let run = tracker.makeRecord(title: workout?.title ?? "Free run", workoutID: workout?.id)
         store.addRun(run)
         savedRun = run

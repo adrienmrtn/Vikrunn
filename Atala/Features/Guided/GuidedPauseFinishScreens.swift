@@ -110,57 +110,45 @@ struct GuidedFinishScreen: View {
 
     @State private var feeling: Feeling?
 
+    /// "5 exercises · 12 min"
+    private var dataLine: String {
+        let minutes = max(1, Int((Double(elapsedSec) / 60).rounded()))
+        return "\(doneCount) \(doneCount == 1 ? "exercise" : "exercises") · \(minutes) min"
+    }
+
+    private var stats: [SessionCompleteStat] {
+        let total = totalCount
+        let kindTitle = workout.kind.title
+        return [
+            SessionCompleteStat(value: Double(elapsedSec), label: "Total time",
+                                format: { Fmt.duration(Int($0.rounded())) }),
+            SessionCompleteStat(value: Double(doneCount), label: "Exercises done",
+                                format: { "\(Int($0.rounded())) of \(total)" }),
+            SessionCompleteStat(value: 0, label: "Session",
+                                format: { _ in kindTitle }),
+        ]
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                header
-                RunStatsRow(items: [
-                    (value: Fmt.duration(elapsedSec), label: "Total time"),
-                    (value: "\(doneCount) of \(totalCount)", label: "Exercises done"),
-                    (value: workout.kind.title, label: "Session"),
-                ])
-                .padding(18)
-                .card(radius: 24)
-                CoachNote(coach: coach, text: coachLine)
-                VStack(alignment: .leading, spacing: 9) {
-                    Text("How did it feel? (optional)")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Theme.ink)
-                    ForEach(Feeling.allCases) { option in
-                        GuidedFeelingRow(feeling: option, subtitle: subtitle(for: option),
-                                         selected: feeling == option) {
-                            feeling = feeling == option ? nil : option
-                        }
+        SessionCompleteScreen(eyebrow: workout.title,
+                              dataLine: dataLine,
+                              stats: stats,
+                              coach: coach,
+                              coachLine: coachLine,
+                              buttonTitle: "Done",
+                              onPrimary: { onDone(feeling) }) {
+            VStack(alignment: .leading, spacing: 9) {
+                Text("How did it feel? (optional)")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.ink)
+                ForEach(Feeling.allCases) { option in
+                    GuidedFeelingRow(feeling: option, subtitle: subtitle(for: option),
+                                     selected: feeling == option) {
+                        feeling = feeling == option ? nil : option
                     }
                 }
             }
-            .padding(.horizontal, Theme.screenPadding)
-            .padding(.top, 20)
-            .padding(.bottom, 16)
         }
-        .scrollIndicators(.hidden)
-        .background(Color.white.ignoresSafeArea())
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            BottomBar {
-                PrimaryButton(title: "Done") { onDone(feeling) }
-            }
-        }
-    }
-
-    private var header: some View {
-        VStack(spacing: 12) {
-            CoachPoseView(coach: coach, pose: .cheer)
-                .frame(height: 170)
-                .accessibilityHidden(true)
-            Text("Session complete")
-                .font(Theme.title(28))
-                .foregroundStyle(Theme.ink)
-            Text(workout.title)
-                .font(.system(size: 15))
-                .foregroundStyle(Theme.muted)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
     }
 
     private var coachLine: String {

@@ -100,7 +100,7 @@ struct RunPauseScreen: View {
                 .background(Theme.ink, in: Capsule())
             }
             .buttonStyle(.plain)
-            // The run flow plays the haptic: success when saved, warning when discarded.
+            // No haptic here: success comes with the "Session complete" screen, warning when discarded.
             Button("Finish session", action: onFinish)
                 .buttonStyle(SecondaryButtonStyle(haptic: nil))
             if tracker.canSkipToCooldown {

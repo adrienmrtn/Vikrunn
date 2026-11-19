@@ -118,7 +118,7 @@ struct GuidedSessionView: View {
             Haptics.play(seconds == 1 ? .confirm : .tap)
             voice.sayNow("\(seconds)", display: "\(seconds)", settings: settings)
         case .finished:
-            Haptics.success()
+            // The success haptic comes with the check mark of the "Session complete" screen.
             voice.sayNow("Session complete. Well done.", display: "Session complete. Well done.",
                          settings: settings)
         }

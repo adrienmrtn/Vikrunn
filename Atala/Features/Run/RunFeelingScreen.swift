@@ -1,69 +1,64 @@
 import SwiftUI
 
-/// "How was it?" right after the run. The answer is optional.
+/// "Session complete" right after the run: the shared celebration, the figures of the run and
+/// "How was it?". The answer is optional.
 struct RunFeelingScreen: View {
     let distanceM: Double
     let durationSec: Int
-    let coachName: String
+    let coach: Coach
     let onDone: (Feeling?) -> Void
 
     @State private var feeling: Feeling?
 
+    /// Seconds per kilometre, 0 when no distance was measured.
+    private var averagePace: Int {
+        distanceM > 0 ? Int(Double(durationSec) / (distanceM / 1000)) : 0
+    }
+
+    private var stats: [SessionCompleteStat] {
+        [
+            SessionCompleteStat(value: distanceM, label: "Distance",
+                                format: { RunFormat.distance($0) }),
+            SessionCompleteStat(value: Double(durationSec), label: "Time",
+                                format: { Fmt.duration(Int($0.rounded())) }),
+            SessionCompleteStat(value: Double(averagePace), label: "Average pace",
+                                format: { "\(Fmt.pace(Int($0.rounded())))/km" }),
+        ]
+    }
+
+    private var coachLine: String {
+        feeling == .pain
+            ? "Thank you for telling me. Take it easy for the rest of the day."
+            : "Well done, that one is in the bank. How was it?"
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                header
-                VStack(spacing: 9) {
-                    ForEach(Feeling.allCases) { option in
-                        RunFeelingRow(feeling: option,
-                                      subtitle: subtitle(for: option),
-                                      selected: feeling == option) {
-                            feeling = feeling == option ? nil : option
-                        }
+        SessionCompleteScreen(dataLine: "\(RunFormat.distance(distanceM)) in \(Fmt.duration(durationSec))",
+                              stats: stats,
+                              coach: coach,
+                              coachLine: coachLine,
+                              buttonTitle: "See my summary",
+                              onPrimary: { onDone(feeling) }) {
+            VStack(spacing: 9) {
+                ForEach(Feeling.allCases) { option in
+                    RunFeelingRow(feeling: option,
+                                  subtitle: subtitle(for: option),
+                                  selected: feeling == option) {
+                        feeling = feeling == option ? nil : option
                     }
                 }
                 Text("Your answer helps tune your next sessions.")
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.muted)
                     .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, Theme.screenPadding)
-            .padding(.top, 20)
-            .padding(.bottom, 16)
-        }
-        .scrollIndicators(.hidden)
-        .background(Color.white.ignoresSafeArea())
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            BottomBar {
-                PrimaryButton(title: "See my summary") { onDone(feeling) }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 6)
             }
         }
-    }
-
-    private var header: some View {
-        VStack(spacing: 12) {
-            Circle()
-                .fill(Theme.greenTint)
-                .frame(width: 64, height: 64)
-                .overlay(
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 26, weight: .bold))
-                        .foregroundStyle(Theme.green)
-                )
-                .accessibilityHidden(true)
-            Text("Session complete")
-                .font(Theme.title(28))
-                .foregroundStyle(Theme.ink)
-            Text("\(RunFormat.distance(distanceM)) in \(Fmt.duration(durationSec)). How was it?")
-                .font(.system(size: 15))
-                .foregroundStyle(Theme.muted)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
     }
 
     private func subtitle(for option: Feeling) -> String {
-        option == .pain ? "I'd rather tell \(coachName)" : option.subtitle
+        option == .pain ? "I'd rather tell \(coach.name)" : option.subtitle
     }
 }
 
@@ -140,5 +135,5 @@ private struct RunFeelingRow: View {
 }
 
 #Preview {
-    RunFeelingScreen(distanceM: 9620, durationSec: 3288, coachName: "Awa", onDone: { _ in })
+    RunFeelingScreen(distanceM: 9620, durationSec: 3288, coach: Coach.all[0], onDone: { _ in })
 }
