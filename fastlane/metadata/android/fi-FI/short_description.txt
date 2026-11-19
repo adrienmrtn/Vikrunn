@@ -1,0 +1,1 @@
+Tekoälyjuoksuvalmentaja: ohjelma tavoitteeseesi ja vauhtiohjaus joka lenkillä.
