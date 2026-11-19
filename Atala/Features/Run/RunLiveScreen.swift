@@ -35,7 +35,10 @@ struct RunLiveScreen: View {
             .scrollBounceBehavior(.basedOnSize)
             .safeAreaInset(edge: .bottom, spacing: 0) { controls }
             if locked {
-                RunLockOverlay(onUnlock: { locked = false })
+                RunLockOverlay(onUnlock: {
+                    Haptics.confirm()
+                    locked = false
+                })
                     .transition(.opacity)
             }
         }
@@ -187,9 +190,15 @@ struct RunLiveScreen: View {
 
     private var controls: some View {
         HStack {
-            RunRoundButton(symbol: "lock.fill", label: "Lock the screen") { locked = true }
+            RunRoundButton(symbol: "lock.fill", label: "Lock the screen") {
+                Haptics.tap()
+                locked = true
+            }
             Spacer()
-            Button(action: onPause) {
+            Button(action: {
+                Haptics.confirm()
+                onPause()
+            }) {
                 Image(systemName: "pause.fill")
                     .font(.system(size: 30, weight: .bold))
                     .foregroundStyle(.white)

@@ -122,12 +122,27 @@ struct RunFlowView: View {
         let tracker = self.tracker
         tracker.onEvent = { [weak tracker, weak voice] event in
             guard let tracker, let voice else { return }
+            Self.playHaptic(for: event)
             voice.handle(event, tracker: tracker, settings: store.settings.voice)
+        }
+    }
+
+    /// A sharp marker when the step changes or a kilometre is passed. The first step starts with
+    /// the run itself, which has its own haptic.
+    private static func playHaptic(for event: RunTrackerEvent) {
+        switch event {
+        case .stepStarted(let index):
+            if index > 0 { Haptics.rigid() }
+        case .kilometre, .sessionComplete:
+            Haptics.rigid()
+        case .paceTick:
+            break
         }
     }
 
     private func begin() {
         guard phase == .countdown else { return }
+        Haptics.strong()
         UIApplication.shared.isIdleTimerDisabled = true
         if !tracker.hasSteps { voice.show("Off you go. Run the way you feel.") }
         tracker.start()
@@ -136,6 +151,7 @@ struct RunFlowView: View {
 
     private func requestFinish() {
         if tracker.elapsed < 60 || tracker.distance < 100 {
+            Haptics.tap()
             confirmShortRun = true
         } else {
             finishRun(save: true)
@@ -148,9 +164,11 @@ struct RunFlowView: View {
         voice.stop()
         UIApplication.shared.isIdleTimerDisabled = false
         guard save else {
+            Haptics.warning()
             close()
             return
         }
+        Haptics.success()
         let run = tracker.makeRecord(title: workout?.title ?? "Free run", workoutID: workout?.id)
         store.addRun(run)
         savedRun = run

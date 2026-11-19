@@ -10,6 +10,7 @@ struct GuidedExerciseList: View {
         VStack(spacing: 0) {
             ForEach(Array(exercises.enumerated()), id: \.offset) { _, exercise in
                 Button {
+                    Haptics.tap()
                     shown = exercise.info
                 } label: {
                     GuidedExerciseRow(exercise: exercise)
@@ -124,6 +125,7 @@ struct GuidedHowToSheet: View {
             }
             Spacer(minLength: 8)
             Button {
+                Haptics.tap()
                 dismiss()
             } label: {
                 Image(systemName: "xmark")

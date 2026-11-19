@@ -73,7 +73,10 @@ struct GuidedPauseScreen: View {
 
     private var actions: some View {
         VStack(spacing: 10) {
-            Button(action: onResume) {
+            Button(action: {
+                Haptics.confirm()
+                onResume()
+            }) {
                 HStack(spacing: 10) {
                     Image(systemName: "play.fill")
                         .font(.system(size: 16, weight: .bold))
@@ -146,14 +149,8 @@ struct GuidedFinishScreen: View {
 
     private var header: some View {
         VStack(spacing: 12) {
-            Circle()
-                .fill(Theme.greenTint)
-                .frame(width: 64, height: 64)
-                .overlay(
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 26, weight: .bold))
-                        .foregroundStyle(Theme.green)
-                )
+            CoachPoseView(coach: coach, pose: .cheer)
+                .frame(height: 170)
                 .accessibilityHidden(true)
             Text("Session complete")
                 .font(Theme.title(28))
@@ -196,7 +193,10 @@ private struct GuidedFeelingRow: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            Haptics.select()
+            action()
+        }) {
             HStack(spacing: 14) {
                 Circle()
                     .fill(RunFeelingStyle.background(feeling))

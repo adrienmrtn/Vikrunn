@@ -104,7 +104,10 @@ private struct RunFeelingRow: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            Haptics.select()
+            action()
+        }) {
             HStack(spacing: 14) {
                 Circle()
                     .fill(RunFeelingStyle.background(feeling))

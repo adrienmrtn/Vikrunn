@@ -84,7 +84,10 @@ struct RunPauseScreen: View {
 
     private var actions: some View {
         VStack(spacing: 10) {
-            Button(action: onResume) {
+            Button(action: {
+                Haptics.confirm()
+                onResume()
+            }) {
                 HStack(spacing: 10) {
                     Image(systemName: "play.fill")
                         .font(.system(size: 16, weight: .bold))
@@ -97,8 +100,9 @@ struct RunPauseScreen: View {
                 .background(Theme.ink, in: Capsule())
             }
             .buttonStyle(.plain)
+            // The run flow plays the haptic: success when saved, warning when discarded.
             Button("Finish session", action: onFinish)
-                .buttonStyle(SecondaryButtonStyle())
+                .buttonStyle(SecondaryButtonStyle(haptic: nil))
             if tracker.canSkipToCooldown {
                 Button("Skip straight to the cool-down") {
                     tracker.skipToCooldown()

@@ -100,6 +100,8 @@ private struct OnboardingBenefitRow: View {
 struct OnboardingPermissionsScreen: View {
     @EnvironmentObject private var store: AppStore
     @ObservedObject private var location = LocationPermission.shared
+    /// True once the user has tapped the button: the answer that follows deserves a haptic.
+    @State private var asked = false
 
     var body: some View {
         OnboardingScaffold(title: "Let Atala follow your runs") {
@@ -119,7 +121,7 @@ struct OnboardingPermissionsScreen: View {
         }
         .onAppear { location.refresh() }
         .onChange(of: location.isAllowed) { _, allowed in
-            if allowed { Haptics.success() }
+            if allowed, asked { Haptics.success() }
         }
     }
 
@@ -155,6 +157,7 @@ struct OnboardingPermissionsScreen: View {
 
     private func locationTapped() {
         Haptics.confirm()
+        asked = true
         if location.isRefused {
             guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
             UIApplication.shared.open(url)

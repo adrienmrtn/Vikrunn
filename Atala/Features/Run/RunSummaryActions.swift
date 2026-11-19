@@ -99,6 +99,7 @@ struct RunSummaryActions: View {
                 .buttonStyle(SecondaryButtonStyle())
             }
             Button(role: .destructive) {
+                Haptics.warning()
                 confirmDelete = true
             } label: {
                 Text("Delete this run")
