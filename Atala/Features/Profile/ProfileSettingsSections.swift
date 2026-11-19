@@ -157,7 +157,8 @@ struct ProfileSubscriptionSection: View {
                         openSettings = !granted
                     }
                     if openSettings, let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
+                        // Inside a task, the system picks the asynchronous form of `open`.
+                        _ = await UIApplication.shared.open(url)
                     }
                 }
             }
