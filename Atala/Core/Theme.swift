@@ -357,7 +357,12 @@ enum Fmt {
     static func day(_ date: Date, _ format: String = "EEEE d MMMM") -> String {
         let f = DateFormatter()
         f.locale = AppLanguage.locale
-        f.dateFormat = format
+        if AppLanguage.current == "en" {
+            f.dateFormat = format
+        } else {
+            // Same parts, in the order and with the punctuation of the language ("12. mai", "5月12日").
+            f.setLocalizedDateFormatFromTemplate(format)
+        }
         return f.string(from: date)
     }
 }

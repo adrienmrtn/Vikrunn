@@ -17,11 +17,16 @@ enum CoachLocalIntent {
     /// `words` are the lowercased words of the message, `lowered` the whole lowercased message
     /// with straight apostrophes.
     static func detect(words: [String], lowered: String) -> CoachLocalIntent? {
-        if hasStem(words, painStems) || hasPhrase(lowered, painPhrases) { return .pain }
-        if hasStem(words, sickStems) || hasWord(words, sickWords) || hasPhrase(lowered, sickPhrases) { return .sick }
-        if hasStem(words, skipStems) || hasPhrase(lowered, skipPhrases) { return .skip }
-        if hasStem(words, tiredStems) || hasPhrase(lowered, tiredPhrases) { return .tired }
-        if hasStem(words, busyStems) || hasWord(words, busyWords) || hasPhrase(lowered, busyPhrases) { return .busy }
+        if hasStem(words, CoachWords.pick(painStems, "pain_stems"))
+            || hasPhrase(lowered, CoachWords.pick(painPhrases, "pain_phrases")) { return .pain }
+        if hasStem(words, CoachWords.pick(sickStems, "sick_stems")) || hasWord(words, CoachWords.english(sickWords))
+            || hasPhrase(lowered, CoachWords.pick(sickPhrases, "sick_phrases")) { return .sick }
+        if hasStem(words, CoachWords.pick(skipStems, "skip_stems"))
+            || hasPhrase(lowered, CoachWords.pick(skipPhrases, "skip_phrases")) { return .skip }
+        if hasStem(words, CoachWords.pick(tiredStems, "tired_stems"))
+            || hasPhrase(lowered, CoachWords.pick(tiredPhrases, "tired_phrases")) { return .tired }
+        if hasStem(words, CoachWords.pick(busyStems, "busy_stems")) || hasWord(words, CoachWords.english(busyWords))
+            || hasPhrase(lowered, CoachWords.pick(busyPhrases, "busy_phrases")) { return .busy }
         return nil
     }
 
@@ -32,21 +37,23 @@ enum CoachLocalIntent {
         let todayIndex = calendar.mondayIndex(of: today)
         var offsets: [Int] = []
 
-        if hasWord(words, ["today", "tonight"])
-            || hasPhrase(lowered, ["this morning", "this afternoon", "this evening"]) {
+        if hasWord(words, CoachWords.english(["today", "tonight"]))
+            || hasPhrase(lowered, CoachWords.pick(["this morning", "this afternoon", "this evening"], "today_phrases")) {
             offsets.append(0)
         }
-        if hasWord(words, ["tomorrow"]) {
+        if hasWord(words, CoachWords.english(["tomorrow"])) || hasPhrase(lowered, CoachWords.list("tomorrow_phrases")) {
             offsets.append(1)
         }
-        if hasWord(words, ["weekend", "weekends"]) {
+        if hasWord(words, CoachWords.english(["weekend", "weekends"])) || hasPhrase(lowered, CoachWords.list("weekend_phrases")) {
             // Saturday and Sunday of the current week (only Sunday is left when today is Sunday).
             offsets.append(max(0, 6 - todayIndex))
             offsets.append(7 - todayIndex)
         }
-        for index in weekdayNames.indices where hasWord(words, weekdayNames[index]) {
+        for index in weekdayNames.indices {
             // Next occurrence of that weekday, today included.
-            offsets.append((index + 1 - todayIndex + 7) % 7)
+            let named = hasWord(words, CoachWords.english(weekdayNames[index]))
+                || hasPhrase(lowered, CoachWords.list("weekday_\(index + 1)_phrases"))
+            if named { offsets.append((index + 1 - todayIndex + 7) % 7) }
         }
 
         var days: [Date] = []
@@ -118,6 +125,8 @@ enum CoachLocalIntent {
     }
 
     private static func hasPhrase(_ text: String, _ phrases: [String]) -> Bool {
-        phrases.contains { text.contains($0) }
+        // Padded, so an entry written with spaces around it also matches at either end of the message.
+        let padded = " " + text + " "
+        return phrases.contains { padded.contains($0) }
     }
 }

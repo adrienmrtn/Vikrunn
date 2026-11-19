@@ -1,0 +1,626 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSHealthShareUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يقرأ Atala جرياتك ونبض قلبك خلالها من Apple Health ليتمكن مدربك من تكييف خطتك."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala čte z Apple Health tvoje běhy a jejich tepovou frekvenci, aby mohl kouč přizpůsobit tvůj plán."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala læser dine løbeture og pulsen fra dem i Apple Health, så din coach kan tilpasse din plan."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala liest deine Läufe und die zugehörige Herzfrequenz aus Apple Health, damit dein Coach deinen Plan anpassen kann."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Atala διαβάζει τα τρεξίματά σου και τους καρδιακούς παλμούς τους από το Apple Health, ώστε ο προπονητής σου να προσαρμόζει το πλάνο σου."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala reads your runs and their heart rate from Apple Health so your coach can adapt your plan."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala lee tus carreras y su frecuencia cardíaca en Apple Health para que tu coach pueda adaptar tu plan."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala lukee lenkkisi ja niiden syketiedot Apple Healthista, jotta valmentajasi voi mukauttaa ohjelmaasi."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala lit tes sorties et leur fréquence cardiaque dans Apple Health pour que ton coach puisse adapter ton plan."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala קוראת מ-Apple Health את הריצות שלך ואת הדופק שנמדד בהן, כדי שהמאמן שלך יוכל להתאים את התוכנית."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala čita tvoja trčanja i puls tijekom njih iz Apple Health kako bi tvoj trener mogao prilagoditi plan."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Az Atala beolvassa a futásaidat és a hozzájuk tartozó pulzusadatokat az Apple Health alkalmazásból, hogy az edződ hozzád igazíthassa a tervedet."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala legge le tue corse e la relativa frequenza cardiaca da Apple Health, così il tuo coach può adattare il tuo piano."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atalaは、コーチがプランを調整できるように、Apple Healthからランと心拍数を読み取ります。"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala leser løpeturene dine og pulsen fra dem i Apple Health, slik at treneren din kan tilpasse planen din."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala leest je runs en de bijbehorende hartslag uit Apple Health, zodat je coach je schema kan aanpassen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala odczytuje z Apple Health twoje biegi i tętno z tych biegów, aby trener mógł dopasować twój plan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Atala lê suas corridas e a frequência cardíaca delas no Apple Health para que seu coach possa adaptar seu plano."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Atala lê as tuas corridas e a respetiva frequência cardíaca no Apple Health para o teu coach poder adaptar o teu plano."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala citește din Apple Health alergările tale și pulsul din timpul lor, pentru ca antrenorul să îți poată adapta planul."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala читает твои пробежки и пульс во время них из Apple Health, чтобы тренер мог адаптировать твой план."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala číta z Apple Health tvoje behy a tep pri nich, aby ti tréner mohol prispôsobiť plán."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala iz Apple Health bere tvoje teke in srčni utrip med njimi, da lahko trener prilagodi tvoj načrt."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala läser dina löprundor och pulsen från dem i Apple Health så att din coach kan anpassa din plan."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala, koçun planını sana göre uyarlayabilsin diye koşularını ve nabız verilerini Apple Health'ten okur."
+          }
+        }
+      }
+    },
+    "NSHealthUpdateUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يكتفي Atala بالقراءة من Apple Health، ولا يضيف شيئا إلى بياناتك الصحية ولا يغير فيها."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala z Apple Health pouze čte. Žádná tvoje data ve Zdraví nepřidává ani nemění."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala læser kun fra Apple Health. Appen tilføjer eller ændrer ikke nogen af dine sundhedsdata."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala liest nur aus Apple Health. Deine Health-Daten werden weder ergänzt noch geändert."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Atala μόνο διαβάζει από το Apple Health. Δεν προσθέτει και δεν αλλάζει κανένα από τα δεδομένα Υγείας σου."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala only reads from Apple Health. It does not add or change any of your Health data."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala solo lee datos de Apple Health. No añade ni modifica ninguno de tus datos de Salud."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala ainoastaan lukee tietoja Apple Healthista. Se ei lisää eikä muuta mitään terveystietojasi."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala se contente de lire Apple Health. L'app n'ajoute et ne modifie aucune de tes données Santé."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala רק קוראת מ-Apple Health. היא לא מוסיפה ולא משנה שום נתון בנתוני הבריאות שלך."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala samo čita podatke iz Apple Health. Ne dodaje i ne mijenja nijedan tvoj zdravstveni podatak."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Az Atala csak olvas az Apple Health alkalmazásból. Nem ad hozzá és nem módosít semmit az egészségügyi adataid között."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala legge soltanto da Apple Health. Non aggiunge né modifica nessuno dei tuoi dati di Salute."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AtalaはApple Healthからデータを読み取るだけです。ヘルスケアデータを追加・変更することはありません。"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala leser bare fra Apple Health. Appen legger ikke til eller endrer noen av helsedataene dine."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala leest alleen gegevens uit Apple Health. Er worden geen gezondheidsgegevens toegevoegd of gewijzigd."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala tylko odczytuje dane z Apple Health. Nie dodaje ani nie zmienia żadnych twoich danych o zdrowiu."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Atala apenas lê dados do Apple Health. Ele não adiciona nem altera nenhum dos seus dados de Saúde."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Atala apenas lê dados do Apple Health. Não adiciona nem altera nenhum dos teus dados de Saúde."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala doar citește din Apple Health. Nu adaugă și nu modifică nimic în datele tale de sănătate."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala только читает данные из Apple Health. Приложение не добавляет и не изменяет твои данные о здоровье."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala z Apple Health iba číta. Žiadne tvoje údaje v aplikácii Zdravie nepridáva ani nemení."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala iz Apple Health samo bere. Tvojih zdravstvenih podatkov ne dodaja in ne spreminja."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala läser bara från Apple Health. Appen lägger inte till och ändrar inte några av dina hälsodata."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala, Apple Health'ten yalnızca veri okur. Sağlık verilerine hiçbir şey eklemez, hiçbirini değiştirmez."
+          }
+        }
+      }
+    },
+    "NSLocationAlwaysAndWhenInUseUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستخدم Atala موقعك لتسجيل جريتك حتى عندما تكون الشاشة مقفلة."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala využívá tvou polohu k zaznamenání běhu, i když je obrazovka zamčená."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala bruger din lokalitet til at registrere din løbetur, også når skærmen er låst."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala verwendet deinen Standort, um deinen Lauf aufzuzeichnen – auch wenn der Bildschirm gesperrt ist."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Atala χρησιμοποιεί την τοποθεσία σου για να καταγράφει το τρέξιμό σου, ακόμα και όταν η οθόνη είναι κλειδωμένη."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala uses your location to record your run, even when the screen is locked."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala usa tu ubicación para registrar tu carrera, incluso con la pantalla bloqueada."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala käyttää sijaintiasi lenkkisi tallentamiseen myös silloin, kun näyttö on lukittu."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala utilise ta position pour enregistrer ta sortie, même quand l'écran est verrouillé."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala משתמשת במיקום שלך כדי לתעד את הריצה שלך, גם כשהמסך נעול."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala koristi tvoju lokaciju za bilježenje trčanja, čak i kad je zaslon zaključan."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Az Atala a helyadataid alapján rögzíti a futásodat akkor is, ha a képernyő le van zárva."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala usa la tua posizione per registrare la tua corsa, anche con lo schermo bloccato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atalaは、画面がロックされているときもランを記録できるように位置情報を使用します。"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala bruker posisjonen din til å registrere løpeturen din, også når skjermen er låst."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala gebruikt je locatie om je run vast te leggen, ook als het scherm vergrendeld is."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala używa twojej lokalizacji, aby rejestrować bieg także wtedy, gdy ekran jest zablokowany."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Atala usa sua localização para registrar sua corrida, mesmo com a tela bloqueada."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Atala usa a tua localização para registar a tua corrida, mesmo com o ecrã bloqueado."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala îți folosește localizarea pentru a-ți înregistra alergarea, chiar și când ecranul este blocat."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala использует твою геолокацию, чтобы записывать пробежку, даже когда экран заблокирован."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala používa tvoju polohu na zaznamenanie behu, aj keď je obrazovka zamknutá."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala uporablja tvojo lokacijo za beleženje teka, tudi ko je zaslon zaklenjen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala använder din plats för att registrera din löprunda, även när skärmen är låst."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala, ekran kilitliyken bile koşunu kaydedebilmek için konumunu kullanır."
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستخدم Atala موقعك لتسجيل مسافة جريتك ووتيرتها ومسارها."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala využívá tvou polohu k zaznamenání vzdálenosti, tempa a trasy tvého běhu."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala bruger din lokalitet til at registrere distance, pace og rute på din løbetur."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala verwendet deinen Standort, um Distanz, Pace und Strecke deines Laufs aufzuzeichnen."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Atala χρησιμοποιεί την τοποθεσία σου για να καταγράφει την απόσταση, τον ρυθμό και τη διαδρομή του τρεξίματός σου."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala uses your location to record the distance, pace and route of your run."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala usa tu ubicación para registrar la distancia, el ritmo y el recorrido de tu carrera."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala käyttää sijaintiasi lenkkisi matkan, vauhdin ja reitin tallentamiseen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala utilise ta position pour enregistrer la distance, l'allure et le parcours de ta sortie."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala משתמשת במיקום שלך כדי לתעד את המרחק, הקצב והמסלול של הריצה שלך."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala koristi tvoju lokaciju za bilježenje udaljenosti, tempa i rute tvog trčanja."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Az Atala a helyadataid alapján rögzíti a futásod távját, iramát és útvonalát."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala usa la tua posizione per registrare distanza, ritmo e percorso della tua corsa."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atalaは、ランの距離・ペース・ルートを記録するために位置情報を使用します。"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala bruker posisjonen din til å registrere distanse, fart og rute på løpeturen din."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala gebruikt je locatie om de afstand, het tempo en de route van je run vast te leggen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala używa twojej lokalizacji, aby rejestrować dystans, tempo i trasę biegu."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Atala usa sua localização para registrar a distância, o ritmo e o percurso da sua corrida."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Atala usa a tua localização para registar a distância, o ritmo e o percurso da tua corrida."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala îți folosește localizarea pentru a înregistra distanța, ritmul și traseul alergării tale."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala использует твою геолокацию, чтобы записывать дистанцию, темп и маршрут пробежки."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala používa tvoju polohu na zaznamenanie vzdialenosti, tempa a trasy tvojho behu."
+          }
+        },
+        "sl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala uporablja tvojo lokacijo za beleženje razdalje, tempa in poti tvojega teka."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala använder din plats för att registrera distans, tempo och rutt under din löprunda."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atala, koşunun mesafesini, temposunu ve rotasını kaydetmek için konumunu kullanır."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
