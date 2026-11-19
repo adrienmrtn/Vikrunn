@@ -25,7 +25,7 @@ struct OnboardingCoachCarouselMetrics {
     }
 }
 
-/// The six coaches on one line. The selected one is centred and large, one smaller, faded
+/// The coaches on one line. The selected one is centred and large, one smaller, faded
 /// neighbour stands on each side. Positions come from `index` and the drag only, so the
 /// centred coach is always the selected one.
 struct OnboardingCoachCarouselView: View {
@@ -147,7 +147,7 @@ struct OnboardingCoachCarouselView: View {
     }
 }
 
-/// Screen 3: swipe through the six coaches. The centred one is large, its neighbours small and faded.
+/// Screen 3: swipe through the coaches. The centred one is large, its neighbours small and faded.
 struct OnboardingCoachScreen: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var nav: OnboardingNavigator
