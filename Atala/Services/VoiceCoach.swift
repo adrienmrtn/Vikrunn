@@ -10,7 +10,7 @@ final class VoiceCoach: NSObject, ObservableObject {
     @Published private(set) var lastCue: String = ""
 
     private let synthesizer = AVSpeechSynthesizer()
-    private let voice: AVSpeechSynthesisVoice? = AVSpeechSynthesisVoice(language: "en-US")
+    private let voice: AVSpeechSynthesisVoice? = VoiceCoach.bestVoice()
     private var lastDriftCue: Date = .distantPast
     private var wasOffTarget = false
     private var pending = 0
@@ -23,6 +23,26 @@ final class VoiceCoach: NSObject, ObservableObject {
     override init() {
         super.init()
         synthesizer.delegate = self
+    }
+
+    /// The most natural English voice installed on the phone: a premium or enhanced one when the
+    /// user downloaded it (Settings, Accessibility, Spoken Content, Voices), the standard one otherwise.
+    nonisolated private static func bestVoice() -> AVSpeechSynthesisVoice? {
+        func rank(_ voice: AVSpeechSynthesisVoice) -> Int {
+            var score = 0
+            switch voice.quality {
+            case .premium: score += 20
+            case .enhanced: score += 10
+            default: break
+            }
+            if voice.language == "en-US" { score += 2 }
+            return score
+        }
+        let english = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.hasPrefix("en") }
+        if let best = english.max(by: { rank($0) < rank($1) }), rank(best) >= 10 {
+            return best
+        }
+        return AVSpeechSynthesisVoice(language: "en-US")
     }
 
     // MARK: Cues

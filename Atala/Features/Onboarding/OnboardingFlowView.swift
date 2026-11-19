@@ -19,6 +19,7 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
     case community = 38
     case beyondCoach = 39
     case planMatters = 40
+    case ready = 41
 
     /// The screens in the order they are shown. `levelRisk` (raw value 34) was removed from the
     /// flow: its raw value stays reserved and a step saved on it resumes on the next screen.
@@ -28,7 +29,7 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
         .levelIntro, .levelFocus,
         .goalIntro, .goal, .race, .target, .why, .coachReply, .consistency,
         .days, .longRun, .constraints, .message, .tone, .projection, .reviews, .community,
-        .signIn, .loading, .planReady, .commitment, .beyondCoach, .planMatters, .trial, .timeline, .reminder, .paywall,
+        .signIn, .loading, .planReady, .ready, .commitment, .beyondCoach, .planMatters, .trial, .timeline, .reminder, .paywall,
         .permissions, .healthConnect,
     ]
 
@@ -95,16 +96,24 @@ final class OnboardingNavigator: ObservableObject {
         isReady = true
     }
 
+    /// Someone who said they are just starting, or that they do not run yet.
+    static func isStarting(_ answers: OnboardingAnswers) -> Bool {
+        (answers.experience ?? .starting) == .starting || answers.weeklyVolume == .notYet
+    }
+
     func isSkipped(_ candidate: OnboardingStep, store: AppStore) -> Bool {
         switch candidate {
         case .levelRisk:
             return true
+        case .recent:
+            // Nothing to ask someone who does not run yet.
+            return store.answers.weeklyVolume == .notYet
         case .levelIntro:
-            // Beginners: congratulations first.
-            return OnboardingRunnerLevel(store.answers.experience) != .beginner
+            // "Starting is the hardest part" is only for people who are really starting.
+            return !Self.isStarting(store.answers)
         case .levelFocus:
-            // Intermediate and advanced runners: one screen.
-            return OnboardingRunnerLevel(store.answers.experience) == .beginner
+            // Everyone else: one screen about what the plan brings them.
+            return Self.isStarting(store.answers)
         case .race, .target:
             return store.answers.goal.isOpenEnded
         case .longRun:
@@ -155,7 +164,7 @@ final class OnboardingNavigator: ObservableObject {
         transition.holdsOutgoing = target.isTapScreen
         let animation: Animation = target.isTapScreen
             ? .easeInOut(duration: OnboardingRevealTiming.hold)
-            : .easeOut(duration: 0.3)
+            : .spring(response: 0.46, dampingFraction: 0.88)
         withAnimation(animation) {
             step = target
         }
@@ -166,7 +175,7 @@ final class OnboardingNavigator: ObservableObject {
     /// on the experience, the race screens on the goal), so the remaining steps stay evenly spaced.
     private func isLeftOutOfBar(_ item: OnboardingStep, store: AppStore) -> Bool {
         switch item {
-        case .levelIntro, .levelFocus, .race, .target:
+        case .recent, .levelIntro, .levelFocus, .race, .target:
             return isSkipped(item, store: store)
         default:
             return false
@@ -370,6 +379,7 @@ struct OnboardingStepHost: View {
         case .signIn: OnboardingSignInScreen()
         case .loading: OnboardingLoadingScreen()
         case .planReady: OnboardingPlanReadyScreen()
+        case .ready: OnboardingReadyScreen()
         case .commitment: OnboardingCommitmentScreen()
         case .beyondCoach: OnboardingBeyondCoachScreen()
         case .planMatters: OnboardingPlanMattersScreen()

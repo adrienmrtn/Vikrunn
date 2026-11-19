@@ -17,15 +17,15 @@ enum OnboardingRevealTiming {
     static let speech: Double = 0.7
 }
 
-/// Incoming screen: fades in while rising a few points and settling.
+/// Incoming screen: fades in while sliding in from the right and settling.
 struct OnboardingEnterModifier: ViewModifier {
     let isActive: Bool
 
     func body(content: Content) -> some View {
         content
             .opacity(isActive ? 0 : 1)
-            .scaleEffect(isActive ? 0.985 : 1)
-            .offset(y: isActive ? 12 : 0)
+            .scaleEffect(isActive ? 0.97 : 1)
+            .offset(x: isActive ? 28 : 0, y: isActive ? 6 : 0)
     }
 }
 

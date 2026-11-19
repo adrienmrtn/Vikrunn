@@ -9,18 +9,8 @@ struct TodayView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    HStack(spacing: 8) {
-                        Text(subtitle)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Theme.muted)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                        Spacer(minLength: 0)
-                        if store.streak.current > 0 {
-                            MainStreakChip(streak: store.streak)
-                        }
-                    }
-                    .mainStagedAppear(index: 0)
+                    topHeader
+                        .mainStagedAppear(index: 0)
                     TodayWeekStrip()
                         .padding(.top, 14)
                         .mainStagedAppear(index: 1)
@@ -71,17 +61,16 @@ struct TodayView: View {
                 .mainStagedEntrance(.today)
             }
             .background(Color.white)
-            .navigationTitle("Hello, \(store.firstName)")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    BrandLogo(style: .full, height: 18)
-                        .foregroundStyle(Theme.forest)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    profileButton
-                }
+            // Keeps the scrolling content from showing through the status bar.
+            .overlay(alignment: .top) {
+                Color.white
+                    .ignoresSafeArea(edges: .top)
+                    .frame(height: 0)
             }
+            // Own header instead of the system bar: the logo sits flat on the page, with no bar
+            // button background behind it.
+            .navigationTitle("Today")
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 
@@ -133,7 +122,39 @@ struct TodayView: View {
 
     // MARK: Sections
 
-    /// Opens the profile, from the navigation bar.
+    /// Logo and profile, the greeting, then the date line with the streak.
+    private var topHeader: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center) {
+                BrandLogo(style: .full, height: 22)
+                    .foregroundStyle(Theme.forest)
+                Spacer(minLength: 8)
+                profileButton
+            }
+            .frame(height: 44)
+            Text("Hello, \(store.firstName)")
+                .font(Theme.title(32))
+                .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.top, 10)
+                .accessibilityAddTraits(.isHeader)
+            HStack(spacing: 8) {
+                Text(subtitle)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.muted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+                if store.streak.current > 0 {
+                    MainStreakChip(streak: store.streak)
+                }
+            }
+            .padding(.top, 6)
+        }
+    }
+
+    /// Opens the profile, from the header.
     private var profileButton: some View {
         Button {
             Haptics.tap()

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Launch splash, shown over the app on every cold launch for about 1.6 s. It starts where the
+/// Launch splash, shown over the app on every cold launch for about 2.6 s. It starts where the
 /// system launch screen ends (the logo mark on cream): the mark settles in with a spring, opens
 /// into the full logo, the tagline rises under it, then everything fades away. It never waits
 /// for anything: the app underneath is already loaded.
@@ -60,7 +60,7 @@ struct AtalaSplashView: View {
             markSettled = true
             opened = true
             taglineShown = true
-            await Self.wait(1.0)
+            await Self.wait(2.0)
             withAnimation(.easeInOut(duration: 0.3)) {
                 leaving = true
             }
@@ -79,8 +79,9 @@ struct AtalaSplashView: View {
         withAnimation(.easeOut(duration: 0.4)) {
             taglineShown = true
         }
-        await Self.wait(0.6)
-        withAnimation(.easeIn(duration: 0.3)) {
+        // Hold the full logo and tagline long enough to be read.
+        await Self.wait(1.6)
+        withAnimation(.easeIn(duration: 0.35)) {
             leaving = true
         }
         await Self.wait(0.32)

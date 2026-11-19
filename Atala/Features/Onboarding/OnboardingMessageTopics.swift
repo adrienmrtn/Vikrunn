@@ -17,12 +17,12 @@ struct OnboardingChatTopic: Identifiable, Equatable {
     /// wording follows the days the user ticked ("I can't run this Thursday").
     static func all(example: OnboardingPlanChangeExample) -> [OnboardingChatTopic] {
         [
-            OnboardingChatTopic(id: 0, question: "What if I miss a session?", answers: [
-                "Nothing breaks. It's simply marked as missed, and the rest of your plan stays as it is.",
-                "You ran it after all, on a treadmill for instance? Tell me afterwards and it counts.",
+            OnboardingChatTopic(id: 0, question: "How should I warm up today?", answers: [
+                "Five minutes of easy jogging, then leg swings, high knees and a few relaxed strides.",
+                "Before a hard session, add two short accelerations so your first rep doesn't come as a shock.",
             ], opensPlanChange: false),
-            OnboardingChatTopic(id: 1, question: "And if I know in advance?", answers: [
-                "Tell me before, and I'll suggest another day. Nothing moves until you say yes.",
+            OnboardingChatTopic(id: 1, question: "What if I miss a session?", answers: [
+                "Nothing breaks. It's simply marked as missed, and the rest of your plan stays as it is.",
             ], opensPlanChange: false),
             OnboardingChatTopic(id: 2, question: example.userLine, answers: [
                 proposalLine,
