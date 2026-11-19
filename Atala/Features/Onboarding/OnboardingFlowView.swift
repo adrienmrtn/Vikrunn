@@ -22,15 +22,15 @@ enum OnboardingStep: Int, CaseIterable, Hashable {
     case ready = 41
     case notifications = 42
 
-    /// The screens in the order they are shown. `levelRisk` (raw value 34) and `reminder` were
-    /// removed from the flow: their raw values stay reserved and a step saved on one of them
-    /// resumes on the next screen.
+    /// The screens in the order they are shown. `levelRisk` (raw value 34), `reminder` and
+    /// `projection` were removed from the flow: their raw values stay reserved and a step saved
+    /// on one of them resumes on the next screen.
     static let order: [OnboardingStep] = [
         .welcome,
         .firstName, .intro, .coach, .hello, .gender, .experience, .volume, .recent, .health, .mirror,
         .levelIntro, .levelFocus,
         .goalIntro, .goal, .race, .target, .why, .coachReply, .consistency,
-        .days, .longRun, .constraints, .message, .tone, .projection, .reviews, .community,
+        .days, .longRun, .constraints, .message, .tone, .reviews, .community,
         .signIn, .loading, .planReady, .ready, .commitment, .beyondCoach, .planMatters, .trial, .timeline, .paywall,
         .permissions, .notifications, .healthConnect,
     ]
@@ -90,6 +90,8 @@ final class OnboardingNavigator: ObservableObject {
         if saved == .levelRisk { saved = .goalIntro }
         // The trial-reminder screen is gone: a step saved on it resumes on the paywall.
         if saved == .reminder { saved = .paywall }
+        // The projection screen is gone: a step saved on it resumes on the reviews.
+        if saved == .projection { saved = .reviews }
         if saved.position > OnboardingStep.loading.position {
             // A plan built on another day would start in the past: rebuild it from today.
             // Nothing can be done or missed yet, the app has not been opened.
@@ -107,7 +109,7 @@ final class OnboardingNavigator: ObservableObject {
 
     func isSkipped(_ candidate: OnboardingStep, store: AppStore) -> Bool {
         switch candidate {
-        case .levelRisk:
+        case .levelRisk, .projection:
             return true
         case .recent:
             // Nothing to ask someone who does not run yet.
@@ -371,7 +373,6 @@ struct OnboardingStepHost: View {
         case .constraints: OnboardingConstraintsScreen()
         case .message: OnboardingMessageScreen()
         case .tone: OnboardingToneScreen()
-        case .projection: OnboardingProjectionScreen()
         case .reviews: OnboardingReviewsScreen()
         case .community: OnboardingCommunityScreen()
         default: EmptyView()
