@@ -1,7 +1,7 @@
 name: iOS build
 
-# Compiles the app on every push that touches it, and sends main to TestFlight.
-# TestFlight can also be started by hand: Actions > iOS build > Run workflow.
+# Compiles the app on every push that touches it. Sending main to TestFlight from here is
+# started by hand: Actions > iOS build > Run workflow.
 on:
   push:
     paths:
@@ -63,7 +63,9 @@ jobs:
   testflight:
     name: TestFlight
     needs: compile
-    if: github.ref == 'refs/heads/main'
+    # By hand only (Actions > iOS build > Run workflow, on main): Xcode Cloud already sends
+    # every change of main to TestFlight.
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
