@@ -19,10 +19,20 @@ struct RunElevationPoint: Identifiable, Equatable {
     let altitudeM: Double
 }
 
-/// Figures worked out from the recorded route: kilometre splits and elevation.
+/// Pace at a point of the run, for the pace chart.
+struct RunPacePoint: Identifiable, Equatable {
+    let id: Int
+    let distanceM: Double
+    /// Seconds per kilometre.
+    let pace: Double
+}
+
+/// Figures worked out from the recorded route: kilometre splits, pace along the way and elevation.
 /// Everything is empty for runs without a route (entered by hand, imported from Health).
 struct RunAnalysis {
     let kmSplits: [RunKmSplit]
+    /// Pace along the run, smoothed. Empty for runs too short to draw.
+    let paceProfile: [RunPacePoint]
     let elevation: [RunElevationPoint]
     /// Total climb in metres, nil when the route carries no altitude.
     let elevationGainM: Int?
@@ -30,6 +40,7 @@ struct RunAnalysis {
     init(run: RunRecord) {
         let legs = Self.legs(of: run)
         kmSplits = Self.kmSplits(from: legs)
+        paceProfile = Self.paceProfile(from: legs)
         let profile = Self.profile(of: run, legs: legs)
         elevation = Self.thinned(profile, to: 80)
         elevationGainM = profile.count >= 5 ? Self.gain(of: profile.map { $0.altitudeM }) : nil
@@ -99,6 +110,45 @@ struct RunAnalysis {
             splits.append(RunKmSplit(id: splits.count + 1, distanceM: metresDone, seconds: secondsDone))
         }
         return splits
+    }
+
+    // MARK: Pace along the run
+
+    /// The run cut into about fifty equal stretches (100 m at least), each with its pace, then
+    /// smoothed over three stretches so the line shows the effort and not the GPS noise.
+    private static func paceProfile(from legs: [Leg]) -> [RunPacePoint] {
+        let total: Double = legs.reduce(0) { $0 + $1.metres }
+        guard total >= 500 else { return [] }
+        let stretch: Double = max(100, total / 50)
+        var distances: [Double] = []
+        var paces: [Double] = []
+        var metres = 0.0
+        var seconds = 0.0
+        var travelled = 0.0
+        for leg in legs {
+            metres += leg.metres
+            seconds += leg.seconds
+            travelled += leg.metres
+            if metres >= stretch {
+                if seconds > 0 {
+                    distances.append(travelled - metres / 2)
+                    // Slower than 20:00 per km is a stop, not a pace: keep the line readable.
+                    paces.append(min(1200, seconds / metres * 1000))
+                }
+                metres = 0
+                seconds = 0
+            }
+        }
+        guard paces.count >= 4 else { return [] }
+        var points: [RunPacePoint] = []
+        for index in paces.indices {
+            let low = max(0, index - 1)
+            let high = min(paces.count - 1, index + 1)
+            let window = paces[low...high]
+            let mean = window.reduce(0, +) / Double(window.count)
+            points.append(RunPacePoint(id: index, distanceM: distances[index], pace: mean))
+        }
+        return points
     }
 
     // MARK: Elevation

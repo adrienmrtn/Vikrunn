@@ -18,6 +18,7 @@ struct RunFlowView: View {
     @State private var didSetup = false
     @State private var savedRun: RunRecord?
     @State private var confirmShortRun = false
+    @State private var confirmFinish = false
 
     init(workout: Workout?) {
         self.workout = workout
@@ -40,8 +41,19 @@ struct RunFlowView: View {
             }
     }
 
-    @ViewBuilder
+    /// The screens, with the "Finish this session?" question asked from the pause screen.
     private var content: some View {
+        screens
+            .confirmationDialog(L("Finish this session?"), isPresented: $confirmFinish, titleVisibility: .visible) {
+                Button(L("Finish and save")) { finishRun(save: true) }
+                Button(L("Not yet"), role: .cancel) {}
+            } message: {
+                Text(L("%@ in %@. It is saved to your history.", RunFormat.distance(tracker.distance), Fmt.duration(tracker.elapsed)))
+            }
+    }
+
+    @ViewBuilder
+    private var screens: some View {
         switch phase {
         case .ready:
             RunReadyScreen(workout: workout, tracker: tracker,
@@ -159,7 +171,9 @@ struct RunFlowView: View {
             Haptics.tap()
             confirmShortRun = true
         } else {
-            finishRun(save: true)
+            // Finishing is deliberate: one question before the recording stops.
+            Haptics.tap()
+            confirmFinish = true
         }
     }
 

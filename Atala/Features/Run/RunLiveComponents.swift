@@ -5,6 +5,8 @@ struct RunSegmentBar: View {
     let steps: [WorkoutStep]
     let currentIndex: Int
     let complete: Bool
+    /// Before the run: every segment in its own colour, none highlighted.
+    var preview: Bool = false
 
     var body: some View {
         GeometryReader { geo in
@@ -13,10 +15,10 @@ struct RunSegmentBar: View {
             let available: CGFloat = max(0, geo.size.width - spacing * CGFloat(max(0, steps.count - 1)))
             HStack(alignment: .center, spacing: spacing) {
                 ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                    let isCurrent = !complete && index == currentIndex
-                    let isDone = complete || index < currentIndex
+                    let isCurrent = !preview && !complete && index == currentIndex
+                    let isDone = !preview && (complete || index < currentIndex)
                     Capsule()
-                        .fill(isCurrent || isDone ? RunFormat.segmentColor(step.kind) : Color(hex: 0xD9D9D6))
+                        .fill(preview || isCurrent || isDone ? RunFormat.segmentColor(step.kind) : Color(hex: 0xD9D9D6))
                         .opacity(isDone ? 0.45 : 1)
                         .frame(width: total > 0 ? max(2, available * RunFormat.weight(step) / total) : 2,
                                height: isCurrent ? 10 : 6)
@@ -60,6 +62,8 @@ struct RunPaceGauge: View {
     let pace: Int
     let paceFast: Int
     let paceSlow: Int
+    /// The "too slow / target / too fast" captions under the bar.
+    var showsLabels: Bool = true
 
     /// 0 = far too slow, 1 = far too fast. The target range spans 0.35 to 0.65.
     private var position: CGFloat {
@@ -87,15 +91,17 @@ struct RunPaceGauge: View {
                 .animation(.easeOut(duration: 0.6), value: pace)
             }
             .frame(height: 20)
-            HStack {
-                Text(L("Too slow"))
-                Spacer()
-                Text(L("%@ to %@", Fmt.pace(paceSlow), Fmt.pace(paceFast)))
-                Spacer()
-                Text(L("Too fast"))
+            if showsLabels {
+                HStack {
+                    Text(L("Too slow"))
+                    Spacer()
+                    Text(L("%@ to %@", Fmt.pace(paceSlow), Fmt.pace(paceFast)))
+                    Spacer()
+                    Text(L("Too fast"))
+                }
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.muted)
             }
-            .font(.system(size: 12))
-            .foregroundStyle(Theme.muted)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L("Pace %@, target %@ to %@", Fmt.pace(pace), Fmt.pace(paceSlow), Fmt.pace(paceFast)))
@@ -191,5 +197,120 @@ struct RunLockOverlay: View {
             }
             .padding(.bottom, 30)
         }
+    }
+}
+
+/// The step being run, white on black so it reads in full sunlight: what is left of it, a bar that
+/// fills as it goes, and what comes next.
+struct RunStepCard: View {
+    let caption: String
+    let value: String
+    let unit: String?
+    /// "of 3 minutes"
+    let total: String
+    /// 0...1
+    let progress: Double
+    let next: String
+    /// "Step 3 of 14"
+    let position: String
+    let fast: Bool
+
+    private var fraction: CGFloat { CGFloat(min(1, max(0, progress))) }
+    private var accent: Color { fast ? Theme.orange : Theme.greenOnDark }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(caption)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.78))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Spacer(minLength: 8)
+                Text(position)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.78))
+                    .lineLimit(1)
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(value)
+                    .font(.system(size: 58, weight: .bold))
+                    .monospacedDigit()
+                    .tracking(-1.5)
+                    .foregroundStyle(Color.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                if let unit {
+                    Text(unit)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(Color.white)
+                }
+                Spacer(minLength: 8)
+                Text(total)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Color.white.opacity(0.78))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.22))
+                    Capsule().fill(accent)
+                        .frame(width: max(8, geo.size.width * fraction))
+                }
+                .animation(.linear(duration: 1), value: fraction)
+            }
+            .frame(height: 8)
+            Text(next)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Color.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.ink, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// One of the big figures of the live and pause screens: the label on top, a very large value.
+struct RunLiveFigure: View {
+    let label: String
+    let value: String
+    var unit: String? = nil
+    var size: CGFloat = 46
+    var alignment: HorizontalAlignment = .leading
+    var labelColor: Color = Theme.muted
+
+    private var frameAlignment: Alignment {
+        alignment == .center ? .center : .leading
+    }
+
+    var body: some View {
+        VStack(alignment: alignment, spacing: 0) {
+            Text(label)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(labelColor)
+                .lineLimit(1)
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(value)
+                    .font(.system(size: size, weight: .bold))
+                    .monospacedDigit()
+                    .tracking(size >= 70 ? -2.5 : -1)
+                    .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                if let unit {
+                    Text(unit)
+                        .font(.system(size: max(16, size * 0.3), weight: .bold))
+                        .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: frameAlignment)
+        .accessibilityElement(children: .combine)
     }
 }

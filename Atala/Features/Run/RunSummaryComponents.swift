@@ -2,27 +2,42 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-/// The route of the run drawn on a map. Not interactive, so it scrolls with the page.
-struct RunRouteMap: View {
-    let route: [RoutePoint]
-
-    private var coordinates: [CLLocationCoordinate2D] { route.map { $0.coordinate } }
-
-    private var region: MKCoordinateRegion {
-        let lats: [Double] = route.map { $0.lat }
-        let lons: [Double] = route.map { $0.lon }
-        let minLat = lats.min() ?? 0, maxLat = lats.max() ?? 0
-        let minLon = lons.min() ?? 0, maxLon = lons.max() ?? 0
-        let center = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2, longitude: (minLon + maxLon) / 2)
-        let span = MKCoordinateSpan(latitudeDelta: max(0.003, (maxLat - minLat) * 1.5),
-                                    longitudeDelta: max(0.003, (maxLon - minLon) * 1.5))
-        return MKCoordinateRegion(center: center, span: span)
+/// The part of the map that shows the whole route, with room around it.
+enum RunRouteGeometry {
+    static func coordinates(of route: [RoutePoint]) -> [CLLocationCoordinate2D] {
+        route.map { $0.coordinate }
     }
 
+    /// `padding` is the share of the route's size added around it (0.4 = 20 % on each side).
+    static func region(of route: [RoutePoint], padding: Double) -> MKCoordinateRegion {
+        let lats: [Double] = route.map { $0.lat }
+        let lons: [Double] = route.map { $0.lon }
+        let minLat: Double = lats.min() ?? 0
+        let maxLat: Double = lats.max() ?? 0
+        let minLon: Double = lons.min() ?? 0
+        let maxLon: Double = lons.max() ?? 0
+        let center = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2, longitude: (minLon + maxLon) / 2)
+        let span = MKCoordinateSpan(latitudeDelta: max(0.003, (maxLat - minLat) * (1 + padding)),
+                                    longitudeDelta: max(0.003, (maxLon - minLon) * (1 + padding)))
+        return MKCoordinateRegion(center: center, span: span)
+    }
+}
+
+/// The route drawn on a map: a white-edged orange line, a green dot at the start, a black one at
+/// the finish.
+private struct RunRouteMapLayer: View {
+    let route: [RoutePoint]
+    let interactive: Bool
+
     var body: some View {
-        Map(initialPosition: MapCameraPosition.region(region), interactionModes: []) {
+        let coordinates: [CLLocationCoordinate2D] = RunRouteGeometry.coordinates(of: route)
+        let region: MKCoordinateRegion = RunRouteGeometry.region(of: route, padding: interactive ? 0.35 : 0.5)
+        let modes: MapInteractionModes = interactive ? .all : []
+        return Map(initialPosition: MapCameraPosition.region(region), interactionModes: modes) {
             MapPolyline(coordinates: coordinates)
-                .stroke(Theme.orange, lineWidth: 4)
+                .stroke(Color.white, lineWidth: 8)
+            MapPolyline(coordinates: coordinates)
+                .stroke(Theme.orange, lineWidth: 4.5)
             if let start = coordinates.first {
                 Annotation(L("Start"), coordinate: start) {
                     RunRouteDot(color: Theme.green)
@@ -36,13 +51,100 @@ struct RunRouteMap: View {
                 .annotationTitles(.hidden)
             }
         }
-        .frame(height: 210)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Theme.cardBorder, lineWidth: 1)
-        )
-        .accessibilityLabel(L("Map of your route"))
+    }
+}
+
+/// The route of the run at the top of the summary. Not interactive, so it scrolls with the page;
+/// a tap opens it full screen, where it can be moved and zoomed.
+struct RunRouteMap: View {
+    let route: [RoutePoint]
+    /// "9.62 km", shown on the full-screen map.
+    var caption: String = ""
+
+    @State private var expanded = false
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 24, style: .continuous) }
+
+    var body: some View {
+        RunRouteMapLayer(route: route, interactive: false)
+            .frame(height: 260)
+            .clipShape(shape)
+            .overlay(shape.stroke(Theme.cardBorder, lineWidth: 1))
+            .overlay {
+                Button(action: {
+                    Haptics.tap()
+                    expanded = true
+                }) {
+                    ZStack(alignment: .topTrailing) {
+                        Color.clear
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Theme.ink)
+                            .frame(width: 40, height: 40)
+                            .background(Color.white, in: Circle())
+                            .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 2)
+                            .padding(12)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("Map of your route"))
+                .accessibilityHint(L("Opens the map full screen"))
+            }
+            .fullScreenCover(isPresented: $expanded) {
+                RunRouteFullMap(route: route, caption: caption)
+            }
+    }
+}
+
+/// The route full screen: the map can be moved and zoomed. Closed with the round button.
+struct RunRouteFullMap: View {
+    let route: [RoutePoint]
+    let caption: String
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            RunRouteMapLayer(route: route, interactive: true)
+                .ignoresSafeArea()
+            VStack(spacing: 0) {
+                HStack {
+                    closeButton
+                    Spacer(minLength: 0)
+                }
+                Spacer(minLength: 0)
+                if !caption.isEmpty {
+                    Text(caption)
+                        .font(.system(size: 17, weight: .bold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.white)
+                        .padding(.horizontal, 18)
+                        .frame(height: 44)
+                        .background(Theme.forest, in: Capsule())
+                        .shadow(color: Color.black.opacity(0.18), radius: 8, x: 0, y: 3)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+        }
+    }
+
+    private var closeButton: some View {
+        Button(action: {
+            Haptics.tap()
+            dismiss()
+        }) {
+            Image(systemName: "xmark")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Theme.ink)
+                .frame(width: 44, height: 44)
+                .background(Color.white, in: Circle())
+                .shadow(color: Color.black.opacity(0.18), radius: 8, x: 0, y: 3)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L("Close"))
     }
 }
 
