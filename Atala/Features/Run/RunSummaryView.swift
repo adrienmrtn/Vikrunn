@@ -1,6 +1,8 @@
 import SwiftUI
 
-/// Summary of a run: figures, route, fast repetitions and a word from the coach.
+/// Summary of a run. It opens with the route on a map (or a plain header when there is none), then
+/// the key figures, the splits per kilometre, the pace and elevation charts and a word from the coach.
+/// The map, the distance, the time and the average pace are free; the detailed figures need Atala Pro.
 /// Works pushed in a NavigationStack, in a sheet, or as the last screen of the run flow.
 struct RunSummaryView: View {
     let run: RunRecord
@@ -9,6 +11,7 @@ struct RunSummaryView: View {
     @EnvironmentObject private var store: AppStore
     @ObservedObject private var purchases = PurchaseService.shared
     @State private var showPaywall = false
+    @State private var showShare = false
     @Environment(\.dismiss) private var dismiss
 
     init(run: RunRecord) {
@@ -28,6 +31,8 @@ struct RunSummaryView: View {
 
     private var fastSplits: [RunSplit] { shown.splits.filter { $0.kind == .work } }
 
+    private var hasRoute: Bool { shown.route.count >= 2 }
+
     private func close() {
         if let onDone { onDone() } else { dismiss() }
     }
@@ -36,14 +41,13 @@ struct RunSummaryView: View {
         let analysis = RunAnalysis(run: shown)
         return ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                header
-                statsCard(analysis)
-                if shown.route.count >= 2 {
-                    RunRouteMap(route: shown.route)
+                if hasRoute {
+                    RunRouteMap(route: shown.route, caption: RunFormat.distance(shown.distanceM))
+                    header
+                } else {
+                    RunSummaryPlainHeader(symbol: plainSymbol, dateLine: dateLine, title: titleLine)
                 }
-                if purchases.isPro, fastSplits.count >= 2 {
-                    RunRepsCard(splits: fastSplits)
-                }
+                RunSummaryFiguresCard(run: shown, analysis: analysis, isPro: purchases.isPro)
                 detailCards(analysis)
                 coachLine
                 if let feeling = shown.feeling {
@@ -60,49 +64,61 @@ struct RunSummaryView: View {
         .background(Color.white.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
             BottomBar {
-                PrimaryButton(title: L("Done")) { close() }
+                HStack(spacing: 10) {
+                    shareButton
+                    PrimaryButton(title: L("Done")) { close() }
+                }
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .proPaywall(isPresented: $showPaywall)
+        .sheet(isPresented: $showShare) {
+            RunShareSheet(run: shown)
+        }
     }
 
-    /// Pace per kilometre and elevation: shown with Atala Pro, offered otherwise.
+    /// Opens the picture to share. Round, next to "Done".
+    private var shareButton: some View {
+        Button(action: {
+            Haptics.tap()
+            showShare = true
+        }) {
+            Image(systemName: "square.and.arrow.up")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Theme.ink)
+                .frame(width: Theme.buttonHeight, height: Theme.buttonHeight)
+                .background(Color.white, in: Circle())
+                .overlay(Circle().stroke(Theme.ink, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L("Share"))
+    }
+
+    /// Fast repetitions, splits per kilometre, pace and elevation: shown with Atala Pro, offered otherwise.
     @ViewBuilder
     private func detailCards(_ analysis: RunAnalysis) -> some View {
-        let hasSplits = analysis.kmSplits.count >= 2
-        let hasElevation = analysis.elevationGainM != nil && analysis.elevation.count >= 2
+        let hasSplits: Bool = analysis.kmSplits.count >= 2
+        let hasPace: Bool = analysis.paceProfile.count >= 4
+        let hasElevation: Bool = analysis.elevationGainM != nil && analysis.elevation.count >= 2
+        let hasHeartRate: Bool = shown.avgHeartRate != nil || shown.maxHeartRate != nil
         if purchases.isPro {
+            if fastSplits.count >= 2 {
+                RunRepsCard(splits: fastSplits)
+            }
             if hasSplits {
-                RunSplitsCard(splits: analysis.kmSplits, fastestID: analysis.fastestSplit?.id)
+                RunSplitsCard(splits: analysis.kmSplits, fastestID: analysis.fastestSplit?.id,
+                              averagePace: shown.avgPace)
+            }
+            if hasPace {
+                RunPaceChartCard(points: analysis.paceProfile, averagePace: shown.avgPace)
             }
             if let gain = analysis.elevationGainM, hasElevation {
                 RunElevationCard(points: analysis.elevation, gainM: gain)
             }
-        } else if hasSplits || hasElevation {
-            Button {
-                showPaywall = true
-            } label: {
-                HStack(spacing: 14) {
-                    IconTile(systemName: "lock.fill", size: 44)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(L("Pace per kilometre and elevation"))
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Theme.ink)
-                        Text(L("See the detail of every run with Atala Pro"))
-                            .font(.system(size: 13))
-                            .foregroundStyle(Theme.muted)
-                    }
-                    Spacer(minLength: 4)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Theme.faint)
-                }
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .card(radius: 22)
-            }
-            .buttonStyle(.plain)
+        } else if hasSplits || hasElevation || hasHeartRate || fastSplits.count >= 2 {
+            RunSummaryProTeaser(splits: analysis.kmSplits,
+                                fastestID: analysis.fastestSplit?.id,
+                                onUnlock: { showPaywall = true })
         }
     }
 
@@ -137,30 +153,13 @@ struct RunSummaryView: View {
         return title
     }
 
-    // MARK: Figures
-
-    private func statsCard(_ analysis: RunAnalysis) -> some View {
-        let columns: [GridItem] = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
-        return LazyVGrid(columns: columns, alignment: .leading, spacing: 16) {
-            RunSummaryStat(value: RunFormat.distance(shown.distanceM), label: L("Distance"), large: true)
-            RunSummaryStat(value: Fmt.duration(shown.durationSec), label: L("Duration"), large: true)
-            RunSummaryStat(value: "\(Fmt.pace(shown.avgPace))/km", label: L("Average pace"), large: false)
-            if let heartRate = shown.avgHeartRate {
-                RunSummaryStat(value: "\(heartRate) bpm", label: L("Average heart rate"), large: false)
-            }
-            if let peak = shown.maxHeartRate {
-                RunSummaryStat(value: "\(peak) bpm", label: L("Max heart rate"), large: false)
-            }
-            if purchases.isPro, let gain = analysis.elevationGainM {
-                RunSummaryStat(value: "+\(gain) m", label: L("Elevation gain"), large: false)
-            }
-            if purchases.isPro, let fastest = analysis.fastestSplit {
-                RunSummaryStat(value: "\(Fmt.pace(fastest.pace))/km", label: L("Fastest kilometre"), large: false)
-            }
+    /// Symbol of the header shown when there is no map.
+    private var plainSymbol: String {
+        switch shown.source {
+        case .gps: return "figure.run"
+        case .manual: return "square.and.pencil"
+        case .health: return "heart.fill"
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.green, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
     // MARK: Coach and feeling
@@ -211,29 +210,8 @@ struct RunSummaryView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .card()
-        .accessibilityElement(children: .combine)
-    }
-}
-
-private struct RunSummaryStat: View {
-    let value: String
-    let label: String
-    let large: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(value)
-                .font(.system(size: large ? 28 : 20, weight: .bold))
-                .monospacedDigit()
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.greenOnDark)
-        }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
         .accessibilityElement(children: .combine)
     }
 }

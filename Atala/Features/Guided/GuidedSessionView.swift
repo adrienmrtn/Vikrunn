@@ -96,7 +96,7 @@ struct GuidedSessionView: View {
         let engine = self.engine
         engine.onEvent = { [weak engine, weak voice] event in
             guard let engine, let voice else { return }
-            GuidedSessionView.handle(event, engine: engine, voice: voice, settings: store.settings.voice)
+            GuidedSessionView.handle(event, engine: engine, voice: voice, settings: ProAccess.voice(store.settings.voice))
         }
     }
 

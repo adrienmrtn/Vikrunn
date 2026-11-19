@@ -8,6 +8,8 @@ struct GuidedReadyScreen: View {
     let onClose: () -> Void
 
     @EnvironmentObject private var store: AppStore
+    @ObservedObject private var purchases = PurchaseService.shared
+    @State private var showPaywall = false
 
     private var totalMinutes: Int { GuidedPrescription.totalMinutes(exercises) }
 
@@ -37,6 +39,7 @@ struct GuidedReadyScreen: View {
                 PrimaryButton(title: L("Start"), enabled: !exercises.isEmpty, haptic: nil, action: onStart)
             }
         }
+        .proPaywall(isPresented: $showPaywall)
     }
 
     private var closeButton: some View {
@@ -73,29 +76,17 @@ struct GuidedReadyScreen: View {
         }
     }
 
+    /// The coach's voice needs Atala Pro: a live switch with it, a padlock that opens the paywall without.
     private var voiceRow: some View {
         VStack(spacing: 0) {
             Divider().overlay(Theme.hairline)
-            HStack(spacing: 14) {
-                IconTile(systemName: "speaker.wave.2.fill", tint: Theme.orangeDeep,
-                         background: Theme.orangeTint, size: 44)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L("%@'s voice", store.coach.name))
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Theme.ink)
-                    Text(store.settings.voice.enabled ? L("Announces each exercise and counts you down")
-                                                      : L("Off for this session"))
-                        .font(.system(size: 13))
-                        .foregroundStyle(Theme.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Toggle(L("Coach voice"), isOn: $store.settings.voice.enabled)
-                    .labelsHidden()
-                    .tint(Theme.green)
-            }
-            .frame(minHeight: 64)
-            .padding(.vertical, 4)
+            CoachVoiceRow(coachName: store.coach.name,
+                          isPro: purchases.isPro,
+                          isOn: $store.settings.voice.enabled,
+                          onText: L("Announces each exercise and counts you down"),
+                          offText: L("Off for this session"),
+                          onLocked: { showPaywall = true })
+                .padding(.vertical, 6)
             Divider().overlay(Theme.hairline)
         }
     }
