@@ -21,4 +21,5 @@ Atala Pro is an auto-renewing subscription. Payment is charged to your Apple Acc
 Atala gives general training guidance, not medical advice. If you have a health concern, talk to a doctor before starting a new training plan.
 
 Terms of Use: https://vikstudios.com/atala/terms
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Privacy Policy: https://vikstudios.com/atala

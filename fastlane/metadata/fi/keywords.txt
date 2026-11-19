@@ -1,0 +1,1 @@
+atala,juoksu,juokseminen,treeni,10km,maraton,hölkkä,vauhti,gps,aloittelija,intervallit

@@ -1,0 +1,25 @@
+Atala je běžecký kouč v kapse. Řekni mu svůj cíl, úroveň a dny, kdy můžeš běhat: sestaví tréninkový plán, který sedí tvému životu, a provede tě každým tréninkem.
+
+PLÁN POSTAVENÝ PODLE TEBE
+Vyber si cíl: prvních 5 km, 10 km, půlmaraton, pravidelné běhání nebo lepší kondici. Atala staví tvoje týdny podle současné úrovně, data závodu a času, na který míříš. Každý týden kombinuje volné běhy, intervaly, tempo a dlouhé běhy s posilováním a protahováním.
+
+KOUČ, KTERÝ ODPOVÍDÁ
+Vyber si kouče a tón, které ti sedí: laskavý, přímý nebo hravý. Nabitý týden, těžké nohy, trénink, který nestíháš? Zeptej se. Kouč může navrhnout změnu plánu a nic se nezmění, dokud neklepneš na Apply.
+
+VEDENÍ PŘI KAŽDÉM BĚHU
+Spusť trénink a Atala ho zaznamená pomocí GPS. Vidíš své tempo oproti cíli každého úseku a kouč ti řekne, kdy přidat a kdy ubrat. Běháš raději podle pocitu? Spusť volný běh nebo dodatečně přidej běh na pásu.
+
+SLEDUJ SVŮJ POKROK
+Odhad času v závodě, který se zpřesňuje s každým zaznamenaným během, týdenní objem oproti plánu, osobní rekordy a série týdnů. Běhy zaznamenané v jiných aplikacích lze importovat z Apple Zdraví.
+
+ZDARMA A ATALA PRO
+Zdarma: tréninky prvního týdne, volné běhy s GPS, historie běhů, série a několik zpráv kouči denně.
+Atala Pro: celý plán, hlas kouče při běhu, vedené posilování a protahování, podrobné údaje o bězích, přesun tréninku na jiný den a neomezený chat s koučem.
+
+Atala Pro je předplatné s automatickým obnovováním. Platba je stržena z tvého účtu Apple při potvrzení nákupu. Předplatné se automaticky obnovuje, pokud není zrušeno nejméně 24 hodin před koncem aktuálního období. Spravovat nebo zrušit ho můžeš v nastavení účtu Apple.
+
+Atala poskytuje obecná tréninková doporučení, nikoli lékařské rady. Pokud máš zdravotní pochybnosti, poraď se před zahájením nového tréninkového plánu s lékařem.
+
+Podmínky použití: https://vikstudios.com/atala/terms
+Podmínky použití (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Zásady ochrany osobních údajů: https://vikstudios.com/atala
