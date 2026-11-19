@@ -165,8 +165,10 @@ final class VoiceCoach: NSObject, ObservableObject {
         pending = max(0, pending - 1)
     }
 
-    fileprivate func clipEnded() {
-        guard clipsPlaying else { return }
+    /// `finished` identifies the player that ended: a late report from a clip that was cut must
+    /// not advance the cue that replaced it.
+    fileprivate func clipEnded(_ finished: ObjectIdentifier) {
+        guard clipsPlaying, let player, ObjectIdentifier(player) == finished else { return }
         playNextClip()
     }
 
@@ -296,14 +298,16 @@ extension VoiceCoach: AVSpeechSynthesizerDelegate {
 
 extension VoiceCoach: AVAudioPlayerDelegate {
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        let finished = ObjectIdentifier(player)
         Task { @MainActor [weak self] in
-            self?.clipEnded()
+            self?.clipEnded(finished)
         }
     }
 
     nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        let finished = ObjectIdentifier(player)
         Task { @MainActor [weak self] in
-            self?.clipEnded()
+            self?.clipEnded(finished)
         }
     }
 }

@@ -24,7 +24,11 @@ extension CoachService {
         for row in rows.reversed() {
             guard let body = row["body"] as? String, !body.isEmpty,
                   let roleText = row["role"] as? String else { continue }
-            var message = ChatMessage(role: roleText == "user" ? .user : .coach, text: body)
+            // The request carries a hidden "(Answer in French.)" line after the user's words: not theirs.
+            let text = roleText == "user"
+                ? body.replacingOccurrences(of: "\\n\\n\\(Answer in [A-Za-z ]+\\.\\)$", with: "", options: .regularExpression)
+                : body
+            var message = ChatMessage(role: roleText == "user" ? .user : .coach, text: text)
             if let idString = row["id"] as? String, let id = UUID(uuidString: idString) {
                 message.id = id
             }
