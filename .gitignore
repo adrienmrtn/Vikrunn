@@ -4,3 +4,8 @@ DerivedData/
 *.xcuserstate
 build/
 .tmp-illus/
+
+# App Store screenshots rendered by appstore/screenshots/render.sh
+fastlane/screenshots/
+fastlane/screenshots-skipped/
+fastlane/report.xml

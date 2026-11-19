@@ -1,0 +1,44 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Upload the App Store screenshots of fastlane/screenshots to App Store Connect (no binary, no submission)"
+  lane :screenshots do
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_content: ENV.fetch("ASC_KEY_P8"),
+      in_house: false
+    )
+
+    shots = File.expand_path("screenshots", __dir__)
+    UI.user_error!("No screenshots in #{shots}. Run appstore/screenshots/render.sh first.") unless Dir.exist?(shots)
+
+    # deliver stops on a folder it does not know as an App Store language: set those aside.
+    known = FastlaneCore::Languages::ALL_LANGUAGES
+    skipped = File.expand_path("screenshots-skipped", __dir__)
+    Dir.children(shots).sort.each do |name|
+      next unless File.directory?(File.join(shots, name))
+      next if known.include?(name)
+      UI.important("#{name} is not a language this fastlane version knows: its screenshots are not uploaded")
+      FileUtils.mkdir_p(skipped)
+      FileUtils.mv(File.join(shots, name), File.join(skipped, name))
+    end
+    locales = Dir.children(shots).select { |name| File.directory?(File.join(shots, name)) }.sort
+    UI.message("Uploading screenshots for #{locales.count} languages: #{locales.join(', ')}")
+
+    deliver(
+      api_key: api_key,
+      screenshots_path: shots,
+      # Adds the languages that are missing on the version. There is no metadata folder,
+      # so no text of the store page is changed.
+      languages: locales,
+      skip_binary_upload: true,
+      skip_app_version_update: true,
+      overwrite_screenshots: true,
+      submit_for_review: false,
+      run_precheck_before_submit: false,
+      precheck_include_in_app_purchases: false,
+      force: true
+    )
+  end
+end

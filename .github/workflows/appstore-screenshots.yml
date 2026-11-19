@@ -1,0 +1,62 @@
+name: App Store screenshots
+
+# Renders the App Store screenshots from appstore/screenshots/src and uploads them to
+# App Store Connect. Started by hand only: Actions > App Store screenshots > Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "Upload to App Store Connect (off = only render, download them from the run)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: appstore-screenshots
+  cancel-in-progress: false
+
+jobs:
+  screenshots:
+    # macOS so that the texts are set in San Francisco, as on the design.
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Render the screenshots
+        run: appstore/screenshots/render.sh
+
+      - name: Keep the rendered screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: appstore-screenshots
+          path: fastlane/screenshots
+          retention-days: 14
+
+      - name: Set up Ruby
+        if: ${{ inputs.upload }}
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Install fastlane
+        if: ${{ inputs.upload }}
+        run: gem install fastlane --no-document
+
+      - name: Upload to App Store Connect
+        if: ${{ inputs.upload }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          FASTLANE_SKIP_UPDATE_CHECK: "1"
+          FASTLANE_HIDE_CHANGELOG: "1"
+          LC_ALL: en_US.UTF-8
+          LANG: en_US.UTF-8
+        run: |
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            if [ -z "${!name}" ]; then echo "::error::Secret $name is missing (Settings > Secrets and variables > Actions)"; exit 1; fi
+          done
+          fastlane ios screenshots
