@@ -33,13 +33,17 @@ struct GuidedReadyScreen: View {
         .background(Color.white.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
             BottomBar {
-                PrimaryButton(title: "Start", enabled: !exercises.isEmpty, action: onStart)
+                // Starting the session plays its own, stronger haptic.
+                PrimaryButton(title: "Start", enabled: !exercises.isEmpty, haptic: nil, action: onStart)
             }
         }
     }
 
     private var closeButton: some View {
-        Button(action: onClose) {
+        Button(action: {
+            Haptics.tap()
+            onClose()
+        }) {
             Image(systemName: "xmark")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Theme.ink)

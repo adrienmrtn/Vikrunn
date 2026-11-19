@@ -80,7 +80,10 @@ struct OnboardingQuestionChips: View {
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.muted)
             ForEach(topics) { topic in
-                Button(action: { onAsk(topic) }) {
+                Button(action: {
+                    Haptics.tap()
+                    onAsk(topic)
+                }) {
                     Text(topic.question)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Theme.green)

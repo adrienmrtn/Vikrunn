@@ -61,7 +61,10 @@ struct OnboardingDaysScreen: View {
 
     private func dayRow(_ day: Int) -> some View {
         let ticked = store.answers.runDays.contains(day)
-        return Button(action: { toggle(day) }) {
+        return Button(action: {
+            Haptics.select()
+            toggle(day)
+        }) {
             HStack(spacing: 12) {
                 Text(Weekday.long(day))
                     .font(.system(size: 16, weight: ticked ? .semibold : .regular))
@@ -194,7 +197,10 @@ struct OnboardingToneScreen: View {
 
     private func toneCard(_ tone: CoachTone) -> some View {
         let selected = store.answers.tone == tone
-        return Button(action: { store.answers.tone = tone }) {
+        return Button(action: {
+            Haptics.select()
+            store.answers.tone = tone
+        }) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(tone.title)

@@ -38,8 +38,14 @@ struct GuidedSessionView: View {
                 GuidedHowToSheet(info: info)
             }
             .confirmationDialog("End this session?", isPresented: $confirmEnd, titleVisibility: .visible) {
-                Button("Mark as done anyway") { leave(markDone: true) }
-                Button("Leave without saving", role: .destructive) { leave(markDone: false) }
+                Button("Mark as done anyway") {
+                    Haptics.success()
+                    leave(markDone: true)
+                }
+                Button("Leave without saving", role: .destructive) {
+                    Haptics.warning()
+                    leave(markDone: false)
+                }
                 Button("Keep going", role: .cancel) {}
             } message: {
                 Text(endMessage)
@@ -99,18 +105,20 @@ struct GuidedSessionView: View {
                                voice: VoiceCoach, settings: VoiceSettings) {
         switch event {
         case .segmentStarted(let segment):
-            UIImpactFeedbackGenerator(style: segment.kind == .work ? .heavy : .medium).impactOccurred()
+            // The first segment starts with the session, which has its own (strong) haptic.
+            if segment.id > 0 { Haptics.play(segment.kind == .work ? .rigid : .tap) }
             guard engine.exercises.indices.contains(segment.exerciseIndex) else { return }
             let line = GuidedWording.announcement(segment, engine.exercises[segment.exerciseIndex])
             voice.sayNow(line, display: line, settings: settings)
         case .halfway:
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            Haptics.tap()
             voice.say("Halfway.", display: "Halfway.", settings: settings)
         case .countdown(let seconds):
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            // Light, light, medium, as before a run.
+            Haptics.play(seconds == 1 ? .confirm : .tap)
             voice.sayNow("\(seconds)", display: "\(seconds)", settings: settings)
         case .finished:
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            // The success haptic comes with the check mark of the "Session complete" screen.
             voice.sayNow("Session complete. Well done.", display: "Session complete. Well done.",
                          settings: settings)
         }
@@ -118,6 +126,7 @@ struct GuidedSessionView: View {
 
     private func begin() {
         guard phase == .ready, !engine.exercises.isEmpty else { return }
+        Haptics.strong()
         UIApplication.shared.isIdleTimerDisabled = true
         phase = .active
         engine.start()

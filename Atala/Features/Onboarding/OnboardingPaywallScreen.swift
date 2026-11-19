@@ -134,7 +134,10 @@ struct OnboardingPaywallScreen: View {
                 .foregroundStyle(Theme.forest)
                 .padding(.leading, 12)
             Spacer()
-            Button(action: { nav.next(store) }) {
+            Button(action: {
+                Haptics.tap()
+                nav.next(store)
+            }) {
                 Image(systemName: "xmark")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(Theme.muted)
@@ -232,7 +235,10 @@ struct OnboardingPaywallScreen: View {
 
     private var callToAction: some View {
         VStack(spacing: 10) {
-            Button(action: { nav.next(store) }) {
+            Button(action: {
+                Haptics.confirm()
+                nav.next(store)
+            }) {
                 VStack(spacing: 2) {
                     Text("Start my free trial")
                         .font(.system(size: 17, weight: .bold))

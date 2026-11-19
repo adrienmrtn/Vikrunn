@@ -140,6 +140,7 @@ struct GuidedExerciseScreen: View {
         }
         .overlay(alignment: .topTrailing) {
             Button {
+                Haptics.tap()
                 onHowTo(exercise.info)
             } label: {
                 HStack(spacing: 6) {
@@ -247,7 +248,10 @@ struct GuidedExerciseScreen: View {
                 engine.previousExercise()
             }
             Spacer()
-            Button(action: onPause) {
+            Button(action: {
+                Haptics.confirm()
+                onPause()
+            }) {
                 Image(systemName: "pause.fill")
                     .font(.system(size: 30, weight: .bold))
                     .foregroundStyle(.white)

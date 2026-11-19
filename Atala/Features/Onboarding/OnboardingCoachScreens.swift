@@ -5,7 +5,7 @@ struct OnboardingCoachCarouselMetrics {
     /// Scale of the coach on each side of the selected one.
     static let neighbourScale: CGFloat = 0.55
     static let labelHeight: CGFloat = 54
-    /// Width / height of the coach frames.
+    /// Width / height of the room given to a coach picture.
     static let aspect: CGFloat = 0.628
 
     let figureWidth: CGFloat
@@ -41,6 +41,7 @@ struct OnboardingCoachCarouselView: View {
             carousel(size: geo.size, metrics: OnboardingCoachCarouselMetrics(size: geo.size))
         }
         .onChange(of: isDragging) { _, dragging in
+            if dragging { Haptics.prepare(.select) }
             // A cancelled drag never calls onEnded: bring the line back in place.
             if !dragging, drag != 0 {
                 withAnimation(Self.snap) { drag = 0 }
@@ -79,7 +80,7 @@ struct OnboardingCoachCarouselView: View {
         let figureOpacity = distance <= 1 ? 1 - 0.55 * distance : max(0, 0.45 * (2 - distance))
         let isSelected = position == index
         return VStack(spacing: 8) {
-            CoachAnimationView(coach: coach, animated: isSelected)
+            CoachPoseView(coach: coach, pose: .wave)
                 .frame(width: metrics.figureWidth, height: metrics.figureHeight)
                 .scaleEffect(scale, anchor: .bottom)
                 .opacity(Double(figureOpacity))
@@ -111,6 +112,7 @@ struct OnboardingCoachCarouselView: View {
 
     private func select(_ position: Int) {
         guard position != index, Coach.all.indices.contains(position) else { return }
+        Haptics.select()
         withAnimation(Self.snap) {
             index = position
             drag = 0
@@ -135,6 +137,8 @@ struct OnboardingCoachCarouselView: View {
                     target -= 1
                 }
                 target = min(max(target, 0), Coach.all.count - 1)
+                // One tick per coach change, none when the line snaps back.
+                if target != index { Haptics.select() }
                 withAnimation(Self.snap) {
                     index = target
                     drag = 0
@@ -143,7 +147,7 @@ struct OnboardingCoachCarouselView: View {
     }
 }
 
-/// Screen 3: swipe through the six coaches. The centred one is large and animated.
+/// Screen 3: swipe through the six coaches. The centred one is large, its neighbours small and faded.
 struct OnboardingCoachScreen: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var nav: OnboardingNavigator
@@ -207,6 +211,7 @@ struct OnboardingCoachScreen: View {
         let enabled = target >= 0 && target < Coach.all.count
         return Button(action: {
             guard enabled else { return }
+            Haptics.select()
             withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) { index = target }
         }) {
             Image(systemName: symbol)

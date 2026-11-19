@@ -92,6 +92,7 @@ struct ProfileHealthSection: View {
         Task { @MainActor in
             let granted = await HealthKitService.shared.requestAuthorization()
             guard granted else {
+                Haptics.error()
                 store.settings.healthImportEnabled = false
                 message = "Atala could not read Apple Health. You can allow it in the Health app, under Sharing."
                 return
@@ -111,6 +112,7 @@ struct ProfileSubscriptionSection: View {
     var body: some View {
         Section("Subscription") {
             Button {
+                Haptics.tap()
                 showSheet = true
             } label: {
                 HStack {

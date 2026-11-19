@@ -17,6 +17,10 @@ struct RunReadyScreen: View {
                 header
                 rows
                 CoachNote(coach: store.coach, text: coachLine)
+                CoachPoseView(coach: store.coach, pose: .run)
+                    .frame(height: 210)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, Theme.screenPadding)
             .padding(.top, 4)
@@ -32,7 +36,10 @@ struct RunReadyScreen: View {
     }
 
     private var closeButton: some View {
-        Button(action: onClose) {
+        Button(action: {
+            Haptics.tap()
+            onClose()
+        }) {
             Image(systemName: "xmark")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Theme.ink)
@@ -103,7 +110,10 @@ struct RunReadyScreen: View {
         case .poor:
             RunReadyBadge(symbol: "exclamationmark", color: Theme.orange)
         case .denied:
-            Button("Settings") { openSettings() }
+            Button("Settings") {
+                Haptics.tap()
+                openSettings()
+            }
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Theme.ink)
                 .frame(minHeight: 44)

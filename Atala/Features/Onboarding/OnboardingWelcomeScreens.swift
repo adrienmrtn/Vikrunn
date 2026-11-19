@@ -94,6 +94,7 @@ struct OnboardingWelcomeScreen: View {
             case .continued:
                 nav.go(to: .firstName, forward: true, store: store)
             case .failed(let failure):
+                Haptics.error()
                 signInError = failure.userMessage
             }
         }
@@ -170,6 +171,7 @@ struct OnboardingWelcomeScreen: View {
                 nav.next(store)
             }
             Button("I already have an account") {
+                Haptics.tap()
                 showSignIn = true
             }
             .font(.system(size: 15, weight: .semibold))

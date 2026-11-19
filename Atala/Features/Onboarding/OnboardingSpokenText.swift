@@ -100,10 +100,10 @@ struct OnboardingSpokenText: View {
 
     /// Seconds before the next word: a natural rhythm, with a breath after punctuation.
     private static func pause(after word: String) -> Double {
-        guard let last = word.last else { return 0.14 }
-        if last == "." || last == "!" || last == "?" { return 0.44 }
-        if last == "," || last == ":" || last == ";" { return 0.26 }
-        return 0.14
+        guard let last = word.last else { return 0.1 }
+        if last == "." || last == "!" || last == "?" { return 0.31 }
+        if last == "," || last == ":" || last == ";" { return 0.18 }
+        return 0.1
     }
 
     @MainActor
@@ -121,7 +121,7 @@ struct OnboardingSpokenText: View {
             if Task.isCancelled { return }
         }
         for index in list.indices {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(.easeOut(duration: 0.24)) {
                 shown = index + 1
             }
             try? await Task.sleep(nanoseconds: UInt64(Self.pause(after: list[index]) * 1_000_000_000))

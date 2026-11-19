@@ -90,7 +90,6 @@ struct OnboardingMessageScreen: View {
             }
         }
         .background(Color.white.ignoresSafeArea())
-        .sensoryFeedback(.success, trigger: choice)
         .task {
             await playOpening()
         }
@@ -261,6 +260,7 @@ struct OnboardingMessageScreen: View {
 
     private func append(_ kind: OnboardingThreadEntry.Kind, _ text: String, showsAvatar: Bool = false) {
         entries.append(OnboardingThreadEntry(id: entries.count, kind: kind, text: text, showsAvatar: showsAvatar))
+        if kind == .coach { Haptics.soft() }
     }
 
     /// Seconds the coach "types": the longer the message, the longer it takes.

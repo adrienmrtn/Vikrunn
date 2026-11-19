@@ -112,7 +112,10 @@ struct ManualRunEntryView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") {
+                        Haptics.tap()
+                        dismiss()
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
@@ -166,6 +169,7 @@ struct ManualRunEntryView: View {
                             durationSec: durationSec,
                             feeling: feeling)
         store.addRun(run)
+        Haptics.success()
         dismiss()
     }
 }

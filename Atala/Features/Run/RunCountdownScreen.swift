@@ -77,8 +77,12 @@ struct RunCountdownScreen: View {
     }
 
     private func runCountdown() async {
+        Haptics.prepare(.tap)
         for value in [3, 2, 1] {
             withAnimation(.easeOut(duration: 0.2)) { count = value }
+            // Light, light, medium; the start itself is heavy (played by the run flow).
+            Haptics.play(value == 1 ? .confirm : .tap)
+            Haptics.prepare(value == 2 ? .confirm : (value == 1 ? .strong : .tap))
             do {
                 try await Task.sleep(nanoseconds: 1_000_000_000)
             } catch {

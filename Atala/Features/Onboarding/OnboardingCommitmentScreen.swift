@@ -28,6 +28,8 @@ struct OnboardingSignaturePad: View {
                     if isDrawing, !strokes.isEmpty {
                         strokes[strokes.count - 1].append(value.location)
                     } else {
+                        // First stroke of the signature: a soft tick under the finger.
+                        if strokes.isEmpty { Haptics.soft() }
                         strokes.append([value.location])
                         isDrawing = true
                     }
@@ -44,6 +46,7 @@ struct OnboardingSignaturePad: View {
 /// Screen 27: the commitment card, built from the real answers, signed with a finger.
 struct OnboardingCommitmentScreen: View {
     @EnvironmentObject private var store: AppStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var strokes: [[CGPoint]] = []
 
     private var weekCount: Int {
@@ -71,9 +74,18 @@ struct OnboardingCommitmentScreen: View {
     var body: some View {
         OnboardingScaffold(title: "\(store.firstName), promise yourself you'll be consistent with your running and you'll reach your goal.",
                            buttonTitle: "I promise",
+                           buttonHaptic: .strong,
                            canContinue: !strokes.isEmpty,
                            tinted: true) {
             card
+            // The coach approves as soon as the card is signed.
+            CoachPoseView(coach: store.coach, pose: .thumbsUp)
+                .frame(height: 180)
+                .frame(maxWidth: .infinity)
+                .scaleEffect(strokes.isEmpty ? 0.92 : 1, anchor: .bottom)
+                .opacity(strokes.isEmpty ? 0 : 1)
+                .animation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.72), value: strokes.isEmpty)
+                .accessibilityHidden(true)
         }
     }
 
@@ -112,6 +124,7 @@ struct OnboardingCommitmentScreen: View {
                 .allowsHitTesting(false)
             if !strokes.isEmpty {
                 Button("Clear") {
+                    Haptics.tap()
                     strokes = []
                 }
                 .font(.system(size: 13, weight: .semibold))

@@ -206,7 +206,10 @@ struct OnboardingPlanChangeCard: View {
 
     private var buttons: some View {
         HStack(spacing: 8) {
-            Button(action: { onChoose(.applied) }) {
+            Button(action: {
+                Haptics.success()
+                onChoose(.applied)
+            }) {
                 Text("Apply")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.white)
@@ -216,7 +219,10 @@ struct OnboardingPlanChangeCard: View {
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
-            Button(action: { onChoose(.kept) }) {
+            Button(action: {
+                Haptics.tap()
+                onChoose(.kept)
+            }) {
                 Text("Keep my plan")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Theme.ink)

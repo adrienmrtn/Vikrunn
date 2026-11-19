@@ -25,9 +25,11 @@ struct ProgressTabHistory: View {
                     ProgressTabRunRow(run: run)
                 }
                 .buttonStyle(.plain)
+                .hapticOnTap()
             }
             if store.runs.count > collapsedCount {
                 Button(showAll ? "Show fewer" : "Show all \(store.runs.count) runs") {
+                    Haptics.tap()
                     showAll.toggle()
                 }
                 .font(.system(size: 14, weight: .semibold))
@@ -94,6 +96,11 @@ struct ProgressTabHistory: View {
                 added = await HealthKitService.shared.importRecentRuns(into: store)
             }
             importing = false
+            if !granted {
+                Haptics.error()
+            } else if added > 0 {
+                Haptics.success()
+            }
             if !granted {
                 importMessage = "Atala could not read Apple Health. You can allow it in the Health app, under Sharing."
             } else if added == 0 {

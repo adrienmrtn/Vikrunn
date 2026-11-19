@@ -41,7 +41,9 @@ struct TodaySessionCard: View {
             } label: {
                 Text("View session")
             }
-            .buttonStyle(PrimaryButtonStyle())
+            // Inside a scroll view: the haptic follows the tap, not the press.
+            .buttonStyle(PrimaryButtonStyle(haptic: nil))
+            .hapticOnTap(.confirm)
         }
         .padding(18)
         .mainGlass(radius: 22)
@@ -71,8 +73,11 @@ struct TodayMessageCard: View {
                 .lineSpacing(4)
                 .foregroundStyle(Theme.body)
                 .fixedSize(horizontal: false, vertical: true)
-            Button(actionTitle, action: action)
-                .buttonStyle(PrimaryButtonStyle())
+            Button(actionTitle, action: {
+                Haptics.confirm()
+                action()
+            })
+            .buttonStyle(PrimaryButtonStyle(haptic: nil))
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -196,6 +201,7 @@ struct TodayExtraSessions: View {
                     .card(radius: 16)
                 }
                 .buttonStyle(.plain)
+                .hapticOnTap()
             }
         }
     }
@@ -315,6 +321,7 @@ struct TodayUpcomingList: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .hapticOnTap()
             }
         }
     }

@@ -214,8 +214,6 @@ struct OnboardingPlanReadyScreen: View {
             }
         }
         .background(Color.white.ignoresSafeArea())
-        .sensoryFeedback(.impact, trigger: current)
-        .sensoryFeedback(.success, trigger: finished)
         .onAppear {
             if store.plan == nil { store.generatePlan() }
         }
@@ -228,7 +226,10 @@ struct OnboardingPlanReadyScreen: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.green)
                 Spacer()
-                Button("Skip") { nav.next(store) }
+                Button("Skip") {
+                    Haptics.tap()
+                    nav.next(store)
+                }
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Theme.muted)
                     .frame(minWidth: 44, minHeight: 44, alignment: .trailing)
@@ -265,6 +266,17 @@ struct OnboardingPlanReadyScreen: View {
         .background(alignment: .topLeading) {
             OnboardingPathLine(count: weeks.count)
                 .stroke(Theme.locked, style: StrokeStyle(lineWidth: 10, lineCap: .round, lineJoin: .round))
+        }
+        .overlay(alignment: .bottomTrailing) {
+            // The coach cheers under the finish, in the room left below the path.
+            if finished {
+                CoachPoseView(coach: store.coach, pose: .cheer)
+                    .frame(height: 170)
+                    .padding(.trailing, 24)
+                    .offset(y: 160)
+                    .transition(.scale(scale: 0.8, anchor: .bottom).combined(with: .opacity))
+                    .accessibilityHidden(true)
+            }
         }
     }
 
@@ -335,7 +347,8 @@ struct OnboardingPlanReadyScreen: View {
 
     private func bottom(_ proxy: ScrollViewProxy) -> some View {
         BottomBar {
-            PrimaryButton(title: buttonTitle) { advance(proxy) }
+            // The haptic depends on what the button does: `advance` plays it.
+            PrimaryButton(title: buttonTitle, haptic: nil) { advance(proxy) }
         }
         .overlay(alignment: .top) {
             Rectangle().fill(Theme.cardBorder).frame(height: 1)
@@ -344,15 +357,18 @@ struct OnboardingPlanReadyScreen: View {
 
     private func advance(_ proxy: ScrollViewProxy) {
         if finished || weeks.isEmpty {
+            Haptics.confirm()
             nav.next(store)
             return
         }
         if current >= weeks.count - 1 {
+            Haptics.success()
             withAnimation(.spring(response: 0.45, dampingFraction: 0.55)) { finished = true }
             withAnimation(.easeInOut(duration: 0.5)) { proxy.scrollTo(finishID, anchor: .center) }
             return
         }
         let next = current + 1
+        Haptics.strong()
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { current = next }
         withAnimation(.easeInOut(duration: 0.5)) {
             proxy.scrollTo(next, anchor: UnitPoint(x: 0.5, y: 0.2))

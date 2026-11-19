@@ -130,7 +130,13 @@ struct RunSummaryView: View {
 
     private var coachLine: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            CoachAvatar(coach: store.coach, size: 36)
+            if onDone != nil {
+                // Right after the run: the coach in full, cheering.
+                CoachPoseView(coach: store.coach, pose: .cheer)
+                    .frame(width: 76, height: 122)
+            } else {
+                CoachAvatar(coach: store.coach, size: 36)
+            }
             Text(RunSummaryCoach.line(for: shown))
                 .font(.system(size: 15))
                 .foregroundStyle(Theme.ink)

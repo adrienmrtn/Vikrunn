@@ -161,6 +161,7 @@ private struct MainTabBar: View {
     private func item(_ tab: MainTab, title: String, symbol: String, selectedSymbol: String) -> some View {
         let selected = selection == tab
         return Button {
+            if selection != tab { Haptics.select() }
             selection = tab
         } label: {
             VStack(spacing: 4) {
@@ -180,7 +181,10 @@ private struct MainTabBar: View {
     }
 
     private var plusButton: some View {
-        Button(action: onPlus) {
+        Button(action: {
+            Haptics.confirm()
+            onPlus()
+        }) {
             Image(systemName: "plus")
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(.white)
@@ -224,6 +228,7 @@ private struct MainPlusSheet: View {
 
     private func row(title: String, subtitle: String, systemName: String, action: MainPlusAction) -> some View {
         Button {
+            Haptics.tap()
             onPick(action)
         } label: {
             HStack(spacing: 14) {

@@ -13,7 +13,7 @@ struct OnboardingConsistencyScreen: View {
     private static let promiseHighlight = "a coach in your pocket,"
 
     /// The second sentence starts once the first one is lit.
-    private static let promiseDelay: Double = 1.9
+    private static let promiseDelay: Double = 1.3
 
     var body: some View {
         OnboardingScaffold(buttonsVisible: finished) {
@@ -24,12 +24,12 @@ struct OnboardingConsistencyScreen: View {
                 .padding(.top, 20)
             OnboardingEmphasisText(text: Self.headline,
                                    size: 38, lineSpacing: 2,
-                                   wordInterval: 0.2,
-                                   startDelay: 0.6)
+                                   wordInterval: 0.14,
+                                   startDelay: 0.42)
             OnboardingEmphasisText(text: Self.promise,
                                    size: 26, lineSpacing: 6,
                                    highlight: Self.promiseHighlight,
-                                   wordInterval: 0.15,
+                                   wordInterval: 0.105,
                                    startDelay: Self.promiseDelay,
                                    onFinished: { finished = true })
         }

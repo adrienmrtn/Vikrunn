@@ -84,6 +84,7 @@ struct OnboardingSignInScreen: View {
             case .continued:
                 nav.next(store)
             case .failed(let failure):
+                Haptics.error()
                 signInError = failure.userMessage
             }
         }

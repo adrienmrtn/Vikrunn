@@ -48,6 +48,26 @@ private struct OnboardingLevelCoachHeader: View {
     }
 }
 
+/// The coach in full, in a pose that fits what was just said. Springs in when `visible`.
+private struct OnboardingLevelCoachFigure: View {
+    let coach: Coach
+    let pose: CoachPose
+    let visible: Bool
+    var height: CGFloat = 210
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        CoachPoseView(coach: coach, pose: pose)
+            .frame(height: height)
+            .frame(maxWidth: .infinity)
+            .scaleEffect(visible ? 1 : 0.92, anchor: .bottom)
+            .opacity(visible ? 1 : 0)
+            .animation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.72), value: visible)
+            .accessibilityHidden(true)
+    }
+}
+
 /// Beginners: congratulations first.
 struct OnboardingLevelIntroScreen: View {
     @EnvironmentObject private var store: AppStore
@@ -60,7 +80,7 @@ struct OnboardingLevelIntroScreen: View {
             VStack(alignment: .leading, spacing: 10) {
                 OnboardingSpokenText(text: OnboardingLevelCopy.beginnerHeadline,
                                      size: 34, weight: .bold, color: Theme.ink, lineSpacing: 2,
-                                     startDelay: 0.5,
+                                     startDelay: 0.35,
                                      onFinished: { spoken = max(spoken, 1) })
                 OnboardingSpokenText(text: OnboardingLevelCopy.beginnerPraise,
                                      size: 34, weight: .bold, color: Theme.green, lineSpacing: 2,
@@ -72,6 +92,8 @@ struct OnboardingLevelIntroScreen: View {
                                  size: 20, weight: .regular, color: Theme.body, lineSpacing: 6,
                                  isActive: spoken >= 2,
                                  onFinished: { spoken = max(spoken, 3) })
+            // The coach cheers as soon as "You just did it." has been said.
+            OnboardingLevelCoachFigure(coach: store.coach, pose: .cheer, visible: spoken >= 2, height: 230)
         }
     }
 }
@@ -100,7 +122,7 @@ struct OnboardingLevelFocusScreen: View {
     @ViewBuilder private var intermediate: some View {
         OnboardingSpokenText(text: OnboardingLevelCopy.intermediateHeadline,
                              size: 34, weight: .bold, color: Theme.ink, lineSpacing: 2,
-                             startDelay: 0.5,
+                             startDelay: 0.35,
                              onFinished: { spoken = max(spoken, 1) })
             .padding(.top, 8)
         OnboardingSpokenText(text: OnboardingLevelCopy.intermediateBody,
@@ -113,14 +135,15 @@ struct OnboardingLevelFocusScreen: View {
         OnboardingSpokenText(text: OnboardingLevelCopy.intermediateClosing,
                              size: 20, weight: .semibold, color: Theme.ink, lineSpacing: 6,
                              isActive: spoken >= 2,
-                             startDelay: 0.5,
+                             startDelay: 0.35,
                              onFinished: { spoken = max(spoken, 3) })
+        OnboardingLevelCoachFigure(coach: store.coach, pose: .present, visible: spoken >= 3, height: 190)
     }
 
     @ViewBuilder private var advanced: some View {
         OnboardingSpokenText(text: OnboardingLevelCopy.advancedHeadline,
                              size: 34, weight: .bold, color: Theme.ink, lineSpacing: 2,
-                             startDelay: 0.5,
+                             startDelay: 0.35,
                              onFinished: { spoken = max(spoken, 1) })
             .padding(.top, 8)
         OnboardingSpokenText(text: OnboardingLevelCopy.advancedBody,
@@ -130,6 +153,7 @@ struct OnboardingLevelFocusScreen: View {
         OnboardingLevelLoadChart(grown: spoken >= 3)
             .modifier(OnboardingStagedModifier(visible: spoken >= 3))
             .animation(.easeOut(duration: 0.5), value: spoken)
+        OnboardingLevelCoachFigure(coach: store.coach, pose: .crossed, visible: spoken >= 3, height: 190)
     }
 }
 

@@ -52,6 +52,7 @@ struct OnboardingRecentScreen: View {
                                onChange: { setTime($0) },
                                onTapTime: { showWheel = true })
             Button("I don't have one") {
+                Haptics.tap()
                 store.answers.recentResult = nil
                 edited = false
                 nav.next(store)
@@ -73,7 +74,10 @@ struct OnboardingRecentScreen: View {
         HStack(spacing: 0) {
             ForEach(distances, id: \.0) { item in
                 let selected = abs(item.1 - distanceKm) < 0.5
-                Button(action: { setDistance(item.1) }) {
+                Button(action: {
+                    Haptics.select()
+                    setDistance(item.1)
+                }) {
                     Text(item.0)
                         .font(.system(size: 15, weight: selected ? .semibold : .medium))
                         .foregroundStyle(Theme.ink)
@@ -179,7 +183,10 @@ struct OnboardingTargetScreen: View {
     }
 
     private func modeButton(_ title: String, isOn: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button(action: {
+            Haptics.select()
+            action()
+        }) {
             Text(title)
                 .font(.system(size: 15, weight: isOn ? .semibold : .medium))
                 .foregroundStyle(Theme.ink)

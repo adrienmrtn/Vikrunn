@@ -233,7 +233,10 @@ struct MainEmptyState: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             if let actionTitle, let action {
-                Button(actionTitle, action: action)
+                Button(actionTitle, action: {
+                    Haptics.tap()
+                    action()
+                })
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.green)
                     .frame(minHeight: 44)

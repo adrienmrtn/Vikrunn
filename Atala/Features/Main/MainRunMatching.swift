@@ -55,11 +55,12 @@ struct MainCountRunCard: View {
                 Spacer(minLength: 0)
             }
             Button(buttonTitle) {
+                Haptics.success()
                 withAnimation(.easeInOut(duration: 0.25)) {
                     store.mainCount(run: run.id, as: session.id)
                 }
             }
-            .buttonStyle(SecondaryButtonStyle())
+            .buttonStyle(SecondaryButtonStyle(haptic: nil))
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
