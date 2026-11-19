@@ -98,6 +98,7 @@ struct RunShareProjection {
 
     /// The points scaled to fit `rect`, proportions kept, centred.
     func fitted(in rect: CGRect) -> [CGPoint] {
+        guard !rect.isNull, rect.width > 0, rect.height > 0 else { return [] }
         let width: CGFloat = max(size.width, 0.000000001)
         let height: CGFloat = max(size.height, 0.000000001)
         let scale: CGFloat = min(rect.width / width, rect.height / height)
