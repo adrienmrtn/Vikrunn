@@ -147,6 +147,14 @@ struct ProfileSubscriptionSection: View {
                 }
                 .foregroundStyle(Theme.ink)
             }
+            if let terms = AtalaLinks.terms {
+                Link("Terms of use", destination: terms)
+                    .foregroundStyle(Theme.ink)
+            }
+            if let privacy = AtalaLinks.privacy {
+                Link("Privacy policy", destination: privacy)
+                    .foregroundStyle(Theme.ink)
+            }
         }
     }
 }

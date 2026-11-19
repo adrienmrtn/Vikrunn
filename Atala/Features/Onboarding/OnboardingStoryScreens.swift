@@ -315,6 +315,118 @@ struct OnboardingReadyScreen: View {
     }
 }
 
+private struct OnboardingSampleNotification: Identifiable {
+    let id: Int
+    let time: String
+    let title: String
+    let body: String
+}
+
+/// After the location permission: what the reminders look like, then the system question.
+/// Saying no is fine: the sessions stay in the Today tab.
+struct OnboardingNotificationsScreen: View {
+    @EnvironmentObject private var store: AppStore
+    @EnvironmentObject private var nav: OnboardingNavigator
+    /// One stage per sample notification, then the text, then the buttons.
+    @State private var stage = 0
+    @State private var isAsking = false
+
+    private var samples: [OnboardingSampleNotification] {
+        let coach = store.coach.name
+        var first = "Easy run · 5 km today"
+        if let next = store.nextRun {
+            first = next.distanceKm > 0 ? "\(next.title) · \(Fmt.km(next.distanceKm)) today" : "\(next.title) today"
+        }
+        return [
+            OnboardingSampleNotification(id: 0, time: "8:00", title: first,
+                                         body: "\(coach) here. Keep it easy today: you should be able to talk the whole way."),
+            OnboardingSampleNotification(id: 1, time: "Thu 8:00", title: "Intervals today",
+                                         body: "\(coach) here. A quality session today. Warm up well, I'll guide you through it."),
+            OnboardingSampleNotification(id: 2, time: "Sun 8:00", title: "Long run today",
+                                         body: "\(coach) here. Slow and steady, the distance does the work."),
+        ]
+    }
+
+    private static let delays: [Double] = [0.25, 0.45, 0.45, 0.4, 0.35]
+
+    var body: some View {
+        let list = samples
+        return OnboardingScaffold(title: "Never miss a run",
+                                  buttonTitle: isAsking ? "One moment…" : "Remind me to run",
+                                  canContinue: !isAsking,
+                                  buttonsVisible: stage >= Self.delays.count,
+                                  secondaryTitle: "Not now",
+                                  onSecondary: { nav.next(store) },
+                                  onContinue: allow) {
+            VStack(spacing: 10) {
+                ForEach(list) { sample in
+                    card(sample)
+                        // The cards behind the first one are a little smaller and lighter, like a stack.
+                        .scaleEffect(1 - CGFloat(sample.id) * 0.03)
+                        .opacity(stage > sample.id ? 1 - Double(sample.id) * 0.2 : 0)
+                        .offset(y: stage > sample.id ? 0 : -18)
+                }
+            }
+            .padding(14)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Examples of reminders from your coach")
+            Text("\(store.coach.name) reminds you on the morning of each session. Nothing else: no ads, no noise.")
+                .font(.system(size: 17))
+                .foregroundStyle(Theme.body)
+                .lineSpacing(5)
+                .fixedSize(horizontal: false, vertical: true)
+                .onboardingStaged(3, stage: stage)
+        }
+        .onboardingStageSequence($stage, delays: Self.delays)
+    }
+
+    private func card(_ sample: OnboardingSampleNotification) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Theme.forest)
+                .frame(width: 40, height: 40)
+                .overlay(
+                    BrandLogo(style: .mark, height: 20)
+                        .foregroundStyle(Theme.cream)
+                )
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(sample.title)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Spacer(minLength: 6)
+                    Text(sample.time)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.muted)
+                }
+                Text(sample.body)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Theme.body)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 6)
+    }
+
+    /// Shows the system question, then moves on whatever the answer.
+    private func allow() {
+        guard !isAsking else { return }
+        isAsking = true
+        Task { @MainActor in
+            _ = await RunReminders.requestAuthorization()
+            isAsking = false
+            nav.next(store)
+        }
+    }
+}
+
 #Preview("Intro") {
     OnboardingIntroScreen()
         .environmentObject(AppStore.preview)

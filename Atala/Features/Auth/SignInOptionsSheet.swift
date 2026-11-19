@@ -252,9 +252,10 @@ struct SignInOptionsSheet: View {
     }
 
     private var terms: some View {
-        Text("By continuing, you accept the terms of use and the privacy policy.")
+        Text("By continuing, you accept the [terms of use](https://vikstudios.com/atala/terms) and the [privacy policy](https://vikstudios.com/atala).")
             .font(.system(size: 12))
             .foregroundStyle(Theme.muted)
+            .tint(Theme.ink)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity)

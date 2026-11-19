@@ -7,7 +7,7 @@
 	<key>NSHealthShareUsageDescription</key>
 	<string>Atala reads your runs and their heart rate from Apple Health so your coach can adapt your plan.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Atala saves the runs you record to Apple Health.</string>
+	<string>Atala only reads from Apple Health. It does not add or change any of your Health data.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Atala uses your location to record your run, even when the screen is locked.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
