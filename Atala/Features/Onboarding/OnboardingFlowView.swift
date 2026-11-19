@@ -248,7 +248,7 @@ struct OnboardingFlowHeader: View {
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
-            .accessibilityLabel("Back")
+            .accessibilityLabel(L("Back"))
             .padding(.leading, -12)
             .opacity(showsBack ? 1 : 0)
             .allowsHitTesting(showsBack)

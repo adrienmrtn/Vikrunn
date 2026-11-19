@@ -36,7 +36,7 @@ struct ProChip: View {
         .padding(.vertical, 5)
         .background(Theme.yellow, in: Capsule())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Atala Pro member")
+        .accessibilityLabel(L("Atala Pro member"))
     }
 }
 
@@ -69,23 +69,33 @@ struct ProJourneyCard: View {
     }
 
     private func freeWeekMessage(daysLeft: Int, locked: Int) -> String {
-        let waiting = locked == 0
-            ? "The rest of Atala unlocks with Atala Pro."
-            : "\(sessions(locked)) of your plan \(locked == 1 ? "unlocks" : "unlock") with Atala Pro."
-        if daysLeft == 0 { return "Last free day. " + waiting }
-        let days = daysLeft == 1 ? "1 free day" : "\(daysLeft) free days"
-        return days + " left. Then " + waiting
+        if daysLeft == 0 {
+            if locked == 0 { return L("Last free day. The rest of Atala unlocks with Atala Pro.") }
+            return locked == 1
+                ? L("Last free day. 1 session of your plan unlocks with Atala Pro.")
+                : L("Last free day. %@ sessions of your plan unlock with Atala Pro.", locked)
+        }
+        if daysLeft == 1 {
+            if locked == 0 { return L("1 free day left. Then the rest of Atala unlocks with Atala Pro.") }
+            return locked == 1
+                ? L("1 free day left. Then 1 session of your plan unlocks with Atala Pro.")
+                : L("1 free day left. Then %@ sessions of your plan unlock with Atala Pro.", locked)
+        }
+        if locked == 0 { return L("%@ free days left. Then the rest of Atala unlocks with Atala Pro.", daysLeft) }
+        return locked == 1
+            ? L("%@ free days left. Then 1 session of your plan unlocks with Atala Pro.", daysLeft)
+            : L("%@ free days left. Then %@ sessions of your plan unlock with Atala Pro.", daysLeft, locked)
     }
 
     private func freeWeek(day: Int, daysLeft: Int, locked: Int) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                Text("YOUR FREE WEEK")
+                Text(L("YOUR FREE WEEK"))
                     .font(.system(size: 12, weight: .bold))
                     .kerning(0.8)
                     .foregroundStyle(Theme.greenOnDark)
                 Spacer(minLength: 8)
-                Text("Day \(day) of 7")
+                Text(L("Day %@ of 7", day))
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Color.white)
             }
@@ -130,12 +140,12 @@ struct ProJourneyCard: View {
                     )
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Your free week is done")
+                    Text(L("Your free week is done"))
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(Color.white)
                     Text(locked > 0
-                         ? "\(sessions(locked)) \(locked == 1 ? "is" : "are") waiting for you."
-                         : "Your coach and your plan are waiting for you.")
+                         ? (locked == 1 ? L("1 session is waiting for you.") : L("%@ sessions are waiting for you.", locked))
+                         : L("Your coach and your plan are waiting for you."))
                         .font(.system(size: 14))
                         .foregroundStyle(Theme.greenOnDark)
                         .fixedSize(horizontal: false, vertical: true)
@@ -153,15 +163,11 @@ struct ProJourneyCard: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func sessions(_ count: Int) -> String {
-        count == 1 ? "1 session" : "\(count) sessions"
-    }
-
     private var unlockLabel: some View {
         HStack(spacing: 8) {
             Image(systemName: "crown.fill")
                 .font(.system(size: 13, weight: .bold))
-            Text("Unlock Atala Pro")
+            Text(L("Unlock Atala Pro"))
                 .font(.system(size: 15, weight: .bold))
         }
         .foregroundStyle(Theme.forest)
@@ -235,11 +241,11 @@ struct ProWelcomeView: View {
     private var items: [ProUnlockedItem] {
         let weeks = store.plan?.weeks.count ?? PlanEngine.maxWeeks
         return [
-            ProUnlockedItem(id: 0, symbol: "calendar", title: "All \(OnboardingCopy.weeks(weeks)) of your plan"),
-            ProUnlockedItem(id: 1, symbol: "waveform", title: "\(store.coach.name)'s voice on every run"),
-            ProUnlockedItem(id: 2, symbol: "bubble.left.and.bubble.right.fill", title: "Your coach, without limits"),
-            ProUnlockedItem(id: 3, symbol: "figure.cooldown", title: "Guided strength and stretching"),
-            ProUnlockedItem(id: 4, symbol: "chart.line.uptrend.xyaxis", title: "Every detail of your runs"),
+            ProUnlockedItem(id: 0, symbol: "calendar", title: L("All %@ of your plan", OnboardingCopy.weeks(weeks))),
+            ProUnlockedItem(id: 1, symbol: "waveform", title: L("%@'s voice on every run", store.coach.name)),
+            ProUnlockedItem(id: 2, symbol: "bubble.left.and.bubble.right.fill", title: L("Your coach, without limits")),
+            ProUnlockedItem(id: 3, symbol: "figure.cooldown", title: L("Guided strength and stretching")),
+            ProUnlockedItem(id: 4, symbol: "chart.line.uptrend.xyaxis", title: L("Every detail of your runs")),
         ]
     }
 
@@ -252,7 +258,7 @@ struct ProWelcomeView: View {
                 Spacer(minLength: 24)
                 crown
                 VStack(spacing: 6) {
-                    Text("Welcome to Atala Pro,")
+                    Text(L("Welcome to Atala Pro,"))
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(Theme.greenOnDark)
                     Text(store.firstName)
@@ -278,7 +284,7 @@ struct ProWelcomeView: View {
                     Haptics.confirm()
                     dismiss()
                 } label: {
-                    Text("Let's run")
+                    Text(L("Let's run"))
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(Theme.forest)
                         .frame(maxWidth: .infinity)

@@ -221,32 +221,32 @@ enum PlanEngine {
 
     private static func easy(date: Date, week: Int, km: Double, paces: Paces, strides: Bool) -> Workout {
         let meters = Int((km * 10).rounded()) * 100
-        let step = WorkoutStep(kind: .steady, label: "Easy pace", distanceM: meters,
+        let step = WorkoutStep(kind: .steady, label: L("Easy pace"), distanceM: meters,
                                paceFast: paces.easy - 15, paceSlow: paces.easy + 20)
         return workout(date: date, week: week, kind: .easy,
-                       title: strides ? "Easy run + strides" : "Easy run",
-                       subtitle: "You should be able to talk",
+                       title: strides ? L("Easy run + strides") : L("Easy run"),
+                       subtitle: L("You should be able to talk"),
                        effort: 3, blocks: [WorkoutBlock(steps: [step])],
-                       why: "Easy kilometres build your endurance without tiring you. They are what makes the hard sessions possible.",
+                       why: L("Easy kilometres build your endurance without tiring you. They are what makes the hard sessions possible."),
                        pace: paces.easy, fallbackPace: paces.easy)
     }
 
     private static func long(date: Date, week: Int, km: Double, paces: Paces, phase: PlanPhase) -> Workout {
         let meters = Int((km * 10).rounded()) * 100
-        let step = WorkoutStep(kind: .steady, label: "Long run pace", distanceM: meters,
+        let step = WorkoutStep(kind: .steady, label: L("Long run pace"), distanceM: meters,
                                paceFast: paces.long - 10, paceSlow: paces.long + 25)
-        return workout(date: date, week: week, kind: .long, title: "Long run",
-                       subtitle: "Slow and steady",
+        return workout(date: date, week: week, kind: .long, title: L("Long run"),
+                       subtitle: L("Slow and steady"),
                        effort: phase == .specific ? 6 : 5, blocks: [WorkoutBlock(steps: [step])],
-                       why: "The long run teaches your body to last. Keep it slow: the distance does the work, not the speed.",
+                       why: L("The long run teaches your body to last. Keep it slow: the distance does the work, not the speed."),
                        pace: paces.long, fallbackPace: paces.long)
     }
 
     private static func quality(date: Date, week: Int, phase: PlanPhase, goal: GoalType, paces: Paces,
                                 budgetKm: Double, variant: Int) -> Workout {
-        let warmup = WorkoutBlock(steps: [WorkoutStep(kind: .warmup, label: "Easy pace", durationSec: 15 * 60,
+        let warmup = WorkoutBlock(steps: [WorkoutStep(kind: .warmup, label: L("Easy pace"), durationSec: 15 * 60,
                                                       paceFast: paces.easy - 10, paceSlow: paces.easy + 30)])
-        let cooldown = WorkoutBlock(steps: [WorkoutStep(kind: .cooldown, label: "Free pace", durationSec: 10 * 60)])
+        let cooldown = WorkoutBlock(steps: [WorkoutStep(kind: .cooldown, label: L("Free pace"), durationSec: 10 * 60)])
         // Kilometres left for the main set once warm-up and cool-down are counted.
         let mainKm = max(1.5, budgetKm - 25.0 * 60 / Double(paces.easy))
 
@@ -255,7 +255,7 @@ enum PlanEngine {
             let count = min(nominal, max(3, Int((mainKm / perRep).rounded())))
             let block = WorkoutBlock(repeats: count, steps: [
                 WorkoutStep(kind: .work, label: "\(distanceM) m", distanceM: distanceM, paceFast: pace - spread, paceSlow: pace + spread),
-                WorkoutStep(kind: .recovery, label: "Very slow jog", distanceM: recoveryM),
+                WorkoutStep(kind: .recovery, label: L("Very slow jog"), distanceM: recoveryM),
             ])
             return (block, count)
         }
@@ -267,25 +267,25 @@ enum PlanEngine {
             let distance = variant % 2 == 0 ? 400 : 300
             let (block, count) = reps(distanceM: distance, recoveryM: 200, nominal: 10, pace: paces.interval, spread: 5)
             return workout(date: date, week: week, kind: .intervals, title: "\(count) × \(format(distance))",
-                           subtitle: "Short and fast", effort: 7, blocks: [warmup, block, cooldown],
-                           why: "Short repetitions raise your top speed. Everything slower will feel easier afterwards.",
+                           subtitle: L("Short and fast"), effort: 7, blocks: [warmup, block, cooldown],
+                           why: L("Short repetitions raise your top speed. Everything slower will feel easier afterwards."),
                            pace: paces.interval, fallbackPace: paces.easy)
         case .build:
             if variant % 2 == 0 {
                 let (block, count) = reps(distanceM: 800, recoveryM: 400, nominal: 6, pace: paces.interval + 8, spread: 5)
                 return workout(date: date, week: week, kind: .intervals, title: "\(count) × 800 m",
-                               subtitle: "Controlled speed", effort: 7, blocks: [warmup, block, cooldown],
-                               why: "The 800s develop your VMA. This is what will make your goal pace feel comfortable.",
+                               subtitle: L("Controlled speed"), effort: 7, blocks: [warmup, block, cooldown],
+                               why: L("The 800s develop your VMA. This is what will make your goal pace feel comfortable."),
                                pace: paces.interval + 8, fallbackPace: paces.easy)
             }
             let count = min(3, max(2, Int((mainKm / 2.2).rounded())))
             let block = WorkoutBlock(repeats: count, steps: [
-                WorkoutStep(kind: .work, label: "Tempo", durationSec: 8 * 60, paceFast: paces.tempo - 5, paceSlow: paces.tempo + 8),
-                WorkoutStep(kind: .recovery, label: "Very slow jog", durationSec: 2 * 60),
+                WorkoutStep(kind: .work, label: L("Tempo"), durationSec: 8 * 60, paceFast: paces.tempo - 5, paceSlow: paces.tempo + 8),
+                WorkoutStep(kind: .recovery, label: L("Very slow jog"), durationSec: 2 * 60),
             ])
-            return workout(date: date, week: week, kind: .tempo, title: "\(count) × 8 min tempo",
-                           subtitle: "Comfortably hard", effort: 6, blocks: [warmup, block, cooldown],
-                           why: "Tempo running teaches you to hold a strong pace for a long time without blowing up.",
+            return workout(date: date, week: week, kind: .tempo, title: L("%@ × 8 min tempo", count),
+                           subtitle: L("Comfortably hard"), effort: 6, blocks: [warmup, block, cooldown],
+                           why: L("Tempo running teaches you to hold a strong pace for a long time without blowing up."),
                            pace: paces.tempo, fallbackPace: paces.easy)
         case .specific:
             let distance: Int
@@ -297,18 +297,18 @@ enum PlanEngine {
             case .regular, .shape: distance = 1000; nominal = 4
             }
             let (block, count) = reps(distanceM: distance, recoveryM: 400, nominal: nominal, pace: paces.race, spread: 5)
-            return workout(date: date, week: week, kind: .racePace, title: "\(count) × \(format(distance)) at race pace",
-                           subtitle: "Learn the pace of the day", effort: 7, blocks: [warmup, block, cooldown],
-                           why: "Running at your goal pace now means no surprises on race day: your legs will know it by heart.",
+            return workout(date: date, week: week, kind: .racePace, title: L("%@ × %@ at race pace", count, format(distance)),
+                           subtitle: L("Learn the pace of the day"), effort: 7, blocks: [warmup, block, cooldown],
+                           why: L("Running at your goal pace now means no surprises on race day: your legs will know it by heart."),
                            pace: paces.race, fallbackPace: paces.easy)
         case .taper:
             let block = WorkoutBlock(repeats: 4, steps: [
                 WorkoutStep(kind: .work, label: "400 m", distanceM: 400, paceFast: paces.race - 5, paceSlow: paces.race + 5),
-                WorkoutStep(kind: .recovery, label: "Very slow jog", distanceM: 200),
+                WorkoutStep(kind: .recovery, label: L("Very slow jog"), distanceM: 200),
             ])
-            return workout(date: date, week: week, kind: .racePace, title: "4 × 400 m at race pace",
-                           subtitle: "A reminder, nothing more", effort: 5, blocks: [warmup, block, cooldown],
-                           why: "A short reminder of race pace to stay sharp while your body recovers.",
+            return workout(date: date, week: week, kind: .racePace, title: L("4 × 400 m at race pace"),
+                           subtitle: L("A reminder, nothing more"), effort: 5, blocks: [warmup, block, cooldown],
+                           why: L("A short reminder of race pace to stay sharp while your body recovers."),
                            pace: paces.race, fallbackPace: paces.easy)
         }
     }
@@ -319,9 +319,9 @@ enum PlanEngine {
         let exercises = GuidedPrescription.strengthSession(phase: phase)
         let steps = exercises.map { $0.workoutStep }
         let minutes = GuidedPrescription.totalMinutes(exercises)
-        return workout(date: date, week: week, kind: .strength, title: "Strength", subtitle: "Bodyweight, \(minutes) min",
+        return workout(date: date, week: week, kind: .strength, title: L("Strength"), subtitle: L("Bodyweight, %@ min", minutes),
                        effort: 4, blocks: [WorkoutBlock(steps: steps)],
-                       why: "Stronger legs and core help you hold your form and keep your stride efficient when you tire.",
+                       why: L("Stronger legs and core help you hold your form and keep your stride efficient when you tire."),
                        pace: nil, fallbackPace: 360)
     }
 
@@ -329,9 +329,9 @@ enum PlanEngine {
         let exercises = GuidedPrescription.stretchingSession(phase: phase)
         let steps = exercises.map { $0.workoutStep }
         let minutes = GuidedPrescription.totalMinutes(exercises)
-        return workout(date: date, week: week, kind: .stretching, title: "Stretching", subtitle: "Gentle, \(minutes) min",
+        return workout(date: date, week: week, kind: .stretching, title: L("Stretching"), subtitle: L("Gentle, %@ min", minutes),
                        effort: 1, blocks: [WorkoutBlock(steps: steps)],
-                       why: "A few gentle minutes help you unwind after your runs and keep your range of motion.",
+                       why: L("A few gentle minutes help you unwind after your runs and keep your range of motion."),
                        pace: nil, fallbackPace: 360)
     }
 
@@ -340,8 +340,8 @@ enum PlanEngine {
         let step = WorkoutStep(kind: .work, label: goal.title, distanceM: meters,
                                paceFast: paces.race - 5, paceSlow: paces.race + 5)
         return workout(date: date, week: week, kind: .race, title: goal.title,
-                       subtitle: "This is your day", effort: 9, blocks: [WorkoutBlock(steps: [step])],
-                       why: "Everything you did leads here. Start calm, hold your pace, and finish strong.",
+                       subtitle: L("This is your day"), effort: 9, blocks: [WorkoutBlock(steps: [step])],
+                       why: L("Everything you did leads here. Start calm, hold your pace, and finish strong."),
                        pace: paces.race, fallbackPace: paces.race)
     }
 }

@@ -59,12 +59,12 @@ extension AppStore {
             workout.kind.isRun ? other.kind.isRun : other.kind == workout.kind
         }
         guard let rival = rivals.first else { return .free }
-        if rivals.count > 1 { return .blocked("Day already full") }
-        if rival.kind == .race { return .blocked("Race day") }
-        if rival.status == .done { return .blocked("Already done") }
+        if rivals.count > 1 { return .blocked(L("Day already full")) }
+        if rival.kind == .race { return .blocked(L("Race day")) }
+        if rival.status == .done { return .blocked(L("Already done")) }
         // Trading places would send the other session into the past.
         let today = calendar.startOfDay(for: Date())
-        if calendar.startOfDay(for: workout.date) < today { return .blocked("Another session that day") }
+        if calendar.startOfDay(for: workout.date) < today { return .blocked(L("Another session that day")) }
         return .swap(rival)
     }
 
@@ -137,11 +137,11 @@ struct PlanMoveSheet: View {
                 }
             }
             .background(Color.white)
-            .navigationTitle("Move this session")
+            .navigationTitle(L("Move this session"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
+                    Button(L("Cancel")) { dismiss() }
                         .foregroundStyle(Theme.ink)
                 }
             }
@@ -156,7 +156,7 @@ struct PlanMoveSheet: View {
                 Text("\(workout.title) · \(CoachChatPlanText.day(workout.date))")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.ink)
-                Text("Pick a day. If a session is already there, the two trade places.")
+                Text(L("Pick a day. If a session is already there, the two trade places."))
                     .font(.system(size: 14))
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -194,12 +194,12 @@ struct PlanMoveSheet: View {
                     Text(CoachChatPlanText.day(day))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(enabled ? Theme.ink : Theme.faint)
-                    Text(others.isEmpty ? "Rest day" : others.map { $0.title }.joined(separator: ", "))
+                    Text(others.isEmpty ? L("Rest day") : others.map { $0.title }.joined(separator: ", "))
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.muted)
                         .lineLimit(1)
                     if tight, enabled {
-                        Text("Hard session the day before or after")
+                        Text(L("Hard session the day before or after"))
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(Theme.orangeDeep)
                     }
@@ -227,11 +227,11 @@ struct PlanMoveSheet: View {
         let background: Color
         switch slot {
         case .current:
-            title = "Now"; tint = Color.white; background = Theme.ink
+            title = L("Now"); tint = Color.white; background = Theme.ink
         case .free:
-            title = "Move here"; tint = Theme.green; background = Theme.greenTint
+            title = L("Move here"); tint = Theme.green; background = Theme.greenTint
         case .swap:
-            title = "Swap"; tint = Theme.orangeDeep; background = Theme.orangeTint
+            title = L("Swap"); tint = Theme.orangeDeep; background = Theme.orangeTint
         case .blocked(let reason):
             title = reason; tint = Theme.muted; background = Theme.surface
         }

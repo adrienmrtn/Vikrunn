@@ -161,7 +161,7 @@ struct OnboardingCoachScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             OnboardingHeaderSpace()
-            Text("First, let's choose your coach")
+            Text(L("First, let's choose your coach"))
                 .font(Theme.title(28))
                 .foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true)
@@ -175,7 +175,7 @@ struct OnboardingCoachScreen: View {
                 .padding(.top, 10)
                 .padding(.bottom, 4)
             BottomBar {
-                PrimaryButton(title: "Choose \(current.name)") {
+                PrimaryButton(title: L("Choose %@", current.name)) {
                     store.answers.coachID = current.id
                     nav.next(store)
                 }
@@ -198,11 +198,11 @@ struct OnboardingCoachScreen: View {
 
     private var hint: some View {
         HStack(spacing: 14) {
-            arrowButton(symbol: "chevron.left", label: "Previous coach", delta: -1)
-            Text("Swipe to change coach")
+            arrowButton(symbol: "chevron.left", label: L("Previous coach"), delta: -1)
+            Text(L("Swipe to change coach"))
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.muted)
-            arrowButton(symbol: "chevron.right", label: "Next coach", delta: 1)
+            arrowButton(symbol: "chevron.right", label: L("Next coach"), delta: 1)
         }
     }
 

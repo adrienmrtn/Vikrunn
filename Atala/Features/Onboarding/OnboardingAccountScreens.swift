@@ -10,20 +10,21 @@ struct OnboardingSignInScreen: View {
 
     private struct Row: Identifiable {
         let id: String
+        let label: String
         let symbol: String
         let value: String
     }
 
     private var rows: [Row] {
         let answers = store.answers
-        var list: [Row] = [Row(id: "Goal", symbol: "target", value: OnboardingCopy.goalHeadline(answers))]
+        var list: [Row] = [Row(id: "Goal", label: L("Goal"), symbol: "target", value: OnboardingCopy.goalHeadline(answers))]
         if answers.hasRace, let date = answers.raceDate {
-            list.append(Row(id: "Race", symbol: "flag.checkered", value: Fmt.day(date, "EEEE d MMMM")))
+            list.append(Row(id: "Race", label: L("Race"), symbol: "flag.checkered", value: Fmt.day(date, "EEEE d MMMM")))
         }
-        list.append(Row(id: "Rhythm", symbol: "calendar",
+        list.append(Row(id: "Rhythm", label: L("Rhythm"), symbol: "calendar",
                         value: OnboardingCopy.sessions(OnboardingCopy.sessionsPerWeek(answers))))
-        list.append(Row(id: "Coach", symbol: "person.fill",
-                        value: "\(store.coach.name), \(answers.tone.title.lowercased()) tone"))
+        list.append(Row(id: "Coach", label: L("Coach"), symbol: "person.fill",
+                        value: L("%@, %@ tone", store.coach.name, answers.tone.title.lowercased())))
         return list
     }
 
@@ -31,19 +32,19 @@ struct OnboardingSignInScreen: View {
         OnboardingScaffold(onContinue: { showOptions = true }) {
             CoachAvatar(coach: store.coach, size: 72)
             VStack(alignment: .leading, spacing: 8) {
-                Text("It's all here, \(store.firstName)")
+                Text(L("It's all here, %@", store.firstName))
                     .font(Theme.title(30))
                     .foregroundStyle(Theme.ink)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
-                Text("I have what I need to build your plan. Let's put it somewhere safe first.")
+                Text(L("I have what I need to build your plan. Let's put it somewhere safe first."))
                     .font(.system(size: 16))
                     .foregroundStyle(Color(hex: 0x5A5A5A))
                     .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
             }
             summaryCard
-            Text("One account is enough to find your plan everywhere.")
+            Text(L("One account is enough to find your plan everywhere."))
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.muted)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -54,10 +55,10 @@ struct OnboardingSignInScreen: View {
                 finishSignIn(account)
             }
         }
-        .alert("We couldn't open your account", isPresented: signInErrorShown) {
-            Button("OK", role: .cancel) {}
+        .alert(L("We couldn't open your account"), isPresented: signInErrorShown) {
+            Button(L("OK"), role: .cancel) {}
         } message: {
-            Text(signInError ?? "Please try again.")
+            Text(signInError ?? L("Please try again."))
         }
     }
 
@@ -102,7 +103,7 @@ struct OnboardingSignInScreen: View {
                         .foregroundStyle(Theme.green)
                         .frame(width: 22)
                         .accessibilityHidden(true)
-                    Text(row.id)
+                    Text(row.label)
                         .font(.system(size: 15))
                         .foregroundStyle(Theme.muted)
                     Spacer(minLength: 8)
@@ -131,15 +132,15 @@ struct OnboardingLoadingScreen: View {
         let answers = store.answers
         let sessions = OnboardingCopy.sessionsPerWeek(answers)
         var list = [
-            "Reading your answers",
-            "Working out your paces",
-            sessions == 1 ? "Placing your session of the week" : "Placing your \(sessions) sessions a week",
-            "Adding strength and stretching",
+            L("Reading your answers"),
+            L("Working out your paces"),
+            sessions == 1 ? L("Placing your session of the week") : L("Placing your %@ sessions a week", sessions),
+            L("Adding strength and stretching"),
         ]
         if answers.hasRace, let date = answers.raceDate, !answers.goal.isOpenEnded {
-            list.append("Easing off before \(Fmt.day(date, "d MMMM"))")
+            list.append(L("Easing off before %@", Fmt.day(date, "d MMMM")))
         } else {
-            list.append("Balancing your \(PlanEngine.maxWeeks) weeks")
+            list.append(L("Balancing your %@ weeks", PlanEngine.maxWeeks))
         }
         return list
     }
@@ -163,7 +164,7 @@ struct OnboardingLoadingScreen: View {
                     .font(.system(size: 15, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(Theme.green)
-                Text("I'm building your plan")
+                Text(L("I'm building your plan"))
                     .font(Theme.title(26))
                     .foregroundStyle(Theme.ink)
                     .accessibilityAddTraits(.isHeader)
@@ -207,7 +208,7 @@ struct OnboardingLoadingScreen: View {
         }
         .frame(width: 180, height: 180)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Plan being built, \(Int((progress * 100).rounded())) percent")
+        .accessibilityLabel(L("Plan being built, %@ percent", Int((progress * 100).rounded())))
     }
 
     private var stageList: some View {

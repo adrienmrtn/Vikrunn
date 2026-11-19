@@ -11,10 +11,10 @@ struct AuthRestoreOverlay: View {
                 SwiftUI.ProgressView()
                     .controlSize(.large)
                     .tint(Theme.green)
-                Text("Restoring your plan…")
+                Text(L("Restoring your plan…"))
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Theme.ink)
-                Text("Looking for what you saved in your account.")
+                Text(L("Looking for what you saved in your account."))
                     .font(.system(size: 14))
                     .foregroundStyle(Theme.muted)
                     .multilineTextAlignment(.center)
@@ -42,16 +42,16 @@ struct AuthSyncPrompts: ViewModifier {
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: store.syncActivity)
-            .alert("Which plan do you want to keep?", isPresented: choiceShown) {
-                Button("Use my saved plan") { resolve(keepPhone: false) }
-                Button("Use this phone's plan") { resolve(keepPhone: true) }
+            .alert(L("Which plan do you want to keep?"), isPresented: choiceShown) {
+                Button(L("Use my saved plan")) { resolve(keepPhone: false) }
+                Button(L("Use this phone's plan")) { resolve(keepPhone: true) }
             } message: {
-                Text("Your account already has a plan. The one you keep replaces the other. Your runs from both are kept.")
+                Text(L("Your account already has a plan. The one you keep replaces the other. Your runs from both are kept."))
             }
-            .alert("We couldn't finish signing you in", isPresented: errorShown) {
-                Button("Try again") { store.syncChoicePending = true }
+            .alert(L("We couldn't finish signing you in"), isPresented: errorShown) {
+                Button(L("Try again")) { store.syncChoicePending = true }
             } message: {
-                Text(errorMessage ?? "Please try again.")
+                Text(errorMessage ?? L("Please try again."))
             }
     }
 

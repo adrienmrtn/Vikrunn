@@ -14,19 +14,19 @@ enum ProgressTabStats {
         let valid = runs.filter { $0.distanceM > 0 && $0.durationSec > 0 }
 
         if let longest = valid.max(by: { $0.distanceM < $1.distanceM }) {
-            result.append(ProgressTabBest(id: "longest", title: "Longest run",
+            result.append(ProgressTabBest(id: "longest", title: L("Longest run"),
                                           value: Fmt.km(longest.distanceKm),
                                           detail: dateText(longest)))
         }
         if let fastest = valid.filter({ $0.distanceM >= 1000 }).min(by: { $0.avgPace < $1.avgPace }) {
-            result.append(ProgressTabBest(id: "pace", title: "Fastest average pace",
+            result.append(ProgressTabBest(id: "pace", title: L("Fastest average pace"),
                                           value: "\(Fmt.pace(fastest.avgPace))/km",
                                           detail: "\(Fmt.km(fastest.distanceKm)) · \(dateText(fastest))"))
         }
         let distances: [(String, String, Double)] = [
-            ("5k", "Best 5 km", 5),
-            ("10k", "Best 10 km", 10),
-            ("half", "Best half marathon", 21.0975),
+            ("5k", L("Best 5 km"), 5),
+            ("10k", L("Best 10 km"), 10),
+            ("half", L("Best half marathon"), 21.0975),
         ]
         for (id, title, km) in distances {
             // A run slightly short of the distance (GPS drift) still counts.
@@ -35,11 +35,11 @@ enum ProgressTabStats {
                 let seconds = Int((Double(best.durationSec) / best.distanceKm * km).rounded())
                 result.append(ProgressTabBest(id: id, title: title,
                                               value: Fmt.duration(seconds),
-                                              detail: "At the pace of your \(Fmt.km(best.distanceKm)) run · \(dateText(best))"))
+                                              detail: L("At the pace of your %@ run · %@", Fmt.km(best.distanceKm), dateText(best))))
             }
         }
         if let longestTime = valid.max(by: { $0.durationSec < $1.durationSec }) {
-            result.append(ProgressTabBest(id: "time", title: "Longest time on your feet",
+            result.append(ProgressTabBest(id: "time", title: L("Longest time on your feet"),
                                           value: Fmt.duration(longestTime.durationSec),
                                           detail: dateText(longestTime)))
         }
@@ -61,7 +61,7 @@ enum ProgressTabStats {
     static func sourceTitle(_ source: RunSource) -> String {
         switch source {
         case .gps: return "GPS"
-        case .manual: return "Added by hand"
+        case .manual: return L("Added by hand")
         case .health: return "Apple Health"
         }
     }
@@ -73,10 +73,10 @@ struct ProgressTabBestsList: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            MainSectionTitle(title: "Personal bests")
+            MainSectionTitle(title: L("Personal bests"))
                 .padding(.bottom, 4)
             if bests.isEmpty {
-                Text("Your bests will appear here after your first run.")
+                Text(L("Your bests will appear here after your first run."))
                     .font(.system(size: 14))
                     .foregroundStyle(Theme.muted)
                     .padding(.vertical, 10)

@@ -7,8 +7,8 @@ struct OnboardingHelloScreen: View {
     @State private var finished = false
 
     private var speech: String {
-        "I'm \(store.coach.name), and I'll be with you all the way to your goal. "
-            + "Tell me about your running and we'll build your plan together."
+        L("I'm %@, and I'll be with you all the way to your goal. Tell me about your running and we'll build your plan together.",
+          store.coach.name)
     }
 
     var body: some View {
@@ -21,7 +21,7 @@ struct OnboardingHelloScreen: View {
                 }
         }, top: {
             VStack(alignment: .leading, spacing: 8) {
-                OnboardingSpokenText(text: "Nice to meet you, \(store.firstName).",
+                OnboardingSpokenText(text: L("Nice to meet you, %@.", store.firstName),
                                      size: 28, weight: .bold, color: Theme.ink, lineSpacing: 2,
                                      startDelay: OnboardingRevealTiming.speech,
                                      onFinished: { greeted = true })
@@ -60,11 +60,11 @@ struct OnboardingGoalIntroScreen: View {
                 }
         }, top: {
             VStack(alignment: .leading, spacing: 14) {
-                OnboardingSpokenText(text: "I know where you're starting from, \(store.firstName).",
+                OnboardingSpokenText(text: L("I know where you're starting from, %@.", store.firstName),
                                      size: 14, weight: .semibold, color: Theme.greenOnDark, lineSpacing: 3,
                                      startDelay: OnboardingRevealTiming.speech,
                                      onFinished: { introduced = true })
-                OnboardingSpokenText(text: "Now it's time to set your goal.",
+                OnboardingSpokenText(text: L("Now it's time to set your goal."),
                                      size: 38, weight: .bold, color: Color.white, lineSpacing: 2,
                                      isActive: introduced,
                                      onFinished: { finished = true })
@@ -84,25 +84,38 @@ struct OnboardingCoachReplyScreen: View {
 
     private var chip: String {
         switch motivation {
-        case .athletic: return "You want an athletic body"
-        case .prove: return "You want to prove to yourself you can do it"
-        case .record: return "You want to beat your record"
-        case .health: return "You want to take care of your health"
-        case .clearHead: return "You want to clear your head"
-        case .together: return "You want to run with people you love"
+        case .athletic: return L("You want an athletic body")
+        case .prove: return L("You want to prove to yourself you can do it")
+        case .record: return L("You want to beat your record")
+        case .health: return L("You want to take care of your health")
+        case .clearHead: return L("You want to clear your head")
+        case .together: return L("You want to run with people you love")
         }
     }
 
     private var detail: String {
         let answers = store.answers
         let goal = answers.goal ?? .regular
+        let habit = L("A running habit is built session after session. I'll be there for each one.")
         if goal.isOpenEnded {
-            return "A running habit is built session after session. I'll be there for each one."
+            return habit
         }
+        // One full sentence per goal: the article and the agreements change with the noun.
         if let target = answers.targetSeconds {
-            return "A \(OnboardingCopy.goalNoun(goal)) in \(Fmt.goalTime(target)) is built session after session. I'll be there for each one."
+            let time = Fmt.goalTime(target)
+            switch goal {
+            case .fiveK: return L("A 5K in %@ is built session after session. I'll be there for each one.", time)
+            case .tenK: return L("A 10K in %@ is built session after session. I'll be there for each one.", time)
+            case .half: return L("A half marathon in %@ is built session after session. I'll be there for each one.", time)
+            case .regular, .shape: return habit
+            }
         }
-        return "A \(OnboardingCopy.goalNoun(goal)) is built session after session. I'll be there for each one."
+        switch goal {
+        case .fiveK: return L("A 5K is built session after session. I'll be there for each one.")
+        case .tenK: return L("A 10K is built session after session. I'll be there for each one.")
+        case .half: return L("A half marathon is built session after session. I'll be there for each one.")
+        case .regular, .shape: return habit
+        }
     }
 
     var body: some View {

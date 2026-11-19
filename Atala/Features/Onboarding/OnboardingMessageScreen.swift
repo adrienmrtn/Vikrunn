@@ -44,7 +44,7 @@ struct OnboardingMessageScreen: View {
     }
 
     private var timeLabel: String {
-        "Today \(Fmt.day(Date(), "HH:mm"))"
+        L("Today %@", Fmt.day(Date(), "HH:mm"))
     }
 
     /// Changes every time something is added to the thread, to scroll to the newest message.
@@ -84,7 +84,7 @@ struct OnboardingMessageScreen: View {
             }
             if answered {
                 BottomBar {
-                    PrimaryButton(title: "Continue") { nav.next(store) }
+                    PrimaryButton(title: L("Continue")) { nav.next(store) }
                 }
                 .transition(.opacity)
             }
@@ -106,7 +106,7 @@ struct OnboardingMessageScreen: View {
     private var titleHeader: some View {
         HStack(alignment: .center, spacing: 12) {
             CoachAvatar(coach: store.coach, size: 48)
-            Text("Here's how you talk to \(store.coach.name)")
+            Text(L("Here's how you talk to %@", store.coach.name))
                 .font(Theme.title(24))
                 .foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true)

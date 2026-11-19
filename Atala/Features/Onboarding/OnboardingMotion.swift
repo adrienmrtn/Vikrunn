@@ -92,7 +92,7 @@ struct OnboardingTapHint: View {
     @State private var dimmed = false
 
     var body: some View {
-        Text("Tap to continue")
+        Text(L("Tap to continue"))
             .font(.system(size: 16, weight: .semibold))
             .foregroundStyle(color)
             .shadow(color: Color.black.opacity(shadow ? 0.45 : 0), radius: 6, x: 0, y: 2)

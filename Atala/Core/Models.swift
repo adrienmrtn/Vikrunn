@@ -8,10 +8,10 @@ enum Gender: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .woman: return "Woman"
-        case .man: return "Man"
-        case .other: return "Non-binary"
-        case .undisclosed: return "Prefer not to say"
+        case .woman: return L("Woman")
+        case .man: return L("Man")
+        case .other: return L("Non-binary")
+        case .undisclosed: return L("Prefer not to say")
         }
     }
 }
@@ -22,20 +22,20 @@ enum GoalType: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .fiveK: return "5K"
-        case .tenK: return "10K"
-        case .half: return "Half marathon"
-        case .regular: return "Run regularly"
-        case .shape: return "Get in shape"
+        case .fiveK: return L("5K")
+        case .tenK: return L("10K")
+        case .half: return L("Half marathon")
+        case .regular: return L("Run regularly")
+        case .shape: return L("Get in shape")
         }
     }
     var subtitle: String {
         switch self {
-        case .fiveK: return "Your first distance"
-        case .tenK: return "The great classic"
-        case .half: return "21.1 km"
-        case .regular: return "A steady habit, no race planned"
-        case .shape: return "I just want to feel fit and strong"
+        case .fiveK: return L("Your first distance")
+        case .tenK: return L("The great classic")
+        case .half: return L("21.1 km")
+        case .regular: return L("A steady habit, no race planned")
+        case .shape: return L("I just want to feel fit and strong")
         }
     }
     /// Race distance in kilometres, nil for the goals without a race.
@@ -75,10 +75,10 @@ enum Experience: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .starting: return "I'm just starting"
-        case .underSixMonths: return "Less than 6 months"
-        case .sixMonthsToTwoYears: return "6 months to 2 years"
-        case .overTwoYears: return "More than 2 years"
+        case .starting: return L("I'm just starting")
+        case .underSixMonths: return L("Less than 6 months")
+        case .sixMonthsToTwoYears: return L("6 months to 2 years")
+        case .overTwoYears: return L("More than 2 years")
         }
     }
     var vignette: String {
@@ -97,10 +97,10 @@ enum WeeklyVolume: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .notYet: return "I don't run yet"
-        case .under10: return "Less than 10 km"
-        case .from10to25: return "10 to 25 km"
-        case .over25: return "More than 25 km"
+        case .notYet: return L("I don't run yet")
+        case .under10: return L("Less than 10 km")
+        case .from10to25: return L("10 to 25 km")
+        case .over25: return L("More than 25 km")
         }
     }
     var vignette: String {
@@ -120,33 +120,33 @@ enum Motivation: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .athletic: return "Get an athletic body"
-        case .prove: return "Prove to myself I can do it"
-        case .record: return "Beat my record"
-        case .health: return "Take care of my health"
-        case .clearHead: return "Clear my head"
-        case .together: return "Run with people I love"
+        case .athletic: return L("Get an athletic body")
+        case .prove: return L("Prove to myself I can do it")
+        case .record: return L("Beat my record")
+        case .health: return L("Take care of my health")
+        case .clearHead: return L("Clear my head")
+        case .together: return L("Run with people I love")
         }
     }
     var subtitle: String {
         switch self {
-        case .athletic: return "Look and feel stronger"
-        case .prove: return "See something through"
-        case .record: return "Do better than last time"
-        case .health: return "Move more, feel better"
-        case .clearHead: return "Switch off from the day"
-        case .together: return "Share the effort"
+        case .athletic: return L("Look and feel stronger")
+        case .prove: return L("See something through")
+        case .record: return L("Do better than last time")
+        case .health: return L("Move more, feel better")
+        case .clearHead: return L("Switch off from the day")
+        case .together: return L("Share the effort")
         }
     }
     /// The coach's adaptive answer shown right after the "why" question.
     var coachReply: String {
         switch self {
-        case .athletic: return "I'll get you there, one session at a time."
-        case .prove: return "I'll help you prove it to yourself."
-        case .record: return "We'll go and get that record together."
-        case .health: return "We'll build a habit your body thanks you for."
-        case .clearHead: return "I'll make every run a breath of fresh air."
-        case .together: return "I'll get you ready to enjoy every shared kilometre."
+        case .athletic: return L("I'll get you there, one session at a time.")
+        case .prove: return L("I'll help you prove it to yourself.")
+        case .record: return L("We'll go and get that record together.")
+        case .health: return L("We'll build a habit your body thanks you for.")
+        case .clearHead: return L("I'll make every run a breath of fresh air.")
+        case .together: return L("I'll get you ready to enjoy every shared kilometre.")
         }
     }
     var vignette: String {
@@ -166,11 +166,11 @@ enum Constraint: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .pastInjury: return "A past injury"
-        case .travel: return "I travel often"
-        case .treadmill: return "I sometimes run on a treadmill"
-        case .strength: return "I already do strength training"
-        case .irregularSleep: return "Irregular hours or sleep"
+        case .pastInjury: return L("A past injury")
+        case .travel: return L("I travel often")
+        case .treadmill: return L("I sometimes run on a treadmill")
+        case .strength: return L("I already do strength training")
+        case .irregularSleep: return L("Irregular hours or sleep")
         }
     }
     var vignette: String {
@@ -189,16 +189,16 @@ enum CoachTone: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .kind: return "Kind"
-        case .direct: return "Direct"
-        case .playful: return "Playful"
+        case .kind: return L("Kind")
+        case .direct: return L("Direct")
+        case .playful: return L("Playful")
         }
     }
     var example: String {
         switch self {
-        case .kind: return "Nice work today. Rest well, you earned it."
-        case .direct: return "Session done. Tomorrow: easy run, no excuses."
-        case .playful: return "Boom. Those 800s never saw you coming."
+        case .kind: return L("Nice work today. Rest well, you earned it.")
+        case .direct: return L("Session done. Tomorrow: easy run, no excuses.")
+        case .playful: return L("Boom. Those 800s never saw you coming.")
         }
     }
 }
@@ -236,15 +236,15 @@ enum WorkoutKind: String, Codable {
 
     var title: String {
         switch self {
-        case .easy: return "Easy run"
-        case .intervals: return "Intervals"
-        case .tempo: return "Tempo"
-        case .long: return "Long run"
-        case .racePace: return "Race pace"
-        case .strength: return "Strength"
-        case .stretching: return "Stretching"
-        case .race: return "Race day"
-        case .free: return "Free run"
+        case .easy: return L("Easy run")
+        case .intervals: return L("Intervals")
+        case .tempo: return L("Tempo")
+        case .long: return L("Long run")
+        case .racePace: return L("Race pace")
+        case .strength: return L("Strength")
+        case .stretching: return L("Stretching")
+        case .race: return L("Race day")
+        case .free: return L("Free run")
         }
     }
     var symbol: String {
@@ -270,12 +270,12 @@ enum StepKind: String, Codable {
     case warmup, work, recovery, cooldown, steady, exercise
     var title: String {
         switch self {
-        case .warmup: return "Warm-up"
-        case .work: return "Fast"
-        case .recovery: return "Recovery"
-        case .cooldown: return "Cool-down"
-        case .steady: return "Steady"
-        case .exercise: return "Exercise"
+        case .warmup: return L("Warm-up")
+        case .work: return L("Fast")
+        case .recovery: return L("Recovery")
+        case .cooldown: return L("Cool-down")
+        case .steady: return L("Steady")
+        case .exercise: return L("Exercise")
         }
     }
 }
@@ -360,18 +360,18 @@ enum PlanPhase: String, Codable {
     case base, build, specific, taper
     var title: String {
         switch self {
-        case .base: return "Base"
-        case .build: return "Build"
-        case .specific: return "Specific"
-        case .taper: return "Taper"
+        case .base: return L("Base")
+        case .build: return L("Build")
+        case .specific: return L("Specific")
+        case .taper: return L("Taper")
         }
     }
     var summary: String {
         switch self {
-        case .base: return "Settle the habit, run easy"
-        case .build: return "More volume, first hard efforts"
-        case .specific: return "Train at your goal pace"
-        case .taper: return "Ease off, fresh legs"
+        case .base: return L("Settle the habit, run easy")
+        case .build: return L("More volume, first hard efforts")
+        case .specific: return L("Train at your goal pace")
+        case .taper: return L("Ease off, fresh legs")
         }
     }
 }
@@ -427,18 +427,18 @@ enum Feeling: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .easy: return "Easy"
-        case .good: return "Hard but good"
-        case .hard: return "Very hard"
-        case .pain: return "Something hurts"
+        case .easy: return L("Easy")
+        case .good: return L("Hard but good")
+        case .hard: return L("Very hard")
+        case .pain: return L("Something hurts")
         }
     }
     var subtitle: String {
         switch self {
-        case .easy: return "I had more in the tank"
-        case .good: return "The planned effort, no more, no less"
-        case .hard: return "I finished at my limit"
-        case .pain: return "I'd rather tell my coach"
+        case .easy: return L("I had more in the tank")
+        case .good: return L("The planned effort, no more, no less")
+        case .hard: return L("I finished at my limit")
+        case .pain: return L("I'd rather tell my coach")
         }
     }
 }
@@ -573,8 +573,26 @@ extension Calendar {
 }
 
 enum Weekday {
-    static let short = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    static let long = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    /// English names, for text that is matched or sent to the server rather than shown.
+    static let englishShort = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    static let englishLong = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    /// Names in the app's language, Monday first.
+    static var short: [String] {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = AppLanguage.locale
+        return mondayFirst(calendar.shortStandaloneWeekdaySymbols, fallback: englishShort)
+    }
+    static var long: [String] {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = AppLanguage.locale
+        return mondayFirst(calendar.standaloneWeekdaySymbols, fallback: englishLong)
+    }
+    /// The calendar lists the days from Sunday.
+    private static func mondayFirst(_ symbols: [String], fallback: [String]) -> [String] {
+        guard symbols.count == 7 else { return fallback }
+        return Array(symbols[1...]) + [symbols[0]]
+    }
     static func short(_ index: Int) -> String { short[min(max(index, 1), 7) - 1] }
     static func long(_ index: Int) -> String { long[min(max(index, 1), 7) - 1] }
+    static func englishLong(_ index: Int) -> String { englishLong[min(max(index, 1), 7) - 1] }
 }

@@ -140,11 +140,11 @@ private struct MainTabBar: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
-            item(.today, title: "Today", symbol: "house", selectedSymbol: "house.fill")
-            item(.plan, title: "Plan", symbol: "calendar", selectedSymbol: "calendar")
+            item(.today, title: L("Today"), symbol: "house", selectedSymbol: "house.fill")
+            item(.plan, title: L("Plan"), symbol: "calendar", selectedSymbol: "calendar")
             plusButton
-            item(.coach, title: "Coach", symbol: "bubble.left", selectedSymbol: "bubble.left.fill")
-            item(.progress, title: "Progress", symbol: "chart.bar", selectedSymbol: "chart.bar.fill")
+            item(.coach, title: L("Coach"), symbol: "bubble.left", selectedSymbol: "bubble.left.fill")
+            item(.progress, title: L("Progress"), symbol: "chart.bar", selectedSymbol: "chart.bar.fill")
         }
         .padding(.horizontal, 8)
         .padding(.top, 8)
@@ -195,7 +195,7 @@ private struct MainTabBar: View {
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
         .offset(y: -6)
-        .accessibilityLabel("Add a run")
+        .accessibilityLabel(L("Add a run"))
     }
 }
 
@@ -206,16 +206,16 @@ private struct MainPlusSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Add a run")
+            Text(L("Add a run"))
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Theme.ink)
                 .padding(.bottom, 2)
-            row(title: "Start a free run",
-                subtitle: "Outside the plan, tracked with GPS",
+            row(title: L("Start a free run"),
+                subtitle: L("Outside the plan, tracked with GPS"),
                 systemName: "figure.run",
                 action: .freeRun)
-            row(title: "Add a past run",
-                subtitle: "Treadmill or a run you did without the app",
+            row(title: L("Add a past run"),
+                subtitle: L("Treadmill or a run you did without the app"),
                 systemName: "square.and.pencil",
                 action: .pastRun)
             Spacer(minLength: 0)

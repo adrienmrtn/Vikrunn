@@ -88,7 +88,7 @@ enum AuthProvider: String {
         switch self {
         case .apple: return "Apple"
         case .google: return "Google"
-        case .email: return "E-mail code"
+        case .email: return L("E-mail code")
         }
     }
 }

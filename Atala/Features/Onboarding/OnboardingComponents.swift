@@ -6,9 +6,9 @@ enum OnboardingCopy {
         switch goal ?? .regular {
         case .fiveK: return "5K"
         case .tenK: return "10K"
-        case .half: return "half marathon"
-        case .regular: return "running routine"
-        case .shape: return "fitness routine"
+        case .half: return L("half marathon")
+        case .regular: return L("running routine")
+        case .shape: return L("fitness routine")
         }
     }
 
@@ -16,7 +16,7 @@ enum OnboardingCopy {
     static func goalHeadline(_ answers: OnboardingAnswers) -> String {
         let goal = answers.goal ?? .regular
         if !goal.isOpenEnded, let target = answers.targetSeconds {
-            return "\(goal.title) in \(Fmt.goalTime(target))"
+            return L("%@ in %@", goal.title, Fmt.goalTime(target))
         }
         return goal.title
     }
@@ -26,17 +26,17 @@ enum OnboardingCopy {
     }
 
     static func sessions(_ count: Int) -> String {
-        count == 1 ? "1 session a week" : "\(count) sessions a week"
+        count == 1 ? L("1 session a week") : L("%@ sessions a week", count)
     }
 
     static func weeks(_ count: Int) -> String {
-        count == 1 ? "1 week" : "\(count) weeks"
+        count == 1 ? L("1 week") : L("%@ weeks", count)
     }
 
     static func distanceName(_ km: Double) -> String {
         if km < 7.5 { return "5K" }
         if km < 15 { return "10K" }
-        return "half marathon"
+        return L("half marathon")
     }
 
     static func pacePerKm(seconds: Int, km: Double) -> String {
@@ -66,7 +66,7 @@ struct OnboardingScaffold<Content: View>: View {
 
     init(title: String? = nil,
          subtitle: String? = nil,
-         buttonTitle: String = "Continue",
+         buttonTitle: String = L("Continue"),
          buttonHaptic: Haptics.Kind? = .confirm,
          canContinue: Bool = true,
          tinted: Bool = false,
@@ -216,7 +216,7 @@ struct OnboardingTimeCard: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            roundButton(symbol: "minus", label: "Less", delta: -stepSeconds)
+            roundButton(symbol: "minus", label: L("Less"), delta: -stepSeconds)
             Button(action: {
                 Haptics.tap()
                 onTapTime()
@@ -236,8 +236,8 @@ struct OnboardingTimeCard: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityHint("Opens the time picker")
-            roundButton(symbol: "plus", label: "More", delta: stepSeconds)
+            .accessibilityHint(L("Opens the time picker"))
+            roundButton(symbol: "plus", label: L("More"), delta: stepSeconds)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 26)
@@ -282,20 +282,20 @@ struct OnboardingTimeWheelSheet: View {
                 .padding(.top, 22)
             HStack(spacing: 0) {
                 if showsHours {
-                    Picker("Hours", selection: $hours) {
+                    Picker(L("Hours"), selection: $hours) {
                         ForEach(0..<4, id: \.self) { value in
                             Text("\(value) h").tag(value)
                         }
                     }
                     .pickerStyle(.wheel)
                 }
-                Picker("Minutes", selection: $minutes) {
+                Picker(L("Minutes"), selection: $minutes) {
                     ForEach(0..<(showsHours ? 60 : 180), id: \.self) { value in
-                        Text("\(value) min").tag(value)
+                        Text(L("%@ min", value)).tag(value)
                     }
                 }
                 .pickerStyle(.wheel)
-                Picker("Seconds", selection: $secs) {
+                Picker(L("Seconds"), selection: $secs) {
                     ForEach(0..<60, id: \.self) { value in
                         Text("\(value) s").tag(value)
                     }
@@ -303,7 +303,7 @@ struct OnboardingTimeWheelSheet: View {
                 .pickerStyle(.wheel)
             }
             .frame(height: 170)
-            PrimaryButton(title: "Done") {
+            PrimaryButton(title: L("Done")) {
                 onDone(hours * 3600 + minutes * 60 + secs)
                 dismiss()
             }

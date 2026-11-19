@@ -107,7 +107,7 @@ struct SignInOptionsSheet: View {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 14, weight: .semibold))
-                        Text("Back")
+                        Text(L("Back"))
                             .font(.system(size: 15, weight: .medium))
                     }
                     .foregroundStyle(Theme.ink)
@@ -130,39 +130,39 @@ struct SignInOptionsSheet: View {
 
     private var headerTitle: String {
         switch mode {
-        case .options: return "Save your plan"
-        case .email: return "Continue with e-mail"
-        case .code: return "Enter your code"
+        case .options: return L("Save your plan")
+        case .email: return L("Continue with e-mail")
+        case .code: return L("Enter your code")
         }
     }
 
     private var headerSubtitle: String {
         switch mode {
-        case .options: return "Choose how to sign in. It takes ten seconds."
-        case .email: return "We'll send you a 6-digit code. No password to remember."
-        case .code: return "We sent a 6-digit code to \(AuthService.normalized(email))."
+        case .options: return L("Choose how to sign in. It takes ten seconds.")
+        case .email: return L("We'll send you a 6-digit code. No password to remember.")
+        case .code: return L("We sent a 6-digit code to %@.", AuthService.normalized(email))
         }
     }
 
     private var optionsSection: some View {
         VStack(spacing: 10) {
-            AuthProviderButton(title: "Continue with Apple", dark: true, loading: busy == .apple,
+            AuthProviderButton(title: L("Continue with Apple"), dark: true, loading: busy == .apple,
                                action: { signIn(with: .apple) }) {
                 Image(systemName: "apple.logo")
                     .font(.system(size: 19, weight: .medium))
                     .accessibilityHidden(true)
             }
-            AuthProviderButton(title: "Continue with Google", loading: busy == .google,
+            AuthProviderButton(title: L("Continue with Google"), loading: busy == .google,
                                action: { signIn(with: .google) }) {
                 AuthGoogleMark()
             }
-            AuthProviderButton(title: "Continue with e-mail", action: { showEmail() }) {
+            AuthProviderButton(title: L("Continue with e-mail"), action: { showEmail() }) {
                 Image(systemName: "envelope")
                     .font(.system(size: 17, weight: .medium))
                     .accessibilityHidden(true)
             }
             Button(action: { continueAsGuest() }) {
-                Text("Continue without an account")
+                Text(L("Continue without an account"))
                     .font(.system(size: 14, weight: .medium))
                     .underline()
                     .foregroundStyle(Theme.muted)
@@ -178,7 +178,7 @@ struct SignInOptionsSheet: View {
     private var emailSection: some View {
         VStack(spacing: 12) {
             AuthFieldBox {
-                TextField("you@example.com", text: $email)
+                TextField(L("you@example.com"), text: $email)
                     .font(.system(size: 16))
                     .foregroundStyle(Theme.ink)
                     .keyboardType(.emailAddress)
@@ -188,9 +188,9 @@ struct SignInOptionsSheet: View {
                     .submitLabel(.send)
                     .focused($focus, equals: .email)
                     .onSubmit { sendCode() }
-                    .accessibilityLabel("E-mail address")
+                    .accessibilityLabel(L("E-mail address"))
             }
-            AuthSubmitButton(title: "Send me a code",
+            AuthSubmitButton(title: L("Send me a code"),
                              enabled: AuthService.isValidEmail(AuthService.normalized(email)),
                              loading: busy == .sendingCode,
                              action: { sendCode() })
@@ -207,7 +207,7 @@ struct SignInOptionsSheet: View {
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)
                     .focused($focus, equals: .code)
-                    .accessibilityLabel("6-digit code")
+                    .accessibilityLabel(L("6-digit code"))
                     .onChange(of: code) { _, newValue in
                         let digits = String(newValue.filter { $0.isNumber }.prefix(6))
                         if digits != newValue {
@@ -217,10 +217,10 @@ struct SignInOptionsSheet: View {
                         }
                     }
             }
-            AuthSubmitButton(title: "Confirm", enabled: code.count == 6, loading: busy == .verifyingCode,
+            AuthSubmitButton(title: L("Confirm"), enabled: code.count == 6, loading: busy == .verifyingCode,
                              action: { verifyCode() })
             Button(action: { resendCode() }) {
-                Text(busy == .sendingCode ? "Sending…" : "Send a new code")
+                Text(busy == .sendingCode ? L("Sending…") : L("Send a new code"))
                     .font(.system(size: 14, weight: .medium))
                     .underline()
                     .foregroundStyle(Theme.muted)
@@ -252,7 +252,7 @@ struct SignInOptionsSheet: View {
     }
 
     private var terms: some View {
-        Text("By continuing, you accept the [terms of use](https://vikstudios.com/atala/terms) and the [privacy policy](https://vikstudios.com/atala).")
+        Text(LocalizedStringKey(L("By continuing, you accept the [terms of use](https://vikstudios.com/atala/terms) and the [privacy policy](https://vikstudios.com/atala).")))
             .font(.system(size: 12))
             .foregroundStyle(Theme.muted)
             .tint(Theme.ink)
@@ -348,7 +348,7 @@ struct SignInOptionsSheet: View {
                 try await AuthService.shared.sendEmailCode(to: email)
                 busy = nil
                 code = ""
-                infoText = "A new code is on its way."
+                infoText = L("A new code is on its way.")
             } catch {
                 busy = nil
                 show(error)
@@ -380,7 +380,7 @@ struct SignInOptionsSheet: View {
             if authError == .cancelled { return }
             errorText = authError.errorDescription
         } else {
-            errorText = "Something went wrong. Please try again."
+            errorText = L("Something went wrong. Please try again.")
         }
         Haptics.error()
     }

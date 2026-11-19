@@ -34,11 +34,11 @@ struct ProfileView: View {
             }
             .mainStagedAppear(index: 0)
             .mainStagedEntrance(.profile)
-            .navigationTitle("Profile")
+            .navigationTitle(L("Profile"))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
+                    Button(L("Done")) {
                         Haptics.tap()
                         dismiss()
                     }
@@ -46,11 +46,11 @@ struct ProfileView: View {
                 }
             }
             .onAppear(perform: loadDraft)
-            .alert("Update your plan?", isPresented: $confirmUpdate) {
-                Button("Update my plan") { applyDraft() }
-                Button("Cancel", role: .cancel) {}
+            .alert(L("Update your plan?"), isPresented: $confirmUpdate) {
+                Button(L("Update my plan")) { applyDraft() }
+                Button(L("Cancel"), role: .cancel) {}
             } message: {
-                Text("Your plan will be rebuilt from today with your new goal and training days. The sessions still to come are replaced. What you already did this week stays done, and your runs stay in your history.")
+                Text(L("Your plan will be rebuilt from today with your new goal and training days. The sessions still to come are replaced. What you already did this week stays done, and your runs stay in your history."))
             }
         }
         .tint(Theme.green)
@@ -62,43 +62,43 @@ struct ProfileView: View {
     private var updateSection: some View {
         if store.plan == nil {
             Section {
-                Button("Build my plan") { applyDraft() }
+                Button(L("Build my plan")) { applyDraft() }
                     .fontWeight(.semibold)
                     .disabled(!canBuild)
             } footer: {
                 Text(canBuild
-                     ? "Your plan is built from your goal and your training days."
-                     : "Choose a goal and at least one training day to build your plan.")
+                     ? L("Your plan is built from your goal and your training days.")
+                     : L("Choose a goal and at least one training day to build your plan."))
             }
         } else if store.mainPlanEnded && !hasPlanChanges {
             Section {
-                Button("Build my next plan") { applyDraft() }
+                Button(L("Build my next plan")) { applyDraft() }
                     .fontWeight(.semibold)
                     .disabled(!canBuild)
             } footer: {
-                Text("Your plan is finished. The next one starts this week, from your level today. Change the goal or the days above first if you want to.")
+                Text(L("Your plan is finished. The next one starts this week, from your level today. Change the goal or the days above first if you want to."))
             }
         } else if hasPlanChanges {
             Section {
-                Button("Update my plan") {
+                Button(L("Update my plan")) {
                     // The sessions to come are replaced: the confirmation opens with a warning.
                     Haptics.warning()
                     confirmUpdate = true
                 }
                     .fontWeight(.semibold)
                     .disabled(!canBuild)
-                Button("Discard changes", role: .cancel) {
+                Button(L("Discard changes"), role: .cancel) {
                     Haptics.tap()
                     draft = Self.withoutPastRace(store.answers)
                 }
             } footer: {
                 Text(canBuild
-                     ? "Your changes to the goal and training days apply once you update your plan."
-                     : "Keep a goal and at least one training day to update your plan.")
+                     ? L("Your changes to the goal and training days apply once you update your plan.")
+                     : L("Keep a goal and at least one training day to update your plan."))
             }
         } else if planUpdated {
             Section {
-                Label("Your plan is up to date", systemImage: "checkmark.circle.fill")
+                Label(L("Your plan is up to date"), systemImage: "checkmark.circle.fill")
                     .foregroundStyle(Theme.green)
             }
         }
@@ -184,10 +184,10 @@ private struct ProfileIdentitySection: View {
     @EnvironmentObject private var store: AppStore
 
     var body: some View {
-        Section("You") {
+        Section(L("You")) {
             HStack {
-                Text("First name")
-                TextField("Your first name", text: $store.answers.firstName)
+                Text(L("First name"))
+                TextField(L("Your first name"), text: $store.answers.firstName)
                     .multilineTextAlignment(.trailing)
                     .textContentType(.givenName)
                     .autocorrectionDisabled()
@@ -212,7 +212,7 @@ private struct ProfileCoachSection: View {
                 }
             }
             .padding(.vertical, 6)
-            Picker("Tone", selection: $store.answers.tone) {
+            Picker(L("Tone"), selection: $store.answers.tone) {
                 ForEach(CoachTone.allCases) { tone in
                     Text(tone.title).tag(tone)
                 }
@@ -226,9 +226,9 @@ private struct ProfileCoachSection: View {
                 .italic()
                 .foregroundStyle(Theme.muted)
         } header: {
-            Text("Your coach")
+            Text(L("Your coach"))
         } footer: {
-            Text("All coaches follow the same method. Only the face and the name change.")
+            Text(L("All coaches follow the same method. Only the face and the name change."))
         }
     }
 

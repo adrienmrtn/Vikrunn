@@ -6,24 +6,24 @@ struct ProfileGoalSection: View {
 
     var body: some View {
         Section {
-            Picker("Goal", selection: goalSelection) {
+            Picker(L("Goal"), selection: goalSelection) {
                 if draft.goal == nil {
-                    Text("Choose").tag(Optional<GoalType>.none)
+                    Text(L("Choose")).tag(Optional<GoalType>.none)
                 }
                 ForEach(GoalType.allCases) { goal in
                     Text(goal.title).tag(Optional(goal))
                 }
             }
             if let goal = draft.goal, !goal.isOpenEnded {
-                Toggle("I have a race date", isOn: hasRace)
+                Toggle(L("I have a race date"), isOn: hasRace)
                 if draft.hasRace {
-                    DatePicker("Race date", selection: raceDate, in: earliestRace..., displayedComponents: .date)
+                    DatePicker(L("Race date"), selection: raceDate, in: earliestRace..., displayedComponents: .date)
                 }
                 NavigationLink {
                     ProfileTargetTimeEditor(seconds: $draft.targetSeconds, goal: goal)
                 } label: {
                     HStack {
-                        Text("Target time")
+                        Text(L("Target time"))
                         Spacer()
                         Text(targetText)
                             .foregroundStyle(Theme.muted)
@@ -31,9 +31,9 @@ struct ProfileGoalSection: View {
                 }
             }
         } header: {
-            Text("Goal")
+            Text(L("Goal"))
         } footer: {
-            Text("Plans cover up to \(PlanEngine.maxWeeks) weeks. If your race is further away, the plan builds your base first.")
+            Text(L("Plans cover up to %@ weeks. If your race is further away, the plan builds your base first.", PlanEngine.maxWeeks))
         }
     }
 
@@ -78,7 +78,7 @@ struct ProfileGoalSection: View {
 
     private var targetText: String {
         if let seconds = draft.targetSeconds { return Fmt.goalTime(seconds) }
-        return "None"
+        return L("None")
     }
 }
 
@@ -94,16 +94,16 @@ struct ProfileDaysSection: View {
                 }
             }
             .padding(.vertical, 4)
-            Picker("Long run day", selection: $draft.longRunDay) {
-                Text("Automatic").tag(Optional<Int>.none)
+            Picker(L("Long run day"), selection: $draft.longRunDay) {
+                Text(L("Automatic")).tag(Optional<Int>.none)
                 ForEach(draft.runDays.sorted(), id: \.self) { day in
                     Text(Weekday.long(day)).tag(Optional(day))
                 }
             }
         } header: {
-            Text("Training days")
+            Text(L("Training days"))
         } footer: {
-            Text("One ticked day is one run per week.")
+            Text(L("One ticked day is one run per week."))
         }
     }
 
@@ -154,47 +154,47 @@ struct ProfileTargetTimeEditor: View {
         guard let today = todaySeconds, let km = goal.distanceKm else { return "" }
         let bounds = OnboardingTimeRules.range(km: km)
         if target < bounds.lowerBound || target > bounds.upperBound {
-            return "Outside what the plan can work with: it will be brought back between \(Fmt.goalTime(bounds.lowerBound)) and \(Fmt.goalTime(bounds.upperBound))."
+            return L("Outside what the plan can work with: it will be brought back between %@ and %@.", Fmt.goalTime(bounds.lowerBound), Fmt.goalTime(bounds.upperBound))
         }
         let reachable = Int(Double(today) * 0.95)
         if target < reachable {
-            return "Ambitious from your level today (around \(Fmt.goalTime(today))). It stays your goal, and the plan trains you towards \(Fmt.goalTime(reachable)) first."
+            return L("Ambitious from your level today (around %@). It stays your goal, and the plan trains you towards %@ first.", Fmt.goalTime(today), Fmt.goalTime(reachable))
         }
         if target <= today {
-            return "A real step up from your level today (around \(Fmt.goalTime(today))), and within reach."
+            return L("A real step up from your level today (around %@), and within reach.", Fmt.goalTime(today))
         }
-        return "Comfortable for your level today (around \(Fmt.goalTime(today)))."
+        return L("Comfortable for your level today (around %@).", Fmt.goalTime(today))
     }
 
     var body: some View {
         Form {
             Section {
-                Toggle("Aim for a time", isOn: hasTarget)
+                Toggle(L("Aim for a time"), isOn: hasTarget)
             } footer: {
-                Text("Without a target time, your paces are set from your current level.")
+                Text(L("Without a target time, your paces are set from your current level."))
             }
             if let value = seconds {
                 Section {
                     HStack(spacing: 0) {
-                        wheel("Hours", range: 0..<4, suffix: "h", selection: hours)
-                        wheel("Minutes", range: 0..<60, suffix: "min", selection: minutes)
-                        wheel("Seconds", range: 0..<60, suffix: "s", selection: secs)
+                        wheel(L("Hours"), range: 0..<4, suffix: L("h"), selection: hours)
+                        wheel(L("Minutes"), range: 0..<60, suffix: L("min"), selection: minutes)
+                        wheel(L("Seconds"), range: 0..<60, suffix: L("s"), selection: secs)
                     }
                     .frame(height: 140)
                     HStack {
-                        Text("Target time")
+                        Text(L("Target time"))
                         Spacer()
                         Text(Fmt.goalTime(value))
                             .fontWeight(.semibold)
                     }
                 } header: {
-                    Text("Target for your \(goal.title)")
+                    Text(L("Target for your %@", goal.title))
                 } footer: {
                     Text(levelNote(for: value))
                 }
             }
         }
-        .navigationTitle("Target time")
+        .navigationTitle(L("Target time"))
         .navigationBarTitleDisplayMode(.inline)
     }
 

@@ -188,8 +188,8 @@ final class VoiceCoach: NSObject, ObservableObject {
             wasOffTarget = false
             guard settings.announceSteps else { return }
             say(clips: [.complete],
-                speech: "Session complete. Well done. Stop whenever you are ready.",
-                display: "Session complete. Well done. Stop whenever you're ready.",
+                speech: L("Session complete. Well done. Stop whenever you are ready."),
+                display: L("Session complete. Well done. Stop whenever you're ready."),
                 settings: settings)
 
         case .kilometre(let count):
@@ -203,13 +203,13 @@ final class VoiceCoach: NSObject, ObservableObject {
     }
 
     private func announceKilometre(_ count: Int, tracker: RunTracker, settings: VoiceSettings) {
-        let unit = count == 1 ? "kilometre" : "kilometres"
         let pace = tracker.averagePace
-        var speech = "\(count) \(unit). Time, \(RunFormat.spokenDuration(tracker.elapsed))."
-        var display = "\(count) km in \(Fmt.duration(tracker.elapsed))."
+        let spokenTime = RunFormat.spokenDuration(tracker.elapsed)
+        var speech = count == 1 ? L("%@ kilometre. Time, %@.", count, spokenTime) : L("%@ kilometres. Time, %@.", count, spokenTime)
+        var display = L("%@ km in %@.", count, Fmt.duration(tracker.elapsed))
         if pace > 0 {
-            speech += " Average pace, \(Fmt.pace(pace)) per kilometre."
-            display += " Average \(Fmt.pace(pace)) /km."
+            speech += " " + L("Average pace, %@ per kilometre.", Fmt.pace(pace))
+            display += " " + L("Average %@ /km.", Fmt.pace(pace))
         }
         if (1...VoiceClip.lastKilometre).contains(count) {
             // The recorded voice gives the kilometre and a word of encouragement; the time and
@@ -236,18 +236,18 @@ final class VoiceCoach: NSObject, ObservableObject {
             let target = Fmt.pace((fast + slow) / 2)
             if tooFast {
                 say(clips: [.fast],
-                    speech: "A little too fast. Ease off towards \(target) per kilometre.",
-                    display: "A little too fast. Ease off towards \(target) /km.",
+                    speech: L("A little too fast. Ease off towards %@ per kilometre.", target),
+                    display: L("A little too fast. Ease off towards %@ /km.", target),
                     settings: settings)
             } else {
                 say(clips: [.slow],
-                    speech: "A little too slow. Pick it up towards \(target) per kilometre.",
-                    display: "A little too slow. Pick it up towards \(target) /km.",
+                    speech: L("A little too slow. Pick it up towards %@ per kilometre.", target),
+                    display: L("A little too slow. Pick it up towards %@ /km.", target),
                     settings: settings)
             }
         } else if wasOffTarget {
             wasOffTarget = false
-            show("Back on target. Hold this pace.")
+            show(L("Back on target. Hold this pace."))
         }
     }
 

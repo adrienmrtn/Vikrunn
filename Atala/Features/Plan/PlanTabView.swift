@@ -50,7 +50,7 @@ struct PlanTabView: View {
                 .mainStagedEntrance(.plan)
             }
             .background(Color.white)
-            .navigationTitle("Plan")
+            .navigationTitle(L("Plan"))
             .navigationBarTitleDisplayMode(.large)
             .onAppear(perform: expandCurrentWeek)
             .onChange(of: store.plan?.id) { _, _ in
@@ -62,13 +62,13 @@ struct PlanTabView: View {
     }
 
     private var headerCaption: String {
-        guard let plan = store.plan else { return "No plan yet" }
+        guard let plan = store.plan else { return L("No plan yet") }
         var parts: [String] = [plan.goal.title]
         if let raceDate = plan.raceDate {
-            parts.append("race on \(Fmt.day(raceDate, "d MMM"))")
+            parts.append(L("race on %@", Fmt.day(raceDate, "d MMM")))
         }
         if let target = plan.targetSeconds {
-            parts.append("goal \(Fmt.goalTime(target))")
+            parts.append(L("goal %@", Fmt.goalTime(target)))
         }
         return parts.joined(separator: " · ")
     }
@@ -93,9 +93,9 @@ struct PlanTabView: View {
 
     private var emptyPanel: some View {
         MainEmptyState(systemName: "calendar",
-                       title: "No plan yet",
-                       message: "Choose a goal and your running days in your profile to build your plan.",
-                       actionTitle: "Open my profile") {
+                       title: L("No plan yet"),
+                       message: L("Choose a goal and your running days in your profile to build your plan."),
+                       actionTitle: L("Open my profile")) {
             chrome.showProfile = true
         }
         .mainGlass(radius: 20)
@@ -126,9 +126,9 @@ private struct PlanTabOverviewPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            MainProgressBar(fraction: fraction, label: "Plan progress")
+            MainProgressBar(fraction: fraction, label: L("Plan progress"))
             HStack(alignment: .firstTextBaseline) {
-                Text(ended ? "Plan complete" : "Week \(currentNumber) of \(plan.weeks.count)")
+                Text(ended ? L("Plan complete") : L("Week %@ of %@", currentNumber, plan.weeks.count))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                 Spacer(minLength: 8)
@@ -159,19 +159,19 @@ private struct PlanTabOverviewPanel: View {
         let today = Calendar.plan.startOfDay(for: Date())
         if ended, plan.raceDate == nil {
             let done = plan.allWorkouts.filter { $0.status == .done }.count
-            return "\(done) of \(plan.allWorkouts.count) sessions done"
+            return L("%@ of %@ sessions done", done, plan.allWorkouts.count)
         }
         if let raceDate = plan.raceDate {
             let race = Calendar.plan.startOfDay(for: raceDate)
             let days = Calendar.plan.dateComponents([.day], from: today, to: race).day ?? 0
-            if days < 0 { return "Race done" }
-            if days == 0 { return "Race day" }
-            if days < 14 { return "Race in \(days) \(days == 1 ? "day" : "days")" }
-            return "Race in \(days / 7) weeks"
+            if days < 0 { return L("Race done") }
+            if days == 0 { return L("Race day") }
+            if days < 14 { return days == 1 ? L("Race in %@ day", days) : L("Race in %@ days", days) }
+            return L("Race in %@ weeks", days / 7)
         }
         let left = plan.weeks.count - currentNumber
-        if left <= 0 { return "Last week" }
-        return "\(left) \(left == 1 ? "week" : "weeks") to go"
+        if left <= 0 { return L("Last week") }
+        return left == 1 ? L("%@ week to go", left) : L("%@ weeks to go", left)
     }
 }
 
@@ -211,7 +211,7 @@ private struct PlanTabPhaseBar: View {
         }
         .frame(height: 26)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Phases: \(groups.map { $0.phase.title }.joined(separator: ", "))")
+        .accessibilityLabel(L("Phases: %@", groups.map { $0.phase.title }.joined(separator: ", ")))
     }
 
     private func groupView(_ group: PhaseGroup, unit: CGFloat, spacing: CGFloat) -> some View {

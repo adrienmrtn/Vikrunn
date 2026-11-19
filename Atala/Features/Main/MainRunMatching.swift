@@ -47,7 +47,7 @@ struct MainCountRunCard: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Theme.ink)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("\(session.title) is still open on that day.")
+                    Text(L("%@ is still open on that day.", session.title))
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.muted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -70,11 +70,14 @@ struct MainCountRunCard: View {
     private var isToday: Bool { Calendar.plan.isDateInToday(run.date) }
 
     private var title: String {
-        let amount = "\(Fmt.km(run.distanceKm)) in \(Fmt.duration(run.durationSec))"
-        return isToday ? "You ran \(amount) today" : "You ran \(amount) on \(Fmt.day(run.date, "EEEE"))"
+        let distance = Fmt.km(run.distanceKm)
+        let duration = Fmt.duration(run.durationSec)
+        return isToday
+            ? L("You ran %@ in %@ today", distance, duration)
+            : L("You ran %@ in %@ on %@", distance, duration, Fmt.day(run.date, "EEEE"))
     }
 
     private var buttonTitle: String {
-        isToday ? "Count it as today's session" : "Count it as \(Fmt.day(run.date, "EEEE"))'s session"
+        isToday ? L("Count it as today's session") : L("Count it as %@'s session", Fmt.day(run.date, "EEEE"))
     }
 }
