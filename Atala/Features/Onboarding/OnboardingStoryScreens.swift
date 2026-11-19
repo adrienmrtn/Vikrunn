@@ -274,6 +274,46 @@ struct OnboardingPlanMattersScreen: View {
     }
 }
 
+/// After the plan preview, before the promise: the coach has everything, one last "ready?".
+struct OnboardingReadyScreen: View {
+    @EnvironmentObject private var store: AppStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var coachShown = false
+    /// 0 nothing said, 1 first sentence, 2 the question.
+    @State private var spoken = 0
+
+    var body: some View {
+        OnboardingScaffold(buttonTitle: "I'm ready", buttonHaptic: .strong, buttonsVisible: spoken >= 2) {
+            CoachPoseView(coach: store.coach, pose: .thumbsUp)
+                .frame(height: 250)
+                .frame(maxWidth: .infinity)
+                .scaleEffect(coachShown ? 1 : 0.9, anchor: .bottom)
+                .opacity(coachShown ? 1 : 0)
+                .accessibilityHidden(true)
+            OnboardingSpokenText(text: "Okay \(store.firstName), I've got everything I need to help you reach your goals.",
+                                 size: 26, weight: .bold, color: Theme.ink, lineSpacing: 4,
+                                 startDelay: 0.5,
+                                 onFinished: { spoken = max(spoken, 1) })
+                .accessibilityAddTraits(.isHeader)
+            OnboardingSpokenText(text: "Are you ready?",
+                                 size: 34, weight: .bold, color: Theme.green, lineSpacing: 2,
+                                 isActive: spoken >= 1,
+                                 startDelay: 0.25,
+                                 onFinished: { spoken = max(spoken, 2) })
+        }
+        .onAppear {
+            guard !coachShown else { return }
+            if reduceMotion {
+                coachShown = true
+            } else {
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.74).delay(0.1)) {
+                    coachShown = true
+                }
+            }
+        }
+    }
+}
+
 #Preview("Intro") {
     OnboardingIntroScreen()
         .environmentObject(AppStore.preview)

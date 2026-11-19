@@ -32,6 +32,9 @@ struct OnboardingWelcomeScreen: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var nav: OnboardingNavigator
     @State private var page: Int? = 0
+    /// The page the automatic slideshow last showed. Once the user swipes elsewhere, it stops.
+    @State private var autoPage = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showSignIn = false
     @State private var isRestoring = false
     @State private var signInError: String?
@@ -58,6 +61,9 @@ struct OnboardingWelcomeScreen: View {
         }
         .ignoresSafeArea(edges: .top)
         .background(Color.white.ignoresSafeArea())
+        .task {
+            await playSlides()
+        }
         .sheet(isPresented: $showSignIn) {
             SignInOptionsSheet { account in
                 showSignIn = false
@@ -68,6 +74,28 @@ struct OnboardingWelcomeScreen: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(signInError ?? "Please try again.")
+        }
+    }
+
+    /// The slides move on by themselves every few seconds, up to the last one, until the user swipes.
+    @MainActor
+    private func playSlides() async {
+        guard !reduceMotion else { return }
+        let count = OnboardingWelcomeSlide.all.count
+        guard count > 1 else { return }
+        while !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: 3_600_000_000)
+            if Task.isCancelled { return }
+            if showSignIn { continue }
+            let current = page ?? 0
+            // The user moved to another slide by hand: leave them in charge.
+            guard current == autoPage else { return }
+            let next = current + 1
+            guard next < count else { return }
+            autoPage = next
+            withAnimation(.easeInOut(duration: 0.7)) {
+                page = next
+            }
         }
     }
 

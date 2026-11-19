@@ -37,24 +37,27 @@ enum OnboardingPhaseStyle {
     }
 }
 
-/// Layout of the winding path: one row per week, then the finish.
+/// Layout of the winding path: one row per week, centred, then the finish under it.
 enum OnboardingPathLayout {
-    static let width: CGFloat = 350
-    static let rowHeight: CGFloat = 96
+    static let width: CGFloat = 340
+    static let rowHeight: CGFloat = 92
     static let nodeWidth: CGFloat = 64
-    static let finishSize: CGFloat = 88
-    static let finishLeading: CGFloat = 34
-    static let finishRowHeight: CGFloat = 120
-    private static let offsets: [CGFloat] = [28, 64, 80, 64, 28, 12]
+    static let finishSize: CGFloat = 92
+    static let finishTopGap: CGFloat = 14
+    static let finishRowHeight: CGFloat = 190
+    /// Horizontal shift of each node from the centre line: the path swings left and right.
+    private static let swings: [CGFloat] = [0, 46, 66, 46, 0, -46, -66, -46]
 
-    static func leading(_ index: Int) -> CGFloat { offsets[index % offsets.count] }
+    static func swing(_ index: Int) -> CGFloat { swings[index % swings.count] }
+
+    static func leading(_ index: Int) -> CGFloat { (width - nodeWidth) / 2 + swing(index) }
 
     static func nodeCenter(_ index: Int) -> CGPoint {
-        CGPoint(x: leading(index) + nodeWidth / 2, y: CGFloat(index) * rowHeight + rowHeight / 2)
+        CGPoint(x: width / 2 + swing(index), y: CGFloat(index) * rowHeight + rowHeight / 2)
     }
 
     static func finishCenter(count: Int) -> CGPoint {
-        CGPoint(x: finishLeading + finishSize / 2, y: CGFloat(count) * rowHeight + finishRowHeight / 2)
+        CGPoint(x: width / 2, y: CGFloat(count) * rowHeight + finishTopGap + finishSize / 2)
     }
 }
 
@@ -77,73 +80,6 @@ struct OnboardingPathLine: Shape {
                           control2: CGPoint(x: next.x, y: midY))
         }
         return path
-    }
-}
-
-/// Bubble shown next to the current week: phase, kilometres and the runs of the week.
-struct OnboardingWeekBubble: View {
-    let week: PlanWeek
-
-    private var runs: [Workout] { week.workouts.filter { $0.kind.isRun } }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(week.phase.title)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(OnboardingPhaseStyle.chipText(week.phase))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(OnboardingPhaseStyle.chipBackground(week.phase), in: Capsule())
-                HStack(alignment: .firstTextBaseline) {
-                    Text("Week \(week.index + 1)")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(Theme.ink)
-                    Spacer(minLength: 6)
-                    Text(Fmt.km(week.plannedKm, decimals: 0))
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.muted)
-                }
-            }
-            .padding(.bottom, 8)
-            if runs.isEmpty {
-                Text("No run left this week: rest and get ready.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.vertical, 7)
-            }
-            ForEach(runs) { run in
-                Divider().overlay(Color(hex: 0xEFEFEF))
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(Weekday.short(Calendar.plan.mondayIndex(of: run.date)))
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.muted)
-                        .frame(width: 28, alignment: .leading)
-                    Text(run.title)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Theme.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text(Fmt.km(run.distanceKm))
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.muted)
-                        .lineLimit(1)
-                        .fixedSize()
-                }
-                .padding(.vertical, 7)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.top, 12)
-        .padding(.bottom, 6)
-        .background(Color.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Theme.cardBorder, lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.1), radius: 12, x: 0, y: 8)
-        .accessibilityElement(children: .combine)
     }
 }
 
@@ -180,11 +116,14 @@ struct OnboardingWeekNode: View {
     }
 }
 
-/// Screen 26: the plan as a winding path, unlocked week by week.
+/// Screen 26: a preview of the plan as a winding path. The weeks light up one after the other,
+/// down to the goal; there is nothing to unlock here, one button moves on.
 struct OnboardingPlanReadyScreen: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var nav: OnboardingNavigator
-    @State private var current = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Number of weeks lit so far.
+    @State private var revealed = 0
     @State private var finished = false
 
     private let finishID = 1000
@@ -193,24 +132,28 @@ struct OnboardingPlanReadyScreen: View {
         Array((store.plan?.weeks ?? []).prefix(PlanEngine.maxWeeks))
     }
 
-    private var buttonTitle: String {
-        if finished || weeks.isEmpty { return "Continue" }
-        if current < weeks.count - 1 { return "Unlock week \(current + 2)" }
-        return store.plan?.raceDate != nil && !store.answers.goal.isOpenEnded ? "See race day" : "See the finish"
-    }
-
     var body: some View {
         ScrollViewReader { proxy in
             VStack(spacing: 0) {
-                header
                 ScrollView {
-                    path
-                        .padding(.top, 24)
-                        .padding(.bottom, 220)
-                        .frame(maxWidth: .infinity)
+                    VStack(spacing: 0) {
+                        header
+                        path
+                            .padding(.top, 26)
+                            .padding(.bottom, 32)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
                 .scrollIndicators(.hidden)
-                bottom(proxy)
+                BottomBar {
+                    PrimaryButton(title: "Continue") { nav.next(store) }
+                }
+                .overlay(alignment: .top) {
+                    Rectangle().fill(Theme.cardBorder).frame(height: 1)
+                }
+            }
+            .task {
+                await play(proxy)
             }
         }
         .background(Color.white.ignoresSafeArea())
@@ -220,112 +163,112 @@ struct OnboardingPlanReadyScreen: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("Your plan is ready")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Theme.green)
-                Spacer()
-                Button("Skip") {
-                    Haptics.tap()
-                    nav.next(store)
-                }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Theme.muted)
-                    .frame(minWidth: 44, minHeight: 44, alignment: .trailing)
-            }
-            .frame(height: 28)
-            Text(OnboardingCopy.goalHeadline(store.answers))
-                .font(Theme.title(28))
+        VStack(spacing: 10) {
+            Text("YOUR PLAN IS READY")
+                .font(.system(size: 12, weight: .bold))
+                .kerning(0.8)
+                .foregroundStyle(Theme.green)
+            Text("Here's how we'll work")
+                .font(Theme.title(30))
                 .foregroundStyle(Theme.ink)
-                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
+            Text("Every week you follow the path, until your goal.")
+                .font(.system(size: 17))
+                .foregroundStyle(Theme.body)
+                .fixedSize(horizontal: false, vertical: true)
             Text("\(OnboardingCopy.weeks(weeks.count)) · \(OnboardingCopy.sessions(OnboardingCopy.sessionsPerWeek(store.answers)))")
-                .font(.system(size: 15))
-                .foregroundStyle(Theme.muted)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Theme.green)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Theme.greenTint, in: Capsule())
+                .padding(.top, 4)
         }
+        .multilineTextAlignment(.center)
         .padding(.horizontal, Theme.screenPadding)
-        .padding(.top, 12)
-        .padding(.bottom, 14)
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(Theme.cardBorder).frame(height: 1)
-        }
+        .padding(.top, 20)
     }
 
     private var path: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(spacing: 0) {
             ForEach(Array(weeks.enumerated()), id: \.offset) { index, week in
                 weekRow(index, week)
                     .id(index)
-                    .zIndex(index == current ? 1 : 0)
             }
             finishRow
                 .id(finishID)
         }
-        .frame(width: OnboardingPathLayout.width, alignment: .leading)
+        .frame(width: OnboardingPathLayout.width)
         .background(alignment: .topLeading) {
             OnboardingPathLine(count: weeks.count)
                 .stroke(Theme.locked, style: StrokeStyle(lineWidth: 10, lineCap: .round, lineJoin: .round))
         }
-        .overlay(alignment: .bottomTrailing) {
-            // The coach cheers under the finish, in the room left below the path.
-            if finished {
-                CoachPoseView(coach: store.coach, pose: .cheer)
-                    .frame(height: 170)
-                    .padding(.trailing, 24)
-                    .offset(y: 160)
-                    .transition(.scale(scale: 0.8, anchor: .bottom).combined(with: .opacity))
-                    .accessibilityHidden(true)
-            }
-        }
     }
 
+    /// The node on the path, and a short label on the side that has more room.
     private func weekRow(_ index: Int, _ week: PlanWeek) -> some View {
-        let isCurrent = index == current && !finished
-        return HStack(spacing: 0) {
-            OnboardingWeekNode(number: index + 1, phase: week.phase, unlocked: index <= current, isCurrent: isCurrent)
-                .animation(.spring(response: 0.4, dampingFraction: 0.42), value: current)
-                .padding(.leading, OnboardingPathLayout.leading(index))
-            Spacer(minLength: 0)
-        }
-        .frame(width: OnboardingPathLayout.width, height: OnboardingPathLayout.rowHeight, alignment: .leading)
-        .overlay(alignment: .topLeading) {
-            if isCurrent {
-                OnboardingWeekBubble(week: week)
-                    .frame(width: 192)
-                    .offset(x: 158, y: 2)
-                    .transition(.scale(scale: 0.7, anchor: .topLeading).combined(with: .opacity))
+        let lit = index < revealed
+        let swing = OnboardingPathLayout.swing(index)
+        // Nodes on the right half get their label on the left, and the other way round.
+        let labelOnLeft = swing > 0
+        let labelWidth: CGFloat = 112
+        let gap: CGFloat = 14
+        let nodeLeading = OnboardingPathLayout.leading(index)
+        let labelX = labelOnLeft
+            ? nodeLeading - gap - labelWidth
+            : nodeLeading + OnboardingPathLayout.nodeWidth + gap
+        return ZStack(alignment: .topLeading) {
+            OnboardingWeekNode(number: index + 1, phase: week.phase, unlocked: lit, isCurrent: false)
+                .scaleEffect(lit ? 1 : 0.86)
+                .offset(x: nodeLeading, y: (OnboardingPathLayout.rowHeight - 64) / 2)
+            VStack(alignment: labelOnLeft ? .trailing : .leading, spacing: 2) {
+                Text(week.phase.title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(OnboardingPhaseStyle.chipText(week.phase))
+                Text(Fmt.km(week.plannedKm, decimals: 0))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.muted)
             }
+            .frame(width: labelWidth, height: OnboardingPathLayout.rowHeight,
+                   alignment: labelOnLeft ? .trailing : .leading)
+            .offset(x: labelX)
+            .opacity(lit ? 1 : 0)
         }
+        .frame(width: OnboardingPathLayout.width, height: OnboardingPathLayout.rowHeight, alignment: .topLeading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Week \(index + 1), \(week.phase.title), \(Fmt.km(week.plannedKm, decimals: 0))")
     }
 
     private var finishRow: some View {
-        HStack(spacing: 16) {
+        VStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(finished ? Theme.orange : Color(hex: 0xCFCFCB))
+                    .fill(finished ? Theme.orangeDeep : Color(hex: 0xCFCFCB))
                     .offset(y: 7)
                 Circle()
-                    .fill(finished ? Theme.ink : Theme.locked)
+                    .fill(finished ? Theme.orange : Theme.locked)
                 Image(systemName: "flag.checkered")
-                    .font(.system(size: 30, weight: .semibold))
+                    .font(.system(size: 32, weight: .semibold))
                     .foregroundStyle(finished ? Color.white : Theme.faint)
             }
             .frame(width: OnboardingPathLayout.finishSize, height: OnboardingPathLayout.finishSize)
-            .scaleEffect(finished ? 1.08 : 1)
+            .scaleEffect(finished ? 1.06 : 0.92)
             .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(finishTitle)
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(finished ? Theme.ink : Theme.faint)
+            VStack(spacing: 2) {
                 Text(finishDetail)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+                Text(finishTitle)
                     .font(.system(size: 14))
-                    .foregroundStyle(finished ? Theme.muted : Theme.faint)
+                    .foregroundStyle(Theme.muted)
             }
-            Spacer(minLength: 0)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .opacity(finished ? 1 : 0)
         }
-        .padding(.leading, OnboardingPathLayout.finishLeading)
-        .frame(width: OnboardingPathLayout.width, height: OnboardingPathLayout.finishRowHeight, alignment: .leading)
+        .padding(.top, OnboardingPathLayout.finishTopGap)
+        .frame(width: OnboardingPathLayout.width, height: OnboardingPathLayout.finishRowHeight, alignment: .top)
+        .accessibilityElement(children: .combine)
     }
 
     private var finishTitle: String {
@@ -345,33 +288,38 @@ struct OnboardingPlanReadyScreen: View {
         return "Ready for your \(OnboardingCopy.goalNoun(goal))"
     }
 
-    private func bottom(_ proxy: ScrollViewProxy) -> some View {
-        BottomBar {
-            // The haptic depends on what the button does: `advance` plays it.
-            PrimaryButton(title: buttonTitle, haptic: nil) { advance(proxy) }
-        }
-        .overlay(alignment: .top) {
-            Rectangle().fill(Theme.cardBorder).frame(height: 1)
-        }
-    }
-
-    private func advance(_ proxy: ScrollViewProxy) {
-        if finished || weeks.isEmpty {
-            Haptics.confirm()
-            nav.next(store)
+    /// Lights the weeks one by one, following them down the page, then the finish.
+    @MainActor
+    private func play(_ proxy: ScrollViewProxy) async {
+        guard !finished else { return }
+        let count = weeks.count
+        if reduceMotion {
+            revealed = count
+            finished = true
             return
         }
-        if current >= weeks.count - 1 {
-            Haptics.success()
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.55)) { finished = true }
-            withAnimation(.easeInOut(duration: 0.5)) { proxy.scrollTo(finishID, anchor: .center) }
-            return
+        try? await Task.sleep(nanoseconds: 700_000_000)
+        for index in 0..<count {
+            if Task.isCancelled { return }
+            Haptics.soft()
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                revealed = index + 1
+            }
+            // The first weeks are on screen already: only follow once they reach the lower half.
+            if index >= 3 {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    proxy.scrollTo(index, anchor: .center)
+                }
+            }
+            try? await Task.sleep(nanoseconds: 380_000_000)
         }
-        let next = current + 1
-        Haptics.strong()
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { current = next }
+        if Task.isCancelled { return }
+        Haptics.success()
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.55)) {
+            finished = true
+        }
         withAnimation(.easeInOut(duration: 0.5)) {
-            proxy.scrollTo(next, anchor: UnitPoint(x: 0.5, y: 0.2))
+            proxy.scrollTo(finishID, anchor: .bottom)
         }
     }
 }

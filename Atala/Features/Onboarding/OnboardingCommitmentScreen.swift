@@ -62,9 +62,9 @@ struct OnboardingCommitmentScreen: View {
         }
     }
 
-    /// "I'll run 3 times a week for 8 weeks."
+    /// "I, Max, will show up 3 times a week for 8 weeks."
     private var pledge: Text {
-        Text("I'll run ")
+        Text("I, \(store.firstName), will show up ")
             + Text(frequency).foregroundColor(Theme.green)
             + Text(" for ")
             + Text(OnboardingCopy.weeks(weekCount)).foregroundColor(Theme.green)
@@ -72,7 +72,8 @@ struct OnboardingCommitmentScreen: View {
     }
 
     var body: some View {
-        OnboardingScaffold(title: "\(store.firstName), promise yourself you'll be consistent with your running and you'll reach your goal.",
+        OnboardingScaffold(title: "Before you go, promise yourself you'll reach your goals.",
+                           subtitle: "Sign it. The runners who commit are the ones who show up.",
                            buttonTitle: "I promise",
                            buttonHaptic: .strong,
                            canContinue: !strokes.isEmpty,
@@ -97,7 +98,7 @@ struct OnboardingCommitmentScreen: View {
                 .lineSpacing(5)
                 .fixedSize(horizontal: false, vertical: true)
             signatureArea
-            Text("\(Fmt.day(Date(), "d MMMM yyyy")) · your signature stays on this screen")
+            Text("\(Fmt.day(Date(), "d MMMM yyyy")) · between you and you, never shared")
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.muted)
         }

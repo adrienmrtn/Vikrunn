@@ -93,7 +93,8 @@ struct OnboardingSpokenText: View {
                     .lineLimit(1)
                     .fixedSize()
                     .opacity(index < shown ? 1 : 0)
-                    .offset(y: index < shown ? 0 : 6)
+                    .offset(y: index < shown ? 0 : 8)
+                    .blur(radius: index < shown ? 0 : 3)
             }
         }
     }
@@ -121,7 +122,8 @@ struct OnboardingSpokenText: View {
             if Task.isCancelled { return }
         }
         for index in list.indices {
-            withAnimation(.easeOut(duration: 0.24)) {
+            // Longer than the pause between two words: each word is still settling when the next starts.
+            withAnimation(.easeOut(duration: 0.45)) {
                 shown = index + 1
             }
             try? await Task.sleep(nanoseconds: UInt64(Self.pause(after: list[index]) * 1_000_000_000))
