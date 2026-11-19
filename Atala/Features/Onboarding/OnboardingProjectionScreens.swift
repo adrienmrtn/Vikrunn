@@ -193,6 +193,8 @@ struct OnboardingReview: Identifiable {
     let id: Int
     let text: String
     let author: String
+    /// Photo of the author in the asset catalog, shown with their agreement.
+    let photo: String
 }
 
 // Reviews supplied by the team. They must come from real users: keep the wording they gave.
@@ -200,13 +202,13 @@ enum OnboardingSampleReviews {
     static let reviews: [OnboardingReview] = [
         OnboardingReview(id: 1,
                          text: "I finally ran 10 km under 45 minutes with Atala. It helped so much.",
-                         author: "Marie"),
+                         author: "Marie", photo: AtalaPhotos.woman),
         OnboardingReview(id: 2,
                          text: "Atala helped me lose 10 kg in just a few months. I strongly recommend it.",
-                         author: "Thomas"),
+                         author: "Thomas", photo: AtalaPhotos.man),
         OnboardingReview(id: 3,
                          text: "A friend recommended Atala. I didn't know you could have a coach this good at this price.",
-                         author: "Luis"),
+                         author: "Luis", photo: AtalaPhotos.trio),
     ]
 }
 
@@ -255,11 +257,6 @@ struct OnboardingReviewsScreen: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func initials(_ author: String) -> String {
-        let letters = author.split(separator: " ").prefix(2).compactMap { $0.first }
-        return String(letters).uppercased()
-    }
-
     private func reviewCard(_ review: OnboardingReview) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             stars(size: 13)
@@ -271,12 +268,13 @@ struct OnboardingReviewsScreen: View {
             HStack(spacing: 10) {
                 Circle()
                     .fill(Theme.greenTint)
-                    .frame(width: 32, height: 32)
-                    .overlay(
-                        Text(initials(review.author))
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Theme.green)
-                    )
+                    .frame(width: 44, height: 44)
+                    .overlay(alignment: .top) {
+                        Image(review.photo)
+                            .resizable()
+                            .scaledToFill()
+                    }
+                    .clipShape(Circle())
                     .accessibilityHidden(true)
                 Text(review.author)
                     .font(.system(size: 14, weight: .semibold))
