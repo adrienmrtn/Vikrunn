@@ -64,7 +64,7 @@ enum OnboardingPaywallCopy {
     static func motivationLine(_ motivation: Motivation?) -> String? {
         guard let motivation else { return nil }
         switch motivation {
-        case .athletic: return L("Because you want an athletic body.")
+        case .athletic: return L("Because you want to get in better shape.")
         case .prove: return L("Because you want to prove to yourself you can do it.")
         case .record: return L("Because you want to beat your record.")
         case .health: return L("Because you want to take care of your health.")
