@@ -2,12 +2,27 @@ import SwiftUI
 import UIKit
 
 /// An exercise picture from the asset catalog, or a neutral symbol when the image is missing.
+/// Which coach performs the exercises. Set from the root view whenever the chosen coach changes.
+/// Coach 1 uses the base images (`exercise_<id>_<frame>`); the others use `exercise_c<coach>_<id>_<frame>`,
+/// falling back to the base image when one is missing.
+enum GuidedExerciseCoach {
+    static var coachID: Int = 1
+
+    static func image(named name: String) -> UIImage? {
+        if coachID != 1, name.hasPrefix("exercise_") {
+            let personal = "exercise_c\(coachID)_" + name.dropFirst("exercise_".count)
+            if let image = UIImage(named: personal) { return image }
+        }
+        return UIImage(named: name)
+    }
+}
+
 struct GuidedExerciseImage: View {
     let name: String
     var symbol: String = "figure.cooldown"
 
     var body: some View {
-        if let image = UIImage(named: name) {
+        if let image = GuidedExerciseCoach.image(named: name) {
             Image(uiImage: image)
                 .resizable()
                 .interpolation(.high)

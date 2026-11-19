@@ -40,6 +40,8 @@ struct RootView: View {
     @State private var splashDone = false
 
     var body: some View {
+        // Exercise pictures follow the chosen coach.
+        let _ = (GuidedExerciseCoach.coachID = store.answers.coachID)
         ZStack {
             ZStack {
                 if store.hasCompletedOnboarding {
