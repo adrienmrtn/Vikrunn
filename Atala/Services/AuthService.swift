@@ -75,7 +75,8 @@ final class AuthService: ObservableObject {
         let address = Self.normalized(email)
         let digits = code.filter { $0.isNumber }
         guard Self.isValidEmail(address) else { throw AuthError.invalidEmail }
-        guard digits.count == 6 else { throw AuthError.invalidCode }
+        // The project normally sends 6 digits; accept longer codes in case the setting changes.
+        guard (6...10).contains(digits.count) else { throw AuthError.invalidCode }
         let payload: [String: Any] = ["type": "email", "email": address, "token": digits]
         let response: SupabaseResponse
         do {
