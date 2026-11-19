@@ -1,0 +1,1 @@
+atala,run,training,10k,jogging,tracker,pace,gps,beginner,intervals,race,trainer,stretching,workout

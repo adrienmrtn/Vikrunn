@@ -1,0 +1,1 @@
+atala,laufen,joggen,training,10km,halbmarathon,tempo,gps,anfanger,intervalle,trainingsplan

@@ -1,0 +1,25 @@
+Atala ist ein Laufcoach für die Hosentasche. Nenne dein Ziel, dein Level und die Tage, an denen du laufen kannst: Atala erstellt einen Trainingsplan, der zu deinem Leben passt, und begleitet dich durch jede Einheit.
+
+EIN PLAN, DER ZU DIR PASST
+Wähle dein Ziel: die ersten 5 km, 10 km, einen Halbmarathon, regelmäßig laufen oder fit werden. Atala baut deine Wochen aus deinem aktuellen Level, deinem Wettkampftermin und deiner Zielzeit. Jede Woche mischt lockere Läufe, Intervalle, Tempoläufe und lange Läufe, dazu Kraft- und Dehneinheiten.
+
+EIN COACH, DER ANTWORTET
+Wähle den Coach und den Ton, die zu dir passen: freundlich, direkt oder verspielt. Volle Woche, müde Beine, eine Einheit, die nicht klappt? Frag einfach. Dein Coach kann eine Änderung an deinem Plan vorschlagen, und nichts ändert sich, bis du auf Apply tippst.
+
+BEGLEITET BEI JEDEM LAUF
+Starte eine Einheit und Atala zeichnet sie per GPS auf. Du siehst dein Tempo im Vergleich zum Ziel jedes Abschnitts, und dein Coach sagt dir, wann du Gas geben und wann du rausnehmen sollst. Lieber nach Gefühl laufen? Starte einen freien Lauf oder trage einen Laufbandlauf nach.
+
+SIEH DEINEN FORTSCHRITT
+Eine Rennzeitprognose, die mit jedem Lauf genauer wird, dein Wochenumfang im Vergleich zum Plan, deine Bestleistungen und deine Serie an Wochen. Läufe aus anderen Apps lassen sich aus Apple Health importieren.
+
+KOSTENLOS UND ATALA PRO
+Kostenlos: die Einheiten deiner ersten Woche, freie Läufe mit GPS, dein Laufverlauf, Serien und einige Nachrichten an den Coach pro Tag.
+Atala Pro: dein ganzer Plan, die Stimme deines Coachs beim Laufen, geführte Kraft- und Dehneinheiten, detaillierte Laufdaten, Einheiten auf einen anderen Tag verschieben und unbegrenzter Coach-Chat.
+
+Atala Pro ist ein Abonnement, das sich automatisch verlängert. Die Zahlung wird bei Kaufbestätigung über deinen Apple Account abgerechnet. Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ende des laufenden Zeitraums gekündigt wird. Du kannst es in den Einstellungen deines Apple Accounts verwalten oder kündigen.
+
+Atala gibt allgemeine Trainingshinweise und keine medizinische Beratung. Sprich bei gesundheitlichen Bedenken mit einer Ärztin oder einem Arzt, bevor du einen neuen Trainingsplan beginnst.
+
+Nutzungsbedingungen: https://vikstudios.com/atala/terms
+Nutzungsbedingungen (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Datenschutzerklärung: https://vikstudios.com/atala
