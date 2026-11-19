@@ -1,28 +1,109 @@
 import SwiftUI
 import UIKit
 
-/// When the welcome gift is shown: to people who are not subscribed, shortly after the app opens,
-/// once a day at most and three times in all. Nothing is saved to the account: it is a property
-/// of this phone.
+/// When the welcome gift is shown: to people who are not subscribed, shortly after the app opens.
+/// The gift screen opens by itself once; from then on the offer stays for 24 hours, as a banner
+/// with a countdown at the top of the main screen that opens the gift again. Nothing is saved to
+/// the account: it is a property of this phone.
 enum GiftOfferSchedule {
     private static let countKey = "atala.gift.shownCount"
     private static let lastKey = "atala.gift.lastShown"
-    static let maxShows = 3
-    private static let minInterval: TimeInterval = 24 * 3600
+    /// When the gift was first shown (seconds since 1970). The banner reads it through `@AppStorage`.
+    static let startKey = "atala.gift.startedAt"
+    /// How long the gift stays available after it was first shown.
+    static let window: TimeInterval = 24 * 3600
     /// Seconds after the main screen appears: the launch splash and the entrance are over by then.
     static let delay: Double = 4
 
-    static func isDue(now: Date = Date()) -> Bool {
-        let defaults = UserDefaults.standard
-        guard defaults.integer(forKey: countKey) < maxShows else { return false }
-        let last = defaults.double(forKey: lastKey)
-        return last == 0 || now.timeIntervalSince1970 - last >= minInterval
+    /// True until the gift screen has opened by itself once.
+    static func isDue() -> Bool {
+        UserDefaults.standard.double(forKey: startKey) == 0
     }
 
     static func noteShown(now: Date = Date()) {
         let defaults = UserDefaults.standard
         defaults.set(defaults.integer(forKey: countKey) + 1, forKey: countKey)
         defaults.set(now.timeIntervalSince1970, forKey: lastKey)
+        if defaults.double(forKey: startKey) == 0 {
+            defaults.set(now.timeIntervalSince1970, forKey: startKey)
+        }
+    }
+
+    /// A gift shown by an earlier version has no start date: it counts from its last showing.
+    static func adoptEarlierShowing() {
+        let defaults = UserDefaults.standard
+        let last = defaults.double(forKey: lastKey)
+        if defaults.double(forKey: startKey) == 0, last > 0 {
+            defaults.set(last, forKey: startKey)
+        }
+    }
+
+    /// Seconds left before the gift ends, nil when it has not started or is over.
+    static func remaining(startedAt: Double, now: Date = Date()) -> TimeInterval? {
+        guard startedAt > 0 else { return nil }
+        let left = startedAt + window - now.timeIntervalSince1970
+        return left > 0 ? left : nil
+    }
+}
+
+/// The gift while it lasts: a banner at the top of the main screen with the time left. A tap opens
+/// the gift screen again. It disappears when the 24 hours are over or once the user is subscribed.
+struct GiftCountdownBanner: View {
+    @EnvironmentObject private var store: AppStore
+    @ObservedObject private var purchases = PurchaseService.shared
+    @AppStorage(GiftOfferSchedule.startKey) private var startedAt: Double = 0
+    @State private var showOffer = false
+
+    /// With the store connected, the banner only shows when the store really has the gift.
+    private var isOffered: Bool {
+        !purchases.isPro && (!purchases.canPurchase || purchases.offers[.gift] != nil)
+    }
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            if isOffered, let left = GiftOfferSchedule.remaining(startedAt: startedAt, now: context.date) {
+                Button {
+                    Haptics.tap()
+                    showOffer = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "gift.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Theme.yellow)
+                            .accessibilityHidden(true)
+                        Text("Your gift ends in")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text(Self.clock(left))
+                            .font(.system(size: 14, weight: .bold))
+                            .monospacedDigit()
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .bold))
+                            .accessibilityHidden(true)
+                    }
+                    .foregroundStyle(Color.white)
+                    .padding(.horizontal, 16)
+                    .frame(height: 44)
+                    .background(Theme.green, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .padding(.horizontal, Theme.screenPadding)
+                    .padding(.top, 6)
+                    .padding(.bottom, 4)
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityHint("Opens your gift")
+            }
+        }
+        .fullScreenCover(isPresented: $showOffer) {
+            GiftOfferView()
+                .environmentObject(store)
+        }
+    }
+
+    /// "23:59:07"
+    private static func clock(_ seconds: TimeInterval) -> String {
+        let total = Int(seconds.rounded(.up))
+        return String(format: "%02d:%02d:%02d", total / 3600, total % 3600 / 60, total % 60)
     }
 }
 
@@ -43,6 +124,7 @@ struct GiftOfferPresenter: ViewModifier {
                 if Task.isCancelled { return }
                 // The subscription state may still be loading at launch: ask once more first.
                 await purchases.refresh()
+                GiftOfferSchedule.adoptEarlierShowing()
                 guard !purchases.isPro, GiftOfferSchedule.isDue() else { return }
                 // With the store connected, only offer the gift when the store really has it.
                 guard !purchases.canPurchase || purchases.offers[.gift] != nil else { return }

@@ -25,6 +25,10 @@ struct MainTabView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // The welcome gift while it lasts. Never during a run or while typing.
+            if !chrome.tabBarHidden && !keyboardVisible {
+                GiftCountdownBanner()
+            }
             tabContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             if !chrome.tabBarHidden && !keyboardVisible {
