@@ -154,7 +154,8 @@ extension AuthService {
                           sessionError.code == .canceledLogin {
                     result = .failure(.cancelled)
                 } else {
-                    result = .failure(.googleFailed)
+                    let reason: String = (error as NSError?).map { $0.domain + " " + String($0.code) } ?? "no callback"
+                    result = .failure(.server(L("Sign in with Google didn't work. Please try again.") + " (" + reason + ")"))
                 }
                 Task { @MainActor in
                     switch result {
@@ -207,7 +208,8 @@ extension AuthService {
                                              query: [URLQueryItem(name: "grant_type", value: "pkce")],
                                              body: SupabaseClient.encode(payload))
             } catch let error as AuthError {
-                if case .server = error { throw AuthError.googleFailed }
+                // Keeps the server's reason next to the message: it tells which setting is wrong.
+                if case .server(let reason) = error { throw Self.googleFailure(detail: "token: " + reason) }
                 throw error
             }
             guard let account = Self.account(fromSession: json) else { throw AuthError.googleFailed }
@@ -220,7 +222,9 @@ extension AuthService {
                 throw AuthError.providerUnavailable
             }
             if values["error"] == "access_denied" { throw AuthError.cancelled }
-            throw AuthError.googleFailed
+            let reason: String = failure.replacingOccurrences(of: "+", with: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            throw Self.googleFailure(detail: reason.isEmpty ? "no code in the callback" : reason)
         }
         let user = try await authRequest(path: "/auth/v1/user", method: "GET", accessToken: token)
         guard let userID = user["id"] as? String else { throw AuthError.googleFailed }
@@ -228,6 +232,12 @@ extension AuthService {
         return Account(userID: userID, email: user["email"] as? String, isGuest: false,
                        accessToken: token, refreshToken: values["refresh_token"],
                        expiresAt: Date().addingTimeInterval(seconds))
+    }
+
+    /// "Sign in with Google didn't work", followed by what the server said.
+    private static func googleFailure(detail: String) -> AuthError {
+        let base: String = L("Sign in with Google didn't work. Please try again.")
+        return AuthError.server(base + " (" + String(detail.prefix(160)) + ")")
     }
 
     /// Key/value pairs of the URL fragment (tokens) and query (errors).
