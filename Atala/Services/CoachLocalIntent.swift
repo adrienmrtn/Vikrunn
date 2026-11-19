@@ -125,6 +125,8 @@ enum CoachLocalIntent {
     }
 
     private static func hasPhrase(_ text: String, _ phrases: [String]) -> Bool {
-        phrases.contains { text.contains($0) }
+        // Padded, so an entry written with spaces around it also matches at either end of the message.
+        let padded = " " + text + " "
+        return phrases.contains { padded.contains($0) }
     }
 }
