@@ -4,6 +4,7 @@ import SwiftUI
 struct TodayView: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var chrome: MainChrome
+    @ObservedObject private var purchases = PurchaseService.shared
 
     var body: some View {
         NavigationStack {
@@ -22,6 +23,8 @@ struct TodayView: View {
                         .padding(.top, -56)
                         .mainStagedAppear(index: 3)
                     Group {
+                        ProJourneyCard()
+                            .padding(.top, 14)
                         if let pending = store.mainUncountedRunToday {
                             MainCountRunCard(run: pending.run, session: pending.session)
                                 .padding(.top, 14)
@@ -132,13 +135,19 @@ struct TodayView: View {
                 profileButton
             }
             .frame(height: 44)
-            Text("Hello, \(store.firstName)")
-                .font(Theme.title(32))
-                .foregroundStyle(Theme.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .padding(.top, 10)
-                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .center, spacing: 10) {
+                Text("Hello, \(store.firstName)")
+                    .font(Theme.title(32))
+                    .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .accessibilityAddTraits(.isHeader)
+                if purchases.isPro {
+                    ProChip()
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 10)
             HStack(spacing: 8) {
                 Text(subtitle)
                     .font(.system(size: 13))

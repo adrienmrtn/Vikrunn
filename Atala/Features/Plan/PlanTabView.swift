@@ -31,6 +31,9 @@ struct PlanTabView: View {
                                 .padding(.top, 14)
                                 .mainStagedAppear(index: 3)
                         }
+                        ProJourneyCard()
+                            .padding(.top, 14)
+                            .mainStagedAppear(index: 3)
                         weekList(plan)
                             .padding(.top, 12)
                             .mainStagedAppear(index: 3)

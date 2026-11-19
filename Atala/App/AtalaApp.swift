@@ -52,6 +52,7 @@ struct RootView: View {
                 if store.hasCompletedOnboarding {
                     MainTabView()
                         .modifier(GiftOfferPresenter())
+                        .modifier(ProWelcomePresenter())
                         .transition(.opacity)
                 } else {
                     OnboardingFlowView()

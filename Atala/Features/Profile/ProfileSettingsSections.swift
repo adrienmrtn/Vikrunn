@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Training paces of the current plan (read-only).
 struct ProfilePacesSection: View {
@@ -105,22 +106,32 @@ struct ProfileHealthSection: View {
     }
 }
 
-/// Subscription row and its placeholder sheet (the real paywall comes later).
+/// Subscription row: the paywall for someone on the free plan, the App Store's own page for a subscriber.
 struct ProfileSubscriptionSection: View {
-    @State private var showSheet = false
+    @ObservedObject private var purchases = PurchaseService.shared
+    @State private var showPaywall = false
 
     var body: some View {
         Section("Subscription") {
             Button {
                 Haptics.tap()
-                showSheet = true
+                if purchases.isPro {
+                    if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                        UIApplication.shared.open(url)
+                    }
+                } else {
+                    showPaywall = true
+                }
             } label: {
-                HStack {
-                    Text("Atala Premium")
+                HStack(spacing: 8) {
+                    Text("Atala Pro")
                         .foregroundStyle(Theme.ink)
+                    if purchases.isPro {
+                        ProChip()
+                    }
                     Spacer()
-                    Text("Free trial (demo)")
-                        .foregroundStyle(Theme.muted)
+                    Text(purchases.isPro ? "Manage" : "Free plan · Unlock")
+                        .foregroundStyle(purchases.isPro ? Theme.muted : Theme.green)
                     Image(systemName: "chevron.right")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(Theme.faint)
@@ -128,36 +139,14 @@ struct ProfileSubscriptionSection: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .sheet(isPresented: $showSheet) {
-                ProfileSubscriptionSheet()
-                    .presentationDetents([.medium])
-                    .presentationDragIndicator(.visible)
+            .proPaywall(isPresented: $showPaywall)
+            if !purchases.isPro, !PurchaseService.isPlaceholder {
+                Button("Restore purchases") {
+                    Haptics.tap()
+                    Task { _ = await purchases.restore() }
+                }
+                .foregroundStyle(Theme.ink)
             }
         }
-    }
-}
-
-private struct ProfileSubscriptionSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            IconTile(systemName: "sparkles", size: 52)
-            Text("Free trial (demo)")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(Theme.ink)
-            Text("Everything is unlocked while we finish the app: your plan, your coach and the voice guidance. Subscriptions are not available yet, and nothing will be charged.")
-                .font(.system(size: 15))
-                .lineSpacing(4)
-                .foregroundStyle(Theme.body)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
-            PrimaryButton(title: "Got it") { dismiss() }
-        }
-        .padding(.horizontal, Theme.screenPadding)
-        .padding(.top, 32)
-        .padding(.bottom, 16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color.white)
     }
 }
