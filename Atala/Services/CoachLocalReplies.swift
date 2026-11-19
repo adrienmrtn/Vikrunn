@@ -53,7 +53,9 @@ enum CoachLocalReplies {
     // MARK: Keywords
 
     static func matches(_ words: [String], _ stems: [String]) -> Bool {
-        words.contains { word in stems.contains { word.hasPrefix($0) } }
+        // Japanese is written without spaces: a "word" is a whole clause, searched anywhere.
+        let anywhere = AppLanguage.current == "ja" && !CoachWords.readsEnglish
+        return words.contains { word in stems.contains { anywhere ? word.contains($0) : word.hasPrefix($0) } }
     }
 
     static func containsAny(_ text: String, _ phrases: [String]) -> Bool {
