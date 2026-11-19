@@ -11,9 +11,9 @@ enum VoicePack {
     private static var ready: Set<String> = []
     private static var running: Set<String> = []
 
-    /// The two recorded voices: "m" for Karim, "f" for the other coaches.
+    /// The two recorded voices: "m" for the men, "f" for the women.
     static func voiceKey(coachID: Int) -> String {
-        coachID == 4 ? "m" : "f"
+        Coach.maleIDs.contains(coachID) ? "m" : "f"
     }
 
     /// A downloaded clip, nil while the pack of this language and voice is not complete.
