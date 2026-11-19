@@ -83,34 +83,33 @@ final class VoiceCoach: NSObject, ObservableObject {
     }
 
     /// Shows a cue and says it with the coach's recorded voice: the clips play one after the other.
-    /// When the chosen coach has no recording for one of them, `speech` is synthesized instead.
-    func say(clips: [VoiceClip], speech: String, display: String, settings: VoiceSettings) {
+    /// When one of them has no recording on the phone, `speech` is synthesized instead.
+    /// `interrupt` cuts whatever is being said (short timed cues of the guided sessions).
+    func say(clips: [VoiceClip], speech: String, display: String, settings: VoiceSettings,
+             interrupt: Bool = false) {
         lastCue = display
         guard settings.enabled else { return }
         let coachID = GuidedExerciseCoach.coachID
-        var names: [String] = []
+        var ids: [String] = []
         var urls: [URL] = []
         for clip in clips {
-            guard let found = clip.url(coachID: coachID, avoiding: lastClipNames.last(where: { Self.sameLine($0, clip, coachID) })) else {
-                say(speech, display: display, settings: settings)
-                return
+            guard let found = clip.url(coachID: coachID, avoiding: lastClipNames.last(where: { clip.matches($0) })) else {
+                ids = []
+                break
             }
-            names.append(found.name)
+            ids.append(found.id)
             urls.append(found.url)
         }
-        guard !urls.isEmpty else {
-            say(speech, display: display, settings: settings)
+        guard !ids.isEmpty else {
+            if interrupt {
+                sayNow(speech, display: display, settings: settings)
+            } else {
+                say(speech, display: display, settings: settings)
+            }
             return
         }
-        lastClipNames = Array((lastClipNames + names).suffix(12))
+        lastClipNames = Array((lastClipNames + ids).suffix(12))
         play(clips: urls)
-    }
-
-    /// True when `name` is a recording of the same line as `clip` for this coach.
-    private static func sameLine(_ name: String, _ clip: VoiceClip, _ coachID: Int) -> Bool {
-        let other = clip.resourceName(coachID: coachID, avoiding: nil)
-        guard let cut = other.lastIndex(of: "_") else { return false }
-        return name.hasPrefix(other[...cut])
     }
 
     /// Stops talking right away (end of the run, flow closed).

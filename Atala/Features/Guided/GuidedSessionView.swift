@@ -109,18 +109,20 @@ struct GuidedSessionView: View {
             if segment.id > 0 { Haptics.play(segment.kind == .work ? .rigid : .tap) }
             guard engine.exercises.indices.contains(segment.exerciseIndex) else { return }
             let line = GuidedWording.announcement(segment, engine.exercises[segment.exerciseIndex])
-            voice.sayNow(line, display: line, settings: settings)
+            voice.say(clips: GuidedWording.clips(segment, engine.exercises[segment.exerciseIndex]),
+                      speech: line, display: line, settings: settings, interrupt: true)
         case .halfway:
             Haptics.tap()
-            voice.say("Halfway.", display: "Halfway.", settings: settings)
+            voice.say(clips: [.halfway], speech: "Halfway.", display: "Halfway.", settings: settings)
         case .countdown(let seconds):
             // Light, light, medium, as before a run.
             Haptics.play(seconds == 1 ? .confirm : .tap)
-            voice.sayNow("\(seconds)", display: "\(seconds)", settings: settings)
+            voice.say(clips: [.count(seconds)], speech: "\(seconds)", display: "\(seconds)",
+                      settings: settings, interrupt: true)
         case .finished:
             // The success haptic comes with the check mark of the "Session complete" screen.
-            voice.sayNow("Session complete. Well done.", display: "Session complete. Well done.",
-                         settings: settings)
+            voice.say(clips: [.done], speech: "Session complete. Well done.",
+                      display: "Session complete. Well done.", settings: settings, interrupt: true)
         }
     }
 

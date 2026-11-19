@@ -40,6 +40,33 @@ enum GuidedWording {
         }
     }
 
+    /// The recorded clips for the start of a segment. A number or an exercise that was never
+    /// recorded is left out: the coach then says the short version ("Next.", "Go.").
+    static func clips(_ segment: GuidedSegment, _ exercise: GuidedPrescription) -> [VoiceClip] {
+        switch segment.kind {
+        case .getReady:
+            var clips: [VoiceClip] = [segment.exerciseIndex == 0 ? .first : .next]
+            guard VoiceClip.exerciseIDs.contains(exercise.info.id) else { return clips }
+            clips.append(.exercise(exercise.info.id))
+            if let side = segment.side { clips.append(side == .left ? .left : .right) }
+            return clips
+        case .switchSide:
+            guard let side = segment.side else { return [.switchSides] }
+            return [.switchSides, side == .left ? .left : .right]
+        case .rest:
+            return [.rest]
+        case .work:
+            let numbered = exercise.sets > 1 && segment.setNumber > 1 && VoiceClip.sets.contains(segment.setNumber)
+            var clips: [VoiceClip] = [numbered ? .set(segment.setNumber) : .go]
+            if let seconds = segment.durationSec {
+                if VoiceClip.holds.contains(seconds) { clips.append(.hold(seconds)) }
+            } else if let reps = segment.reps, VoiceClip.repCounts.contains(reps) {
+                clips.append(.reps(reps))
+            }
+            return clips
+        }
+    }
+
     /// What the coach says when a segment starts.
     static func announcement(_ segment: GuidedSegment, _ exercise: GuidedPrescription) -> String {
         switch segment.kind {

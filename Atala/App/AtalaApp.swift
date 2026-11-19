@@ -84,6 +84,10 @@ struct RootView: View {
             }
         }
         .authSyncPrompts()
+        .task(id: "\(store.answers.coachID)|\(scenePhase == .active)") {
+            // The coach's recorded voice in the app's language: downloaded once, then kept.
+            VoicePack.prepare(coachID: store.answers.coachID)
+        }
         .task(id: reminderKey) {
             await RunReminders.refresh(store: store)
         }
