@@ -69,7 +69,7 @@ struct OnboardingTapScreen<Backdrop: View, Top: View>: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(OnboardingTapButtonStyle(active: canContinue))
-            .accessibilityHint(canContinue ? "Tap to continue" : "")
+            .accessibilityHint(canContinue ? L("Tap to continue") : "")
             backButton
                 .opacity(contentShown ? 1 : 0)
         }
@@ -138,7 +138,7 @@ struct OnboardingTapScreen<Backdrop: View, Top: View>: View {
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
-            .accessibilityLabel("Back")
+            .accessibilityLabel(L("Back"))
             .padding(.leading, 8)
         }
     }

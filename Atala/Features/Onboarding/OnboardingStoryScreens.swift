@@ -42,7 +42,7 @@ struct OnboardingIntroScreen: View {
     private static let delays: [Double] = [0.1, 0.35, 0.35, 0.4]
 
     var body: some View {
-        OnboardingScaffold(buttonTitle: "Let's go", buttonsVisible: stage >= Self.delays.count) {
+        OnboardingScaffold(buttonTitle: L("Let's go"), buttonsVisible: stage >= Self.delays.count) {
             OnboardingPhotoCard(name: "hero_today_man", height: 320, alignment: .top, scrim: true) {
                 BrandLogo(style: .full, height: 24)
                     .foregroundStyle(Theme.cream)
@@ -50,10 +50,10 @@ struct OnboardingIntroScreen: View {
             }
             .onboardingStaged(0, stage: stage)
             VStack(alignment: .leading, spacing: 6) {
-                Text("Hey \(store.firstName),")
+                Text(L("Hey %@,", store.firstName))
                     .font(Theme.title(32))
                     .foregroundStyle(Theme.ink)
-                Text("welcome to Atala, your new running coach.")
+                Text(L("welcome to Atala, your new running coach."))
                     .font(Theme.title(32))
                     .foregroundStyle(Theme.green)
                     .fixedSize(horizontal: false, vertical: true)
@@ -61,7 +61,7 @@ struct OnboardingIntroScreen: View {
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
             .onboardingStaged(1, stage: stage)
-            Text("A few quick questions, and your plan is built around you.")
+            Text(L("A few quick questions, and your plan is built around you."))
                 .font(.system(size: 17))
                 .foregroundStyle(Theme.body)
                 .lineSpacing(5)
@@ -75,7 +75,7 @@ struct OnboardingIntroScreen: View {
 // COMMUNITY FIGURE — shown to every new user: keep it true, update it from real usage before release.
 enum OnboardingCommunityFigure {
     static let value = 10_000
-    static let caption = "runners coached every day"
+    static var caption: String { L("runners coached every day") }
 }
 
 /// Right after the reviews: the runners already training with Atala.
@@ -88,13 +88,13 @@ struct OnboardingCommunityScreen: View {
     private static func grouped(_ value: Int) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.locale = Locale(identifier: "en_US")
+        formatter.locale = AppLanguage.locale
         return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 
     var body: some View {
-        OnboardingScaffold(title: "Join the Atala community",
-                           buttonTitle: "Join them",
+        OnboardingScaffold(title: L("Join the Atala community"),
+                           buttonTitle: L("Join them"),
                            buttonsVisible: stage >= Self.delays.count) {
             OnboardingPhotoCard(name: "photo_community", height: 340, alignment: .center, scrim: true) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -110,16 +110,16 @@ struct OnboardingCommunityScreen: View {
                 .padding(20)
                 .animation(.easeOut(duration: 1.1), value: stage)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(Self.grouped(OnboardingCommunityFigure.value)) \(OnboardingCommunityFigure.caption)")
+                .accessibilityLabel(L("%@ runners coached every day", Self.grouped(OnboardingCommunityFigure.value)))
             }
             .onboardingStaged(1, stage: stage)
             HStack(spacing: 14) {
                 IconTile(systemName: "square.and.arrow.up", size: 48)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Atala is also a community")
+                    Text(L("Atala is also a community"))
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Theme.ink)
-                    Text("Share your results with your friends 😉")
+                    Text(L("Share your results with your friends 😉"))
                         .font(.system(size: 15))
                         .foregroundStyle(Theme.body)
                         .fixedSize(horizontal: false, vertical: true)
@@ -141,14 +141,14 @@ private struct OnboardingBeyondCoachPoint: Identifiable {
     let symbol: String
     let title: String
 
-    static let all: [OnboardingBeyondCoachPoint] = [
+    static var all: [OnboardingBeyondCoachPoint] { [
         OnboardingBeyondCoachPoint(id: 0, symbol: "shield.lefthalf.filled",
-                                   title: "Prevent injuries"),
+                                   title: L("Prevent injuries")),
         OnboardingBeyondCoachPoint(id: 1, symbol: "figure.cooldown",
-                                   title: "Get every warm-up and stretch you need"),
+                                   title: L("Get every warm-up and stretch you need")),
         OnboardingBeyondCoachPoint(id: 2, symbol: "clock.badge.checkmark",
-                                   title: "Get answers 24/7 from a coach who knows you"),
-    ]
+                                   title: L("Get answers 24/7 from a coach who knows you")),
+    ] }
 }
 
 /// Just before the free trial: what Atala does beyond the plan. The points arrive one by one,
@@ -161,18 +161,23 @@ struct OnboardingBeyondCoachScreen: View {
 
     private static let delays: [Double] = [0.2, 0.55, 0.9, 0.9, 0.7]
 
+    /// The part between asterisks is the one shown in colour.
+    private var headline: (text: String, highlight: String?) {
+        OnboardingMarkedSentence.parse(L("Atala is *not just a coach.*"))
+    }
+
     var body: some View {
         OnboardingScaffold(buttonsVisible: stage >= Self.delays.count) {
             OnboardingPhotoCard(name: AtalaPhotos.woman, height: 210, alignment: .top) {
                 EmptyView()
             }
-            OnboardingEmphasisText(text: "Atala is not just a coach.",
+            OnboardingEmphasisText(text: headline.text,
                                    size: 34,
                                    lineSpacing: 4,
-                                   highlight: "not just a coach.",
+                                   highlight: headline.highlight,
                                    onFinished: { emphasised = true })
                 .accessibilityAddTraits(.isHeader)
-            Text("It will help you:")
+            Text(L("It will help you:"))
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Theme.muted)
                 .onboardingStaged(0, stage: stage)
@@ -215,21 +220,26 @@ struct OnboardingPlanMattersScreen: View {
 
     private var closing: String {
         let weeks = store.plan?.weeks.count ?? PlanEngine.maxWeeks
-        return "Yours is ready: \(OnboardingCopy.weeks(weeks)), session by session."
+        return L("Yours is ready: %@, session by session.", OnboardingCopy.weeks(weeks))
+    }
+
+    /// The part between asterisks is the one shown in colour.
+    private var headline: (text: String, highlight: String?) {
+        OnboardingMarkedSentence.parse(L("Having a *clear, precise plan* is essential in running."))
     }
 
     var body: some View {
         let list = sessions
         let steps = delays
         return OnboardingScaffold(buttonsVisible: stage >= steps.count) {
-            OnboardingEmphasisText(text: "Having a clear, precise plan is essential in running.",
+            OnboardingEmphasisText(text: headline.text,
                                    size: 32,
                                    lineSpacing: 5,
-                                   highlight: "clear, precise plan",
+                                   highlight: headline.highlight,
                                    onFinished: { emphasised = true })
                 .accessibilityAddTraits(.isHeader)
                 .padding(.top, 8)
-            Text("YOUR FIRST WEEK")
+            Text(L("YOUR FIRST WEEK"))
                 .font(.system(size: 12, weight: .bold))
                 .kerning(0.8)
                 .foregroundStyle(Theme.muted)
@@ -284,19 +294,19 @@ struct OnboardingReadyScreen: View {
     @State private var spoken = 0
 
     var body: some View {
-        OnboardingScaffold(buttonTitle: "I'm ready", buttonHaptic: .strong, buttonsVisible: spoken >= 2) {
+        OnboardingScaffold(buttonTitle: L("I'm ready"), buttonHaptic: .strong, buttonsVisible: spoken >= 2) {
             CoachPoseView(coach: store.coach, pose: .thumbsUp)
                 .frame(height: 250)
                 .frame(maxWidth: .infinity)
                 .scaleEffect(coachShown ? 1 : 0.9, anchor: .bottom)
                 .opacity(coachShown ? 1 : 0)
                 .accessibilityHidden(true)
-            OnboardingSpokenText(text: "Okay \(store.firstName), I've got everything I need to help you reach your goals.",
+            OnboardingSpokenText(text: L("Okay %@, I've got everything I need to help you reach your goals.", store.firstName),
                                  size: 26, weight: .bold, color: Theme.ink, lineSpacing: 4,
                                  startDelay: 0.5,
                                  onFinished: { spoken = max(spoken, 1) })
                 .accessibilityAddTraits(.isHeader)
-            OnboardingSpokenText(text: "Are you ready?",
+            OnboardingSpokenText(text: L("Are you ready?"),
                                  size: 34, weight: .bold, color: Theme.green, lineSpacing: 2,
                                  isActive: spoken >= 1,
                                  startDelay: 0.25,
@@ -333,17 +343,17 @@ struct OnboardingNotificationsScreen: View {
 
     private var samples: [OnboardingSampleNotification] {
         let coach = store.coach.name
-        var first = "Easy run · 5 km today"
+        var first = L("Easy run · 5 km today")
         if let next = store.nextRun {
-            first = next.distanceKm > 0 ? "\(next.title) · \(Fmt.km(next.distanceKm)) today" : "\(next.title) today"
+            first = next.distanceKm > 0 ? L("%@ · %@ today", next.title, Fmt.km(next.distanceKm)) : L("%@ today", next.title)
         }
         return [
             OnboardingSampleNotification(id: 0, time: "8:00", title: first,
-                                         body: "\(coach) here. Keep it easy today: you should be able to talk the whole way."),
-            OnboardingSampleNotification(id: 1, time: "Thu 8:00", title: "Intervals today",
-                                         body: "\(coach) here. A quality session today. Warm up well, I'll guide you through it."),
-            OnboardingSampleNotification(id: 2, time: "Sun 8:00", title: "Long run today",
-                                         body: "\(coach) here. Slow and steady, the distance does the work."),
+                                         body: L("%@ here. Keep it easy today: you should be able to talk the whole way.", coach)),
+            OnboardingSampleNotification(id: 1, time: L("Thu 8:00"), title: L("Intervals today"),
+                                         body: L("%@ here. A quality session today. Warm up well, I'll guide you through it.", coach)),
+            OnboardingSampleNotification(id: 2, time: L("Sun 8:00"), title: L("Long run today"),
+                                         body: L("%@ here. Slow and steady, the distance does the work.", coach)),
         ]
     }
 
@@ -351,11 +361,11 @@ struct OnboardingNotificationsScreen: View {
 
     var body: some View {
         let list = samples
-        return OnboardingScaffold(title: "Never miss a run",
-                                  buttonTitle: isAsking ? "One moment…" : "Remind me to run",
+        return OnboardingScaffold(title: L("Never miss a run"),
+                                  buttonTitle: isAsking ? L("One moment…") : L("Remind me to run"),
                                   canContinue: !isAsking,
                                   buttonsVisible: stage >= Self.delays.count,
-                                  secondaryTitle: "Not now",
+                                  secondaryTitle: L("Not now"),
                                   onSecondary: { nav.next(store) },
                                   onContinue: allow) {
             VStack(spacing: 10) {
@@ -370,10 +380,10 @@ struct OnboardingNotificationsScreen: View {
             .padding(14)
             .background(Theme.surface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Examples of reminders from your coach")
+            .accessibilityLabel(L("Examples of reminders from your coach"))
             Text(PurchaseService.shared.isInTrial
-                 ? "Once your free trial is over, \(store.coach.name) reminds you on the morning of each session. Nothing else: no ads, no noise."
-                 : "\(store.coach.name) reminds you on the morning of each session. Nothing else: no ads, no noise.")
+                 ? L("Once your free trial is over, %@ reminds you on the morning of each session. Nothing else: no ads, no noise.", store.coach.name)
+                 : L("%@ reminds you on the morning of each session. Nothing else: no ads, no noise.", store.coach.name))
                 .font(.system(size: 17))
                 .foregroundStyle(Theme.body)
                 .lineSpacing(5)

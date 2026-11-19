@@ -36,22 +36,22 @@ struct OnboardingRecentScreen: View {
     @State private var edited = false
     @State private var showWheel = false
 
-    private let distances: [(String, Double)] = [("5 km", 5), ("10 km", 10), ("Half", 21.0975)]
+    private var distances: [(String, Double)] { [("5 km", 5), ("10 km", 10), (L("Half"), 21.0975)] }
 
     var body: some View {
-        OnboardingScaffold(title: "A recent result?",
-                           subtitle: "A race or an all-out run from the last 3 months.",
+        OnboardingScaffold(title: L("A recent result?"),
+                           subtitle: L("A race or an all-out run from the last 3 months."),
                            canContinue: edited) {
             distancePicker
             OnboardingTimeCard(seconds: seconds,
                                caption: edited
-                                   ? "that's \(OnboardingCopy.pacePerKm(seconds: seconds, km: distanceKm)) per km"
-                                   : "tap to set your time",
+                                   ? L("that's %@ per km", OnboardingCopy.pacePerKm(seconds: seconds, km: distanceKm))
+                                   : L("tap to set your time"),
                                stepSeconds: OnboardingTimeRules.step(km: distanceKm),
                                dimmed: !edited,
                                onChange: { setTime($0) },
                                onTapTime: { showWheel = true })
-            Button("I don't have one") {
+            Button(L("I don't have one")) {
                 Haptics.tap()
                 store.answers.recentResult = nil
                 edited = false
@@ -65,7 +65,7 @@ struct OnboardingRecentScreen: View {
         }
         .onAppear(perform: load)
         .sheet(isPresented: $showWheel) {
-            OnboardingTimeWheelSheet(title: "Your time", showsHours: distanceKm > 15,
+            OnboardingTimeWheelSheet(title: L("Your time"), showsHours: distanceKm > 15,
                                      initialSeconds: seconds, onDone: { setTime($0) })
         }
     }
@@ -144,40 +144,40 @@ struct OnboardingTargetScreen: View {
 
     private var note: String {
         let pace = OnboardingCopy.pacePerKm(seconds: seconds, km: km)
-        let base = "\(Fmt.goalTime(seconds)) is \(pace) per km for \(Fmt.km(km))."
+        let time: String = Fmt.goalTime(seconds)
+        let distance: String = Fmt.km(km)
         let reachable = Int(Double(todaySeconds) * 0.95)
         if seconds < reachable {
-            return "\(base) That's ambitious from where you are today (around \(Fmt.goalTime(todaySeconds))). "
-                + "I keep it as your goal and train you towards \(Fmt.goalTime(reachable)) first, so you stay safe."
+            return L("%@ is %@ per km for %@. That's ambitious from where you are today (around %@). I keep it as your goal and train you towards %@ first, so you stay safe.", time, pace, distance, Fmt.goalTime(todaySeconds), Fmt.goalTime(reachable))
         }
         if seconds <= todaySeconds {
-            return "\(base) A real step up from today, and within reach."
+            return L("%@ is %@ per km for %@. A real step up from today, and within reach.", time, pace, distance)
         }
-        return "\(base) Comfortable for your level: a good way to enjoy the day."
+        return L("%@ is %@ per km for %@. Comfortable for your level: a good way to enjoy the day.", time, pace, distance)
     }
 
     var body: some View {
-        OnboardingScaffold(title: "What time are you aiming for?",
+        OnboardingScaffold(title: L("What time are you aiming for?"),
                            canContinue: precise != nil) {
             HStack(spacing: 10) {
-                modeButton("Just finish", isOn: precise == false) { choose(false) }
-                modeButton("A precise time", isOn: precise == true) { choose(true) }
+                modeButton(L("Just finish"), isOn: precise == false) { choose(false) }
+                modeButton(L("A precise time"), isOn: precise == true) { choose(true) }
             }
             if precise == true {
                 OnboardingTimeCard(seconds: seconds,
-                                   caption: "for your \(OnboardingCopy.goalNoun(goal))",
+                                   caption: L("for your %@", OnboardingCopy.goalNoun(goal)),
                                    stepSeconds: km > 15 ? 60 : 15,
                                    onChange: { setTime($0) },
                                    onTapTime: { showWheel = true })
                 CoachNote(coach: store.coach, text: note)
             } else if precise == false {
                 CoachNote(coach: store.coach,
-                          text: "No clock to chase. I'll get you to the finish line feeling good, and that's a goal in itself.")
+                          text: L("No clock to chase. I'll get you to the finish line feeling good, and that's a goal in itself."))
             }
         }
         .onAppear(perform: load)
         .sheet(isPresented: $showWheel) {
-            OnboardingTimeWheelSheet(title: "Your target", showsHours: km > 15,
+            OnboardingTimeWheelSheet(title: L("Your target"), showsHours: km > 15,
                                      initialSeconds: seconds, onDone: { setTime($0) })
         }
     }
