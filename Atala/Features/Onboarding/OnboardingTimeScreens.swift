@@ -146,6 +146,10 @@ struct OnboardingTargetScreen: View {
         let pace = OnboardingCopy.pacePerKm(seconds: seconds, km: km)
         let time: String = Fmt.goalTime(seconds)
         let distance: String = Fmt.km(km)
+        // Without a recent result there is no "today" to compare the target with.
+        guard OnboardingNavigator.hasRecentResult(store.answers) else {
+            return L("%@ is %@ per km for %@. I'll build your plan towards it, step by step.", time, pace, distance)
+        }
         let reachable = Int(Double(todaySeconds) * 0.95)
         if seconds < reachable {
             return L("%@ is %@ per km for %@. That's ambitious from where you are today (around %@). I keep it as your goal and train you towards %@ first, so you stay safe.", time, pace, distance, Fmt.goalTime(todaySeconds), Fmt.goalTime(reachable))

@@ -49,6 +49,14 @@ struct OnboardingGoalIntroScreen: View {
     @State private var introduced = false
     @State private var finished = false
 
+    /// Nothing is "known" about someone who does not run yet: the coach only says how it will go.
+    private var opening: String {
+        if OnboardingNavigator.isNotRunningYet(store.answers) {
+            return L("We'll take it step by step, %@.", store.firstName)
+        }
+        return L("I know where you're starting from, %@.", store.firstName)
+    }
+
     var body: some View {
         OnboardingTapScreen(lightContent: true, canContinue: finished, pose: .present, backdrop: {
             Theme.green
@@ -60,7 +68,7 @@ struct OnboardingGoalIntroScreen: View {
                 }
         }, top: {
             VStack(alignment: .leading, spacing: 14) {
-                OnboardingSpokenText(text: L("I know where you're starting from, %@.", store.firstName),
+                OnboardingSpokenText(text: opening,
                                      size: 14, weight: .semibold, color: Theme.greenOnDark, lineSpacing: 3,
                                      startDelay: OnboardingRevealTiming.speech,
                                      onFinished: { introduced = true })

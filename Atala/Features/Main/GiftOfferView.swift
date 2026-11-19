@@ -104,6 +104,10 @@ struct GiftOfferPresenter: ViewModifier {
             .task {
                 try? await Task.sleep(nanoseconds: UInt64(GiftOfferSchedule.delay * 1_000_000_000))
                 if Task.isCancelled { return }
+                // The App Store rating request comes first: on the launch where it is made, the
+                // gift waits a few more seconds behind it.
+                await ReviewPromptState.waitBeforeOffer()
+                if Task.isCancelled { return }
                 // The subscription state may still be loading at launch: ask once more first.
                 await purchases.refresh()
                 guard !purchases.isPro, GiftOfferSchedule.isDue() else { return }

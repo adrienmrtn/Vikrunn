@@ -51,8 +51,12 @@ struct OnboardingVolumeScreen: View {
                                selected: store.answers.weeklyVolume == volume,
                                action: {
                                    store.answers.weeklyVolume = volume
-                                   // The recent-result question is skipped for someone who does not run yet.
-                                   if volume == .notYet { store.answers.recentResult = nil }
+                                   // The recent-result and target-time questions are skipped for
+                                   // someone who does not run yet: nothing is kept from an earlier pass.
+                                   if volume == .notYet {
+                                       store.answers.recentResult = nil
+                                       store.answers.targetSeconds = nil
+                                   }
                                }) {
                         VignetteImage(name: volume.vignette)
                     }
@@ -125,7 +129,8 @@ struct OnboardingHealthScreen: View {
     }
 }
 
-/// Screen 10: "Here's what I see", built from the answers so far.
+/// Screen 10: "Here's what I see", built from the answers so far. Only shown to someone who gave
+/// a recent result (see `OnboardingNavigator.isSkipped`): every figure here comes from that time.
 struct OnboardingMirrorScreen: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var nav: OnboardingNavigator

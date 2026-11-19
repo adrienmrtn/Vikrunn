@@ -71,6 +71,9 @@ struct RootView: View {
             ZStack {
                 if store.hasCompletedOnboarding {
                     MainTabView()
+                        // The rating request comes first, once the splash is gone; the gift
+                        // and the Pro welcome wait behind it (see `ReviewPromptState`).
+                        .modifier(ReviewPrompt(isActive: splashDone))
                         .modifier(GiftOfferPresenter())
                         .modifier(ProWelcomePresenter())
                         .transition(.opacity)

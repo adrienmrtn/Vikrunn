@@ -91,6 +91,18 @@ final class OnboardingNavigator: ObservableObject {
         if saved == .levelRisk { saved = .goalIntro }
         // The trial-reminder screen is gone: a step saved on it resumes on the paywall.
         if saved == .reminder { saved = .paywall }
+        // Answers saved by an earlier version: no target time is kept for someone who does not run yet.
+        if Self.isNotRunningYet(store.answers), store.answers.targetSeconds != nil {
+            store.answers.targetSeconds = nil
+        }
+        // A step that the answers now rule out (the mirror for someone with no recent time, the
+        // target time for someone who does not run yet): resume on the next screen that is shown.
+        let order = OnboardingStep.order
+        var index = saved.position
+        while index < order.count, isSkipped(order[index], store: store) {
+            index += 1
+        }
+        if index < order.count { saved = order[index] }
         if saved.position > OnboardingStep.loading.position {
             // A plan built on another day would start in the past: rebuild it from today.
             // Nothing can be done or missed yet, the app has not been opened.
@@ -106,10 +118,30 @@ final class OnboardingNavigator: ObservableObject {
         (answers.experience ?? .starting) == .starting || answers.weeklyVolume == .notYet
     }
 
+    /// Someone who said they do not run yet: there is no running to reflect back to them.
+    nonisolated static func isNotRunningYet(_ answers: OnboardingAnswers) -> Bool {
+        answers.weeklyVolume == .notYet
+    }
+
+    /// True when a real recent time was entered. Without one, any time, pace or level shown as
+    /// "today" would be made up from defaults: screens leave those figures out.
+    nonisolated static func hasRecentResult(_ answers: OnboardingAnswers) -> Bool {
+        guard !isNotRunningYet(answers), let result = answers.recentResult else { return false }
+        return result.seconds > 0 && result.distanceKm > 0
+    }
+
     func isSkipped(_ candidate: OnboardingStep, store: AppStore) -> Bool {
         switch candidate {
         case .levelRisk:
             return true
+        case .mirror:
+            // "Here's what I see" only reflects a real result: nothing to show without one.
+            return !Self.hasRecentResult(store.answers)
+        case .race:
+            return store.answers.goal.isOpenEnded
+        case .target:
+            // No time to chase for someone who does not run yet: the goal is to finish.
+            return store.answers.goal.isOpenEnded || Self.isNotRunningYet(store.answers)
         case .health:
             // The health question is out of the flow for now (no injury or medical wording at sign-up).
             return true
@@ -122,8 +154,6 @@ final class OnboardingNavigator: ObservableObject {
         case .levelFocus:
             // Everyone else: one screen about what the plan brings them.
             return Self.isStarting(store.answers)
-        case .race, .target:
-            return store.answers.goal.isOpenEnded
         case .longRun:
             return store.answers.runDays.count <= 1
         case .signIn:
@@ -197,11 +227,12 @@ final class OnboardingNavigator: ObservableObject {
         store.onboardingStep = target.rawValue
     }
 
-    /// Steps left out of the bar because an earlier answer rules them out (the level screens depend
-    /// on the experience, the race screens on the goal), so the remaining steps stay evenly spaced.
+    /// Steps left out of the bar because an earlier answer rules them out (the mirror depends on
+    /// the recent result, the level screens on the experience, the race screens on the goal), so
+    /// the remaining steps stay evenly spaced.
     private func isLeftOutOfBar(_ item: OnboardingStep, store: AppStore) -> Bool {
         switch item {
-        case .recent, .health, .levelIntro, .levelFocus, .race, .target:
+        case .recent, .health, .mirror, .levelIntro, .levelFocus, .race, .target:
             return isSkipped(item, store: store)
         default:
             return false

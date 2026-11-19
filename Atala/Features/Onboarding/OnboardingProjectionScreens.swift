@@ -29,10 +29,19 @@ struct OnboardingProjectionScreen: View {
         return max(0, today - goal)
     }
 
+    /// Times of "today" and of the end of the plan are only shown when they come from a real
+    /// recent result. Without one the screen shows the plan itself: its weeks and its kilometres.
+    private var hasResult: Bool {
+        OnboardingNavigator.hasRecentResult(store.answers)
+    }
+
     private func title(_ plan: TrainingPlan) -> String {
         let weeks = OnboardingCopy.weeks(plan.weeks.count)
         if plan.goal.isOpenEnded {
             return L("%@ to make running a habit", weeks)
+        }
+        if !hasResult {
+            return L("%@ to be ready for your %@", weeks, OnboardingCopy.goalNoun(plan.goal))
         }
         let gain = gainSeconds(plan)
         if gain >= 60 {
@@ -53,7 +62,7 @@ struct OnboardingProjectionScreen: View {
     }
 
     private func verdict(_ plan: TrainingPlan) -> String {
-        if plan.goal.isOpenEnded {
+        if plan.goal.isOpenEnded || !hasResult {
             return L("A steady build-up, never more than you can absorb")
         }
         if let target = plan.targetSeconds, let aimed = plan.predictedSeconds, aimed > target {
@@ -66,6 +75,9 @@ struct OnboardingProjectionScreen: View {
         if let result = store.answers.recentResult {
             return L("I start from your %@ in %@ and build up gently, with strength and stretching every week.", OnboardingCopy.distanceName(result.distanceKm), Fmt.goalTime(result.seconds))
         }
+        if OnboardingNavigator.isNotRunningYet(store.answers) {
+            return L("We start gently and build up step by step, with strength and stretching every week.")
+        }
         return L("I start from what you told me about your running and build up gently, with strength and stretching every week.")
     }
 
@@ -73,7 +85,7 @@ struct OnboardingProjectionScreen: View {
 
     private func heroCard(_ plan: TrainingPlan) -> some View {
         let firstKm = plan.weeks.first?.plannedKm ?? 0
-        let usesTimes = !plan.goal.isOpenEnded && plan.currentSeconds != nil
+        let usesTimes = hasResult && !plan.goal.isOpenEnded && plan.currentSeconds != nil
         // The big number starts from today's value and travels to where the plan leads.
         let startValue: Double = usesTimes ? Double(plan.currentSeconds ?? 0) : firstKm
         let endValue: Double = usesTimes

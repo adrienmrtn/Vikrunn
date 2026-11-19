@@ -156,16 +156,24 @@ struct PaywallView: View {
 
     private var features: [OnboardingPaywallFeature] {
         let weeks = store.plan?.weeks.count ?? PlanEngine.maxWeeks
+        // Someone who does not run yet has no level or pace to speak of: plain words instead.
+        let starting: Bool = OnboardingNavigator.isNotRunningYet(store.answers)
+        let planDetail: String = starting
+            ? L("%@ built around your days, starting gently", OnboardingCopy.weeks(weeks))
+            : L("%@ built around your days and your level", OnboardingCopy.weeks(weeks))
+        let voiceDetail: String = starting
+            ? L("Your coach in your ears, from the first step")
+            : L("Your pace and your intervals, in your ears")
         return [
             OnboardingPaywallFeature(id: 0, symbol: "calendar",
                                      title: L("Your personal plan"),
-                                     detail: L("%@ built around your days and your level", OnboardingCopy.weeks(weeks))),
+                                     detail: planDetail),
             OnboardingPaywallFeature(id: 1, symbol: "bubble.left.and.bubble.right.fill",
                                      title: L("%@, your coach, 24/7", store.coach.name),
                                      detail: L("Ask anything, move a session, lighten a week")),
             OnboardingPaywallFeature(id: 2, symbol: "waveform",
                                      title: L("Voice guidance on every run"),
-                                     detail: L("Your pace and your intervals, in your ears")),
+                                     detail: voiceDetail),
             OnboardingPaywallFeature(id: 3, symbol: "figure.cooldown",
                                      title: L("Warm-ups, strength and stretching"),
                                      detail: L("Get every warm-up and stretch you need")),
