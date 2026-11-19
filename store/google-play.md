@@ -6,7 +6,7 @@
 
 | Field | Value | Limit |
 |---|---|---|
-| App name | Atala: Running Coach & Plans | 30 |
+| App name | Atala: Running Coach | 30 |
 | Short description | Your running plan and coach: 5K, 10K, half marathon. Guided by voice. | 80 |
 | Category | Health & Fitness | |
 | Tags | Running, Fitness, Training plans | |
@@ -42,7 +42,7 @@ SEE YOUR PROGRESS
 • Personal bests, weekly volume and weekly streaks
 
 ATALA PRO
-Free trial, then an auto-renewing subscription, monthly or yearly. Manage or cancel at any time in Google Play.
+Free trial, then an auto-renewing yearly subscription. Manage or cancel at any time in Google Play.
 
 Atala is a training tool, not a medical device. If you have a health condition or an injury, talk to a health professional before you start.
 

@@ -195,26 +195,24 @@ struct OnboardingReview: Identifiable {
     let author: String
 }
 
-// SAMPLE REVIEWS — replace with real ones before release
+// Reviews supplied by the team. They must come from real users: keep the wording they gave.
 enum OnboardingSampleReviews {
-    static let rating = "4.8"
-    static let ratingCaption = "Sample rating, not a real App Store score"
     static let reviews: [OnboardingReview] = [
         OnboardingReview(id: 1,
-                         text: "Sample review. A runner explains in two or three lines what the plan changed for them.",
-                         author: "Sample Runner A · placeholder"),
+                         text: "I finally ran 10 km under 45 minutes with Atala. It helped so much.",
+                         author: "Marie"),
         OnboardingReview(id: 2,
-                         text: "Sample review. A runner tells how the coach helped during a difficult week.",
-                         author: "Sample Runner B · placeholder"),
+                         text: "Atala helped me lose 10 kg in just a few months. I strongly recommend it.",
+                         author: "Thomas"),
         OnboardingReview(id: 3,
-                         text: "Sample review. A runner says what they liked about the coach's explanations.",
-                         author: "Sample Runner C · placeholder"),
+                         text: "A friend recommended Atala. I didn't know you could have a coach this good at this price.",
+                         author: "Luis"),
     ]
 }
 
-/// Screen 23: what runners say (sample content until real reviews are collected).
+/// Screen 23: what runners say.
 struct OnboardingReviewsScreen: View {
-    /// 1 rating, then one stage per review, then the button.
+    /// 1 photos and stars, then one stage per review, then the button.
     @State private var stage = 0
 
     private static var delays: [Double] {
@@ -247,33 +245,14 @@ struct OnboardingReviewsScreen: View {
         .accessibilityHidden(true)
     }
 
+    /// Runners in motion above the reviews, five stars underneath.
     private var ratingHeader: some View {
-        VStack(spacing: 6) {
-            HStack(alignment: .center, spacing: 10) {
-                Image(systemName: "laurel.leading")
-                    .font(.system(size: 40, weight: .regular))
-                    .foregroundStyle(Theme.yellow)
-                    .accessibilityHidden(true)
-                Text(OnboardingSampleReviews.rating)
-                    .font(.system(size: 52, weight: .bold))
-                    .foregroundStyle(Theme.ink)
-                Image(systemName: "laurel.trailing")
-                    .font(.system(size: 40, weight: .regular))
-                    .foregroundStyle(Theme.yellow)
-                    .accessibilityHidden(true)
-            }
-            stars(size: 18)
-            Text(OnboardingSampleReviews.ratingCaption)
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.muted)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: 14) {
+            OnboardingPhotoStrip(names: AtalaPhotos.strip(for: nil), tileWidth: 104, height: 132, speed: 16)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            stars(size: 20)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 22)
-        .padding(.horizontal, 16)
-        .background(Theme.yellowTint, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .accessibilityElement(children: .combine)
     }
 
     private func initials(_ author: String) -> String {
