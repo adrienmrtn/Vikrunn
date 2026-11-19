@@ -51,4 +51,17 @@ Each product still has a blank review screenshot: replace the three with real sc
 
 ## Android
 
-No Android app exists, so there is nothing to configure in Google Play Billing yet. When there is one, the same RevenueCat project takes a second app (Play Store) and the same `pro` entitlement.
+State on 19 November 2026: the store side is prepared, there is still no Android app.
+
+| Where | Done | Still to do |
+|---|---|---|
+| Google Play Console (Vik Studios SAS) | App "Atala: AI Running Coach" created as a draft, package `com.atala.app`, free. Store listing saved as a draft in 25 languages (title, short and full description, from `fastlane/metadata/android`), with the icon and the feature graphic | Phone screenshots (Play wants 9:16, and they should show the Android app), the "App content" declarations, a build |
+| RevenueCat | App "Atala (Android)" added to the project "Atala" with the package `com.atala.app` | Service account credentials, the products, the Android SDK key in the app |
+
+What is left for subscriptions, in this order:
+
+1. Upload a first Android build with the Play Billing library: Google Play does not let you create subscriptions before that.
+2. In Play Console → Monetise → Subscriptions, create the same three products as on iOS: `atala_pro_yearly` (base plan yearly, 3-day free trial offer), `atala_pro_monthly` (base plan monthly), `atala_pro_yearly_gift` (base plan yearly at half price). Use the prices of the table above.
+3. Create a Google Cloud service account, give it access in Play Console (Users and permissions), and upload its JSON key in RevenueCat → Apps → Atala (Android). RevenueCat needs it to validate purchases.
+4. In RevenueCat, import the three Play products, attach them to the entitlement `atala_pro`, and add them to the existing packages: `$rc_annual` and `$rc_monthly` of the offering `default`, `$rc_annual` of the offering `gift`. The offerings then serve both stores.
+5. In the Android app, configure the RevenueCat SDK with the public key of "Atala (Android)" (it starts with `goog_`), and use the same entitlement and offering identifiers as `PurchaseService.swift`.
