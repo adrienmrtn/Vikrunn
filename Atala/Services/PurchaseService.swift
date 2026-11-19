@@ -50,6 +50,8 @@ final class PurchaseService: ObservableObject {
 
     /// True while the user has an active Atala Pro subscription (trial included).
     @Published private(set) var isPro = false
+    /// True while the active subscription is still in its free trial.
+    @Published private(set) var isInTrial = false
     /// The plans loaded from the store. Empty until they are loaded, or without the package.
     @Published private(set) var offers: [PurchasePlan: PurchaseOffer] = [:]
 
@@ -68,6 +70,7 @@ final class PurchaseService: ObservableObject {
     private var started = false
 
     private static let placeholderKey = "atala.placeholder.pro"
+    private static let trialKey = "atala.pro.inTrial"
 
     /// True in a build without the RevenueCat package: nothing can be bought, and the paywall's
     /// main button stands in for a purchase so the free and the Pro sides can both be tried.
@@ -82,6 +85,8 @@ final class PurchaseService: ObservableObject {
     private init() {
         if Self.isPlaceholder {
             isPro = UserDefaults.standard.bool(forKey: Self.placeholderKey)
+        } else {
+            isInTrial = UserDefaults.standard.bool(forKey: Self.trialKey)
         }
     }
 
@@ -116,6 +121,8 @@ final class PurchaseService: ObservableObject {
         #if canImport(RevenueCat)
         guard started else { return }
         isPro = false
+        isInTrial = false
+        UserDefaults.standard.set(false, forKey: Self.trialKey)
         Task { @MainActor in
             if !Purchases.shared.isAnonymous {
                 _ = try? await Purchases.shared.logOut()
@@ -132,7 +139,7 @@ final class PurchaseService: ObservableObject {
         #if canImport(RevenueCat)
         guard started else { return }
         if let info = try? await Purchases.shared.customerInfo() {
-            isPro = info.entitlements[Self.entitlementID]?.isActive == true
+            apply(info)
             // Confirmed by the store: the next subscription gets its welcome again.
             if !isPro { ProWelcomeState.wasPlayed = false }
         }
@@ -158,7 +165,7 @@ final class PurchaseService: ObservableObject {
         do {
             let result = try await Purchases.shared.purchase(package: package)
             if result.userCancelled { return .cancelled }
-            isPro = result.customerInfo.entitlements[Self.entitlementID]?.isActive == true
+            apply(result.customerInfo)
             return isPro ? .purchased : .failed("The purchase went through but Atala Pro is not active yet. Tap Restore purchases in a moment.")
         } catch {
             // Some versions of the SDK report a cancelled purchase as an error.
@@ -175,7 +182,7 @@ final class PurchaseService: ObservableObject {
         #if canImport(RevenueCat)
         guard started else { return false }
         if let info = try? await Purchases.shared.restorePurchases() {
-            isPro = info.entitlements[Self.entitlementID]?.isActive == true
+            apply(info)
         }
         return isPro
         #else
@@ -184,6 +191,16 @@ final class PurchaseService: ObservableObject {
     }
 
     #if canImport(RevenueCat)
+    /// Reads the subscription state from what the store says.
+    private func apply(_ info: CustomerInfo) {
+        let entitlement = info.entitlements[Self.entitlementID]
+        isPro = entitlement?.isActive == true
+        isInTrial = isPro && entitlement?.periodType == .trial
+        // Kept on the phone: if the store cannot be reached at the next launch, someone in a
+        // free trial is still known as such (and gets no reminder).
+        UserDefaults.standard.set(isInTrial, forKey: Self.trialKey)
+    }
+
     private static func package(for plan: PurchasePlan, in offerings: Offerings) -> Package? {
         switch plan {
         case .yearly: return offerings.current?.annual

@@ -403,6 +403,11 @@ struct PaywallView: View {
                 }
             }
             .foregroundStyle(Theme.muted)
+            // Apple asks for both links next to the price of a subscription.
+            Text("[Terms of use](https://vikstudios.com/atala/terms) · [Privacy policy](https://vikstudios.com/atala)")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.muted)
+                .tint(Theme.ink)
         }
         .padding(.horizontal, Theme.screenPadding)
         .padding(.top, 12)

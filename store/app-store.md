@@ -68,21 +68,23 @@ Atala Pro unlocks your full plan, your coach, voice guidance and guided sessions
 
 Atala is a training tool, not a medical device. If you have a health condition or an injury, talk to a health professional before you start.
 
-Terms of Use: [YOUR TERMS URL]
-Privacy Policy: [YOUR PRIVACY URL]
+Terms of Use: https://vikstudios.com/atala/terms
+Privacy Policy: https://vikstudios.com/atala
 
 ## What's New (version 0.1.0)
 
 First release of Atala: your running plan, your coach and guided sessions.
 
-## URLs to fill in (required)
+## URLs
 
-| Field | Status |
+| Field | Value |
 |---|---|
-| Privacy Policy URL | **Missing: must exist before submission** |
-| Terms of Use (EULA) | **Missing.** Either host your own, or use Apple's standard EULA and say so in the description |
+| Privacy Policy URL | https://vikstudios.com/atala |
+| Terms of Use (EULA) | https://vikstudios.com/atala/terms (also paste it in the "License Agreement" field, or keep Apple's standard one and leave the link in the description) |
 | Support URL | **Missing** (a simple page with a contact e-mail is enough) |
 | Marketing URL | Optional |
+
+Also set the privacy policy URL on each of the three subscriptions (App Store Connect → Subscriptions → the product → Privacy Policy).
 
 ## App Privacy (the "nutrition label")
 
@@ -122,11 +124,16 @@ Location is used only while a run is being recorded, to measure distance and pac
 Apple Health is optional and read-only: it imports past runs and heart rate.
 The coach chat uses an AI model; answers are generated and may be imperfect.
 
-## Before you submit: things in the app that will block review
+## Before you submit
 
-- The paywall is a placeholder ("Nothing is charged in this version"). Real subscriptions must be wired first (see `subscriptions.md`).
-- The reviews screen shows sample reviews and a sample 4.8 rating. Replace with real ones or remove the screen.
-- "10,000 runners coached every day" must be true, or be removed.
-- The trial timeline promises a reminder before the trial ends, but the app sends no notification yet.
-- The Health permission text says the app saves runs to Health, but it only reads. Fix the text or add the write.
-- "Terms of use and privacy policy" on the sign-in sheet is plain text: it needs real links.
+Done in the app:
+- Real subscriptions (yearly, monthly, welcome gift) through RevenueCat, with Restore purchases and the Terms and Privacy links on the paywall and the sign-in sheet.
+- Session reminders are real notifications. Nothing promises a reminder before the end of the free trial any more.
+- The Health permission text matches what the app does (read only).
+
+Still open:
+- "10,000 runners coached every day" is shown in the onboarding. Apple can ask for proof of figures like this one.
+- The three reviews in the onboarding must come from real users.
+- A Support URL.
+- Screenshots for the listing, and for each of the three subscriptions (blank placeholders were uploaded).
+- The App Privacy questionnaire in App Store Connect (answers in the table above; add "Purchases").

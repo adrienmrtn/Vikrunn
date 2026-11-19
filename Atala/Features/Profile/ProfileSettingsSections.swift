@@ -147,6 +147,29 @@ struct ProfileSubscriptionSection: View {
                 }
                 .foregroundStyle(Theme.ink)
             }
+            Button("Session reminders") {
+                Haptics.tap()
+                Task { @MainActor in
+                    // First time: the system question. Afterwards the choice lives in Settings.
+                    var openSettings = await RunReminders.isAuthorized()
+                    if !openSettings {
+                        let granted = await RunReminders.requestAuthorization()
+                        openSettings = !granted
+                    }
+                    if openSettings, let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            }
+            .foregroundStyle(Theme.ink)
+            if let terms = AtalaLinks.terms {
+                Link("Terms of use", destination: terms)
+                    .foregroundStyle(Theme.ink)
+            }
+            if let privacy = AtalaLinks.privacy {
+                Link("Privacy policy", destination: privacy)
+                    .foregroundStyle(Theme.ink)
+            }
         }
     }
 }

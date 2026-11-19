@@ -92,8 +92,8 @@ struct OnboardingTimelineScreen: View {
         return [
             OnboardingTimelineItem(id: 0, symbol: "lock.open.fill", color: Theme.green, title: "Today",
                                    text: "You unlock everything: your full plan, your coach, voice guidance."),
-            OnboardingTimelineItem(id: 1, symbol: "bell.fill", color: Theme.yellow, title: "In \(days - 1) days",
-                                   text: "We remind you that your trial ends the next day."),
+            OnboardingTimelineItem(id: 1, symbol: "figure.run", color: Theme.yellow, title: "During your trial",
+                                   text: "Run your first sessions with your coach and see how it feels."),
             OnboardingTimelineItem(id: 2, symbol: "star.fill", color: Theme.orange, title: "In \(days) days",
                                    text: "Your subscription starts and you carry on with Atala. Cancel before and you pay nothing."),
         ]
@@ -158,52 +158,6 @@ struct OnboardingTimelineScreen: View {
     }
 }
 
-/// Screen 30: the reminder before the end of the trial, with a ringing bell. The title turns bold
-/// word by word, then the subtitle fades in, then the button.
-struct OnboardingReminderScreen: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var ringing = false
-    @State private var emphasised = false
-    /// 1 subtitle, 2 button.
-    @State private var stage = 0
-
-    private static let stageDelays: [Double] = [0.2, 0.6]
-
-    var body: some View {
-        OnboardingScaffold(buttonsVisible: stage >= Self.stageDelays.count) {
-            VStack(spacing: 28) {
-                Circle()
-                    .fill(Theme.greenTint)
-                    .frame(width: 168, height: 168)
-                    .overlay(
-                        Image(systemName: "bell.fill")
-                            .font(.system(size: 68, weight: .semibold))
-                            .foregroundStyle(Theme.green)
-                            .rotationEffect(.degrees(reduceMotion ? 0 : (ringing ? 16 : -16)), anchor: .top)
-                            .animation(.easeInOut(duration: 0.16).repeatForever(autoreverses: true), value: ringing)
-                    )
-                    .accessibilityHidden(true)
-                OnboardingEmphasisText(text: "We'll remind you before your free trial ends",
-                                       size: 28,
-                                       centered: true,
-                                       onFinished: { emphasised = true })
-                    .accessibilityAddTraits(.isHeader)
-                Text("No worries :) You get a reminder the day before, so you can try Atala with peace of mind.")
-                    .font(.system(size: 17))
-                    .foregroundStyle(Color(hex: 0x5A5A5A))
-                    .lineSpacing(5)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .onboardingStaged(0, stage: stage)
-            }
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 56)
-        }
-        .onboardingStageSequence($stage, delays: Self.stageDelays, isActive: emphasised)
-        .onAppear { ringing = true }
-    }
-}
-
 #Preview("Trial") {
     OnboardingTrialScreen()
         .environmentObject(AppStore.preview)
@@ -212,12 +166,6 @@ struct OnboardingReminderScreen: View {
 
 #Preview("Timeline") {
     OnboardingTimelineScreen()
-        .environmentObject(AppStore.preview)
-        .environmentObject(OnboardingNavigator())
-}
-
-#Preview("Reminder") {
-    OnboardingReminderScreen()
         .environmentObject(AppStore.preview)
         .environmentObject(OnboardingNavigator())
 }

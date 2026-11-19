@@ -41,8 +41,25 @@ struct AtalaApp: App {
 /// for its short animation, on every cold launch.
 struct RootView: View {
     @EnvironmentObject private var store: AppStore
+    @ObservedObject private var purchases = PurchaseService.shared
+    @Environment(\.scenePhase) private var scenePhase
     /// Not saved: a new process starts with the splash again.
     @State private var splashDone = false
+
+    /// Everything the reminders depend on: when one of these changes, they are scheduled again.
+    private var reminderKey: String {
+        // The sessions still to do and their days: a moved or finished session changes the key.
+        var planned = 0
+        var days = 0.0
+        for week in store.plan?.weeks ?? [] {
+            for workout in week.workouts where workout.status == .planned {
+                planned += 1
+                days += workout.date.timeIntervalSinceReferenceDate
+            }
+        }
+        let plan = store.plan?.id.uuidString ?? "none"
+        return "\(plan)|\(planned)|\(days)|\(store.answers.coachID)|\(purchases.isPro)|\(purchases.isInTrial)|\(store.hasCompletedOnboarding)|\(scenePhase == .active)"
+    }
 
     var body: some View {
         // Exercise pictures follow the chosen coach.
@@ -67,6 +84,9 @@ struct RootView: View {
             }
         }
         .authSyncPrompts()
+        .task(id: reminderKey) {
+            await RunReminders.refresh(store: store)
+        }
         .onChange(of: store.account?.userID) { _, _ in
             // Signing in links the purchases to the account straight away, not at the next launch.
             let account = store.account
