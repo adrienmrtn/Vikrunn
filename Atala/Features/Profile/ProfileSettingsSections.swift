@@ -38,23 +38,63 @@ struct ProfilePacesSection: View {
     }
 }
 
-/// Voice announcements during a run.
+/// Voice announcements during a run. The coach's voice is part of Atala Pro: without it the
+/// switch carries a padlock, stays off and opens the paywall.
 struct ProfileVoiceSection: View {
     @EnvironmentObject private var store: AppStore
+    @ObservedObject private var purchases = PurchaseService.shared
+    @State private var showPaywall = false
 
     var body: some View {
         Section {
-            Toggle(L("Voice coach"), isOn: $store.settings.voice.enabled)
-            Group {
-                Toggle(L("Step changes"), isOn: $store.settings.voice.announceSteps)
-                Toggle(L("Pace too fast or too slow"), isOn: $store.settings.voice.announcePace)
-                Toggle(L("Every kilometre"), isOn: $store.settings.voice.announceEveryKm)
+            if purchases.isPro {
+                Toggle(L("Voice coach"), isOn: $store.settings.voice.enabled)
+                Group {
+                    Toggle(L("Step changes"), isOn: $store.settings.voice.announceSteps)
+                    Toggle(L("Pace too fast or too slow"), isOn: $store.settings.voice.announcePace)
+                    Toggle(L("Every kilometre"), isOn: $store.settings.voice.announceEveryKm)
+                }
+                .disabled(!store.settings.voice.enabled)
+            } else {
+                // A row that looks like the switch, always off: a tap opens the paywall instead.
+                Button {
+                    Haptics.tap()
+                    showPaywall = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(L("Voice coach"))
+                            .foregroundStyle(Theme.ink)
+                        HStack(spacing: 4) {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 10, weight: .bold))
+                            Text("Atala Pro")
+                                .font(.system(size: 11, weight: .bold))
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(Theme.yellowDeep)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Theme.yellowTint, in: Capsule())
+                        .fixedSize()
+                        Spacer(minLength: 8)
+                        Toggle("", isOn: .constant(false))
+                            .labelsHidden()
+                            .allowsHitTesting(false)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(L("Voice coach, needs Atala Pro"))
+                .accessibilityAddTraits(.isButton)
+                .proPaywall(isPresented: $showPaywall)
             }
-            .disabled(!store.settings.voice.enabled)
         } header: {
             Text(L("Voice during runs"))
         } footer: {
-            Text(L("Your coach speaks over your music and stays quiet the rest of the time."))
+            Text(purchases.isPro
+                 ? L("Your coach speaks over your music and stays quiet the rest of the time.")
+                 : L("With Atala Pro, your coach talks you through every run, over your music."))
         }
     }
 }

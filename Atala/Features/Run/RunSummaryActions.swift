@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// What is shared from a run summary: a short text and a rendered card.
+/// The words shared with the picture of a run (see `RunShareCard` and `RunShareSheet`).
 enum RunSummaryShare {
     static func title(for run: RunRecord) -> String {
         run.title.isEmpty ? L("Run") : L(run.title)
@@ -19,64 +19,10 @@ enum RunSummaryShare {
         parts.append("Atala")
         return parts.joined(separator: " · ")
     }
-
-    /// The card as an image, or nil when it could not be rendered (the text is shared instead).
-    @MainActor
-    static func image(for run: RunRecord) -> Image? {
-        let renderer = ImageRenderer(content: RunSummaryShareCard(run: run))
-        renderer.scale = 3
-        guard let rendered = renderer.uiImage else { return nil }
-        return Image(uiImage: rendered)
-    }
 }
 
-/// The picture sent by the share sheet: title, date and the figures of the run on the brand green.
-/// Self-contained (no environment), so it can be rendered off screen.
-struct RunSummaryShareCard: View {
-    let run: RunRecord
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            BrandLogo(style: .full, height: 20)
-                .foregroundStyle(Theme.cream)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(Fmt.day(run.date))
-                    .font(.system(size: 14))
-                    .foregroundStyle(Theme.greenOnDark)
-                Text(RunSummaryShare.title(for: run))
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(Color.white)
-                    .lineLimit(2)
-            }
-            HStack(alignment: .top, spacing: 12) {
-                figure(RunFormat.distance(run.distanceM), L("Distance"))
-                figure(Fmt.duration(run.durationSec), L("Duration"))
-                figure(run.avgPace > 0 ? "\(Fmt.pace(run.avgPace))/km" : "--", L("Average pace"))
-            }
-        }
-        .padding(24)
-        .frame(width: 360, alignment: .leading)
-        .background(Theme.green)
-    }
-
-    private func figure(_ value: String, _ label: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(value)
-                .font(.system(size: 20, weight: .bold))
-                .monospacedDigit()
-                .foregroundStyle(Color.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.greenOnDark)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-/// Actions under a run summary: count the run as the session of its day, share it, talk to the coach,
-/// delete it.
+/// Actions under a run summary: count the run as the session of its day, talk to the coach, delete it.
+/// Sharing sits next to "Done", at the bottom of the summary.
 struct RunSummaryActions: View {
     let run: RunRecord
     /// Closes the summary, wherever it is shown (end of the run flow, or pushed from the history).
@@ -84,22 +30,18 @@ struct RunSummaryActions: View {
 
     @EnvironmentObject private var store: AppStore
     @State private var confirmDelete = false
-    @State private var shareImage: Image?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let session = store.mainSessionToCount(for: run) {
                 MainCountRunCard(run: run, session: session)
             }
-            HStack(spacing: 10) {
-                shareButton
-                Button(action: talkToCoach) {
-                    Label(L("Talk to my coach"), systemImage: "bubble.left")
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
-                .buttonStyle(SecondaryButtonStyle())
+            Button(action: talkToCoach) {
+                Label(L("Talk to my coach"), systemImage: "bubble.left")
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
+            .buttonStyle(SecondaryButtonStyle())
             Button(role: .destructive) {
                 Haptics.warning()
                 confirmDelete = true
@@ -115,32 +57,6 @@ struct RunSummaryActions: View {
             } message: {
                 Text(deleteMessage)
             }
-        }
-        .task(id: run.id) {
-            await renderShareImage()
-        }
-    }
-
-    @MainActor
-    private func renderShareImage() async {
-        shareImage = RunSummaryShare.image(for: run)
-    }
-
-    @ViewBuilder
-    private var shareButton: some View {
-        let text = RunSummaryShare.text(for: run)
-        if let shareImage {
-            ShareLink(item: shareImage,
-                      message: Text(text),
-                      preview: SharePreview(RunSummaryShare.title(for: run), image: shareImage)) {
-                Label(L("Share"), systemImage: "square.and.arrow.up")
-            }
-            .buttonStyle(SecondaryButtonStyle())
-        } else {
-            ShareLink(item: text) {
-                Label(L("Share"), systemImage: "square.and.arrow.up")
-            }
-            .buttonStyle(SecondaryButtonStyle())
         }
     }
 

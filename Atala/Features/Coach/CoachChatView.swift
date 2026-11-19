@@ -1,12 +1,14 @@
 import SwiftUI
 
 /// The Coach tab: a conversation with the chosen coach. The coach only answers, never writes first.
+/// Talking to the coach is part of Atala Pro: without it the conversation is shown blurred, behind
+/// the padlock card that opens the paywall. The tab bar stays in use.
 @MainActor
 struct CoachChatView: View {
     @EnvironmentObject private var store: AppStore
     @State private var draft: String = ""
     @State private var isSending: Bool = false
-    @State private var showPaywall = false
+    @ObservedObject private var purchases = PurchaseService.shared
     @FocusState private var inputFocused: Bool
 
     private static let bottomID = "coach-chat-bottom"
@@ -20,26 +22,35 @@ struct CoachChatView: View {
 
     var body: some View {
         NavigationStack {
-            messageList
-                .background(Color.white)
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    bottomBar
-                }
+            chat
+                .proLocked(symbol: "bubble.left.and.bubble.right.fill",
+                           title: L("Unlock your coach"),
+                           message: L("Ask %@ anything, any time: your plan, a session, tired legs or a busy week. The answers are made for you.", store.coach.name))
                 .navigationTitle(store.coach.name)
-                .proPaywall(isPresented: $showPaywall)
                 .navigationBarTitleDisplayMode(.large)
-                .task {
+                .task(id: purchases.isPro) {
                     // Signed in with an empty conversation: bring back the one saved in the account.
-                    if store.messages.isEmpty, !isSending {
+                    if purchases.isPro, store.messages.isEmpty, !isSending {
                         await CoachService.restoreHistory(store: store)
                     }
                 }
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
-                        CoachChatToneMenu(tone: $store.answers.tone)
+                        if purchases.isPro {
+                            CoachChatToneMenu(tone: $store.answers.tone)
+                        }
                     }
                 }
         }
+    }
+
+    /// The conversation and its input field: what Atala Pro unlocks.
+    private var chat: some View {
+        messageList
+            .background(Color.white)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                bottomBar
+            }
     }
 
     // MARK: Messages
@@ -51,8 +62,12 @@ struct CoachChatView: View {
                     CoachChatHeader(coach: store.coach, runCount: store.runs.count)
                     banner
                     if store.messages.isEmpty {
-                        CoachChatEmptyState(coach: store.coach, prompts: prompts) { prompt in
-                            send(prompt)
+                        if purchases.isPro {
+                            CoachChatEmptyState(coach: store.coach, prompts: prompts) { prompt in
+                                send(prompt)
+                            }
+                        } else {
+                            CoachChatSample(coach: store.coach)
                         }
                     }
                     ForEach(store.messages) { message in
@@ -162,13 +177,8 @@ struct CoachChatView: View {
 
     private func send(_ text: String) {
         let trimmed = String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(2000))
-        guard !trimmed.isEmpty, !isSending else { return }
-        // Without Atala Pro, a few messages a day: the draft stays so nothing typed is lost.
-        guard ProAccess.canMessageCoach(store.messages) else {
-            Haptics.tap()
-            showPaywall = true
-            return
-        }
+        // Talking to the coach is part of Atala Pro (the screen is locked without it).
+        guard purchases.isPro, !trimmed.isEmpty, !isSending else { return }
         Haptics.tap()
         draft = ""
         store.messages.append(ChatMessage(role: .user, text: trimmed))
@@ -221,6 +231,26 @@ struct CoachChatHeader: View {
         if runCount == 1 { return L("Your coach · knows your %@ run", runCount) }
         if runCount > 1 { return L("Your coach · knows your %@ runs", runCount) }
         return L("Your coach")
+    }
+}
+
+/// Without Atala Pro and with no conversation yet: a short example of an exchange, seen blurred
+/// behind the padlock card. Never sent anywhere, never saved.
+struct CoachChatSample: View {
+    let coach: Coach
+
+    var body: some View {
+        VStack(spacing: 10) {
+            CoachChatMessageRow(message: ChatMessage(role: .user, text: L("My legs feel heavy today. Should I still run?")),
+                                coach: coach)
+            CoachChatMessageRow(message: ChatMessage(role: .coach, text: L("Thanks for telling me. Swap today for an easy 20 minutes, and we move your intervals to Thursday. Does that work for you?")),
+                                coach: coach)
+            CoachChatMessageRow(message: ChatMessage(role: .user, text: L("Perfect. And what pace for my long run on Sunday?")),
+                                coach: coach)
+            CoachChatMessageRow(message: ChatMessage(role: .coach, text: L("Slow enough to talk the whole way. I will tell you when to hold back and when to push.")),
+                                coach: coach)
+        }
+        .accessibilityHidden(true)
     }
 }
 

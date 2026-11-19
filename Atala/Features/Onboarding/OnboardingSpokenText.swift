@@ -64,6 +64,27 @@ enum OnboardingMarkedSentence {
     }
 }
 
+/// How a word arrives in the texts that reveal themselves: it fades in while rising a few points.
+/// Every word gets its own delay up front, so the rhythm is set by the animation system and
+/// stays perfectly even (no timer between two words).
+enum OnboardingWordReveal {
+    /// How far below its place a word starts.
+    static let rise: CGFloat = 7
+    /// Time a word takes to settle. Longer than the gap between two words: they overlap softly.
+    static let duration: Double = 0.6
+    /// After the last word has started, how long before the text counts as said.
+    static let settle: Double = 0.38
+
+    /// Quick start, long soft landing.
+    static func animation(delay: Double) -> Animation {
+        Animation.timingCurve(0.22, 0.61, 0.36, 1, duration: duration).delay(max(0, delay))
+    }
+
+    static func nanoseconds(_ seconds: Double) -> UInt64 {
+        UInt64(max(0, seconds) * 1_000_000_000)
+    }
+}
+
 /// Text that appears word by word, as if the coach were speaking. The full paragraph is laid out
 /// from the start, so nothing around it moves. `onFinished` is called once, after the last word.
 /// With Reduce Motion the text shows at once and `onFinished` is called immediately.
@@ -79,68 +100,75 @@ struct OnboardingSpokenText: View {
     var onFinished: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var shown = 0
+    @State private var revealed = false
     @State private var finished = false
 
     private var words: [String] {
         text.split(separator: " ").map { String($0) }
     }
 
-    var body: some View {
-        flow(words)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(text)
-            .task(id: isActive) {
-                await speak()
-            }
+    /// Seconds before the next word: a steady reading pace, with a breath after punctuation.
+    private static func pause(after word: String) -> Double {
+        guard let last = word.last else { return 0.09 }
+        if last == "." || last == "!" || last == "?" { return 0.26 }
+        if last == "," || last == ":" || last == ";" { return 0.16 }
+        return 0.09
     }
 
-    private func flow(_ list: [String]) -> some View {
-        OnboardingWordFlowLayout(wordSpacing: size * 0.27, lineSpacing: lineSpacing) {
+    /// When each word starts, counted from the moment the coach starts speaking.
+    private static func starts(for list: [String], after startDelay: Double) -> [Double] {
+        var result: [Double] = []
+        var time: Double = max(0, startDelay)
+        for word in list {
+            result.append(time)
+            time += pause(after: word)
+        }
+        return result
+    }
+
+    var body: some View {
+        let list: [String] = words
+        let starts: [Double] = Self.starts(for: list, after: startDelay)
+        return OnboardingWordFlowLayout(wordSpacing: size * 0.27, lineSpacing: lineSpacing) {
             ForEach(list.indices, id: \.self) { index in
-                Text(list[index])
-                    .font(.system(size: size, weight: weight))
-                    .foregroundStyle(color)
-                    .lineLimit(1)
-                    .fixedSize()
-                    .opacity(index < shown ? 1 : 0)
-                    .offset(y: index < shown ? 0 : 8)
-                    .blur(radius: index < shown ? 0 : 3)
+                word(list[index], start: index < starts.count ? starts[index] : 0)
             }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(text)
+        .task(id: isActive) {
+            await speak()
         }
     }
 
-    /// Seconds before the next word: a natural rhythm, with a breath after punctuation.
-    private static func pause(after word: String) -> Double {
-        guard let last = word.last else { return 0.1 }
-        if last == "." || last == "!" || last == "?" { return 0.31 }
-        if last == "," || last == ":" || last == ";" { return 0.18 }
-        return 0.1
+    private func word(_ value: String, start: Double) -> some View {
+        let animation: Animation? = reduceMotion ? nil : OnboardingWordReveal.animation(delay: start)
+        return Text(value)
+            .font(.system(size: size, weight: weight))
+            .foregroundStyle(color)
+            .lineLimit(1)
+            .fixedSize()
+            .opacity(revealed ? 1 : 0)
+            .offset(y: revealed ? 0 : OnboardingWordReveal.rise)
+            .animation(animation, value: revealed)
     }
 
     @MainActor
     private func speak() async {
         guard isActive, !finished else { return }
-        let list = words
+        let list: [String] = words
         if reduceMotion || list.isEmpty {
-            shown = list.count
+            revealed = true
             finished = true
             onFinished()
             return
         }
-        if startDelay > 0 {
-            try? await Task.sleep(nanoseconds: UInt64(startDelay * 1_000_000_000))
-            if Task.isCancelled { return }
-        }
-        for index in list.indices {
-            // Longer than the pause between two words: each word is still settling when the next starts.
-            withAnimation(.easeOut(duration: 0.45)) {
-                shown = index + 1
-            }
-            try? await Task.sleep(nanoseconds: UInt64(Self.pause(after: list[index]) * 1_000_000_000))
-            if Task.isCancelled { return }
-        }
+        // One change: every word then follows its own delay.
+        revealed = true
+        let lastStart: Double = Self.starts(for: list, after: startDelay).last ?? 0
+        try? await Task.sleep(nanoseconds: OnboardingWordReveal.nanoseconds(lastStart + OnboardingWordReveal.settle))
+        if Task.isCancelled { return }
         finished = true
         onFinished()
     }

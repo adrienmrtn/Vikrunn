@@ -4,13 +4,13 @@ import SwiftUI
 /// The language Atala speaks: the one picked in the app, otherwise the phone's, otherwise English.
 enum AppLanguage {
     /// Every language the app and the coach's recorded voice exist in, with its own name.
-    static let all: [(code: String, name: String)] = [
-        ("en", "English"), ("fr", "Français"), ("es", "Español"), ("de", "Deutsch"), ("it", "Italiano"),
-        ("pt-BR", "Português (Brasil)"), ("pt-PT", "Português (Portugal)"), ("nl", "Nederlands"),
-        ("sv", "Svenska"), ("da", "Dansk"), ("no", "Norsk"), ("fi", "Suomi"), ("pl", "Polski"),
-        ("cs", "Čeština"), ("sk", "Slovenčina"), ("hu", "Magyar"), ("ro", "Română"), ("hr", "Hrvatski"),
-        ("sl", "Slovenščina"), ("el", "Ελληνικά"), ("tr", "Türkçe"), ("ru", "Русский"),
-        ("ar", "العربية"), ("he", "עברית"), ("ja", "日本語")
+    static let all: [(code: String, name: String, flag: String)] = [
+        ("en", "English", "🇬🇧"), ("fr", "Français", "🇫🇷"), ("es", "Español", "🇪🇸"), ("de", "Deutsch", "🇩🇪"), ("it", "Italiano", "🇮🇹"),
+        ("pt-BR", "Português (Brasil)", "🇧🇷"), ("pt-PT", "Português (Portugal)", "🇵🇹"), ("nl", "Nederlands", "🇳🇱"),
+        ("sv", "Svenska", "🇸🇪"), ("da", "Dansk", "🇩🇰"), ("no", "Norsk", "🇳🇴"), ("fi", "Suomi", "🇫🇮"), ("pl", "Polski", "🇵🇱"),
+        ("cs", "Čeština", "🇨🇿"), ("sk", "Slovenčina", "🇸🇰"), ("hu", "Magyar", "🇭🇺"), ("ro", "Română", "🇷🇴"), ("hr", "Hrvatski", "🇭🇷"),
+        ("sl", "Slovenščina", "🇸🇮"), ("el", "Ελληνικά", "🇬🇷"), ("tr", "Türkçe", "🇹🇷"), ("ru", "Русский", "🇷🇺"),
+        ("ar", "العربية", "🇸🇦"), ("he", "עברית", "🇮🇱"), ("ja", "日本語", "🇯🇵")
     ]
     static let supported: [String] = all.map { $0.code }
 
@@ -109,6 +109,10 @@ final class LanguageModel: ObservableObject {
     /// Redraws the app after `AppLanguage.chosen` was set directly.
     func refresh() {
         let current = AppLanguage.current
-        if current != code { code = current }
+        guard current != code else { return }
+        // The root view cross-fades from the old language to the new one.
+        withAnimation(.easeInOut(duration: 0.3)) {
+            code = current
+        }
     }
 }

@@ -106,9 +106,10 @@ struct OnboardingScaffold<Content: View>: View {
             // Screens that stage their content only show the buttons once everything is there.
             bottom
                 .opacity(buttonsVisible ? 1 : 0)
+                .offset(y: buttonsVisible || reduceMotion ? 0 : 10)
                 .allowsHitTesting(buttonsVisible)
                 .accessibilityHidden(!buttonsVisible)
-                .animation(.easeOut(duration: 0.35), value: buttonsVisible)
+                .animation(.easeOut(duration: 0.5), value: buttonsVisible)
         }
         .background((tinted ? Theme.surface : Color.white).ignoresSafeArea())
         .onChange(of: buttonsVisible) { _, visible in
@@ -126,6 +127,8 @@ struct OnboardingScaffold<Content: View>: View {
                         .font(Theme.title(28))
                         .foregroundStyle(Theme.ink)
                         .fixedSize(horizontal: false, vertical: true)
+                        // A title that changes in place (language picker) cross-fades.
+                        .contentTransition(.opacity)
                         .accessibilityAddTraits(.isHeader)
                 }
                 if let subtitle {

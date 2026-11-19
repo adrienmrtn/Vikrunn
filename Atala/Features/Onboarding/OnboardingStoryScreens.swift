@@ -203,6 +203,62 @@ struct OnboardingBeyondCoachScreen: View {
     }
 }
 
+/// Small rounded running photo that stands for a session in a list. A hard session keeps its
+/// orange mark, as a dot in the corner.
+struct OnboardingSessionThumbnail: View {
+    let name: String
+    var quality: Bool = false
+    var size: CGFloat = 52
+
+    var body: some View {
+        Color(hex: 0x1B1B1B)
+            .frame(width: size, height: size)
+            .overlay(alignment: .top) {
+                Image(name)
+                    .resizable()
+                    .scaledToFill()
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(alignment: .bottomTrailing) {
+                if quality {
+                    Circle()
+                        .fill(Theme.orange)
+                        .frame(width: 12, height: 12)
+                        .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                        .offset(x: 3, y: 3)
+                }
+            }
+            .accessibilityHidden(true)
+    }
+
+    /// The photo that suits a kind of session best, then the others, so a list can avoid repeats.
+    private static func candidates(for kind: WorkoutKind, gender: Gender?) -> [String] {
+        let runner: String = gender == .man ? AtalaPhotos.man : AtalaPhotos.woman
+        let other: String = gender == .man ? AtalaPhotos.woman : AtalaPhotos.man
+        switch kind {
+        case .easy, .free:
+            return [runner, "welcome_photo_3", "welcome_photo_1", other, AtalaPhotos.trio, AtalaPhotos.group]
+        case .intervals, .tempo, .racePace:
+            return [AtalaPhotos.trio, "welcome_photo_2", other, "welcome_photo_1", runner, AtalaPhotos.group]
+        case .long, .race:
+            return [AtalaPhotos.group, "welcome_photo_1", "welcome_photo_3", AtalaPhotos.trio, other, runner]
+        case .strength, .stretching:
+            return ["photo_session_complete", "welcome_photo_2", "welcome_photo_3", other, AtalaPhotos.trio, runner]
+        }
+    }
+
+    /// One photo per session, in order, never the same twice while there are photos left.
+    static func photos(for kinds: [WorkoutKind], gender: Gender?) -> [String] {
+        var result: [String] = []
+        for kind in kinds {
+            let options: [String] = candidates(for: kind, gender: gender)
+            let fresh: String? = options.first(where: { !result.contains($0) })
+            result.append(fresh ?? options.first ?? AtalaPhotos.trio)
+        }
+        return result
+    }
+}
+
 /// After "not just a coach": why a clear plan matters, shown with the first week of the user's own plan.
 struct OnboardingPlanMattersScreen: View {
     @EnvironmentObject private var store: AppStore
@@ -231,6 +287,7 @@ struct OnboardingPlanMattersScreen: View {
     var body: some View {
         let list = sessions
         let steps = delays
+        let photos: [String] = OnboardingSessionThumbnail.photos(for: list.map { $0.kind }, gender: store.answers.gender)
         return OnboardingScaffold(buttonsVisible: stage >= steps.count) {
             OnboardingEmphasisText(text: headline.text,
                                    size: 32,
@@ -248,10 +305,8 @@ struct OnboardingPlanMattersScreen: View {
             VStack(spacing: 10) {
                 ForEach(Array(list.enumerated()), id: \.element.id) { index, workout in
                     HStack(spacing: 14) {
-                        IconTile(systemName: workout.kind.symbol,
-                                 tint: workout.kind.isQuality ? Theme.orangeDeep : Theme.green,
-                                 background: workout.kind.isQuality ? Theme.orangeTint : Theme.greenTint,
-                                 size: 44)
+                        OnboardingSessionThumbnail(name: index < photos.count ? photos[index] : AtalaPhotos.trio,
+                                                   quality: workout.kind.isQuality)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(workout.title)
                                 .font(.system(size: 16, weight: .semibold))
@@ -267,8 +322,9 @@ struct OnboardingPlanMattersScreen: View {
                             .monospacedDigit()
                             .foregroundStyle(Theme.ink)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
+                    .padding(.leading, 10)
+                    .padding(.trailing, 16)
+                    .padding(.vertical, 10)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .card(radius: 20)
                     .accessibilityElement(children: .combine)

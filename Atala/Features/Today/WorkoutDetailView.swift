@@ -11,8 +11,6 @@ struct WorkoutDetailView: View {
     @State private var showManualEntry = false
     @State private var showGuided = false
     @State private var showMove = false
-    @State private var showPaywall = false
-    @ObservedObject private var purchases = PurchaseService.shared
 
     var body: some View {
         Group {
@@ -49,7 +47,6 @@ struct WorkoutDetailView: View {
             PlanMoveSheet(workoutID: workoutID)
                 .environmentObject(store)
         }
-        .proPaywall(isPresented: $showPaywall)
     }
 
     // MARK: Content
@@ -135,8 +132,7 @@ struct WorkoutDetailView: View {
         } else if let workout = store.workout(id: workoutID), store.planCanMove(workout) {
             Button {
                 Haptics.tap()
-                // Moving sessions is part of Atala Pro.
-                if purchases.isPro { showMove = true } else { showPaywall = true }
+                showMove = true
             } label: {
                 Label(L("Move"), systemImage: "calendar")
                     .labelStyle(.titleAndIcon)
@@ -243,15 +239,7 @@ struct WorkoutDetailView: View {
 
     @ViewBuilder
     private func actionButtons(_ workout: Workout) -> some View {
-        if !purchases.isPro, ProAccess.isLocked(workout, plan: store.plan) {
-            // After the free week, the plan needs Atala Pro.
-            Button {
-                showPaywall = true
-            } label: {
-                Label(L("Unlock with Atala Pro"), systemImage: "lock.fill")
-            }
-            .buttonStyle(PrimaryButtonStyle())
-        } else if !workout.kind.isRun {
+        if !workout.kind.isRun {
             // Strength and stretching, planned or missed: a guided session, or a simple tick.
             Button(L("Mark as done")) {
                 Haptics.success()
@@ -259,8 +247,7 @@ struct WorkoutDetailView: View {
             }
             .buttonStyle(SecondaryButtonStyle(haptic: nil))
             Button(L("Start")) {
-                // Guided strength and stretching sessions are part of Atala Pro.
-                if purchases.isPro { showGuided = true } else { showPaywall = true }
+                showGuided = true
             }
             .buttonStyle(PrimaryButtonStyle())
         } else if workout.status == .missed {

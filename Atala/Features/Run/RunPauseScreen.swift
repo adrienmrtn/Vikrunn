@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// Paused: the clock stands still until the runner resumes or finishes.
+/// Resuming is the big button; finishing is the quieter one and is confirmed by the run flow.
 struct RunPauseScreen: View {
     @ObservedObject var tracker: RunTracker
     let coach: Coach
@@ -9,13 +10,13 @@ struct RunPauseScreen: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 22) {
+            VStack(spacing: 20) {
+                pausedPill
                 if tracker.hasSteps {
                     RunSegmentBar(steps: tracker.steps, currentIndex: tracker.stepIndex,
                                   complete: tracker.stepsComplete)
                 }
-                clock
-                statsCard
+                figures
                 RunCoachBubble(coach: coach, text: L("Take your time. We start again whenever you like."),
                                showsSpeaker: false)
             }
@@ -29,58 +30,66 @@ struct RunPauseScreen: View {
         .safeAreaInset(edge: .bottom, spacing: 0) { actions }
     }
 
-    private var clock: some View {
-        VStack(spacing: 6) {
+    private var pausedPill: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "pause.fill")
+                .font(.system(size: 13, weight: .bold))
+                .accessibilityHidden(true)
             Text(L("Paused"))
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(Theme.ink, in: Capsule())
-            Text(Fmt.duration(tracker.elapsed))
-                .font(.system(size: 84, weight: .bold))
-                .monospacedDigit()
-                .tracking(-2)
-                .foregroundStyle(Theme.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-                .padding(.top, 10)
-            Text(positionLine)
-                .font(.system(size: 15))
-                .foregroundStyle(Theme.muted)
+                .font(.system(size: 16, weight: .bold))
         }
+        .foregroundStyle(Color.white)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 9)
+        .background(Theme.ink, in: Capsule())
         .frame(maxWidth: .infinity)
-        .padding(.top, 18)
+        .padding(.top, 10)
     }
 
+    // MARK: Figures so far
+
+    private var figures: some View {
+        VStack(spacing: 14) {
+            RunLiveFigure(label: L("Distance"),
+                          value: String(format: "%.2f", tracker.distance / 1000),
+                          unit: "km",
+                          size: 88,
+                          alignment: .center)
+            HStack(alignment: .top, spacing: 12) {
+                RunLiveFigure(label: L("Time"),
+                              value: Fmt.duration(tracker.elapsed),
+                              size: 46,
+                              alignment: .center)
+                RunLiveFigure(label: L("Average pace"),
+                              value: Fmt.pace(tracker.averagePace),
+                              unit: "/km",
+                              size: 46,
+                              alignment: .center)
+            }
+            Text(positionLine)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.muted)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 20)
+        .frame(maxWidth: .infinity)
+        .card(radius: 24)
+    }
+
+    /// Where the runner stopped: "Rep 3 of 6", "Warm-up · step 1 of 4", "Free run".
     private var positionLine: String {
-        let distance = RunFormat.distance(tracker.distance)
-        guard tracker.hasSteps else { return L("Free run") + " · " + distance }
-        if tracker.stepsComplete { return L("Session complete") + " · " + distance }
+        guard tracker.hasSteps else { return L("Free run") }
+        if tracker.stepsComplete { return L("Session complete") }
         if let rep = RunFormat.repetition(at: tracker.stepIndex, in: tracker.steps) {
-            return L("Rep %@ of %@ · %@", rep.number, rep.total, distance)
+            return L("Rep %@ of %@", rep.number, rep.total)
         }
         let title = tracker.currentStep?.kind.title ?? L("Run")
-        return "\(title) · \(distance)"
+        return L("%@ · step %@ of %@", title, tracker.stepIndex + 1, tracker.steps.count)
     }
 
-    private var statsCard: some View {
-        RunStatsRow(items: statItems)
-            .padding(18)
-            .card(radius: 24)
-    }
-
-    private var statItems: [(value: String, label: String)] {
-        var items: [(value: String, label: String)] = [
-            (value: Fmt.pace(tracker.averagePace), label: L("Average pace")),
-            (value: RunFormat.distance(tracker.distance), label: L("Distance")),
-        ]
-        if tracker.hasSteps {
-            let current = tracker.stepsComplete ? tracker.steps.count : tracker.stepIndex + 1
-            items.append((value: L("%@ of %@", current, tracker.steps.count), label: L("Step")))
-        }
-        return items
-    }
+    // MARK: Actions
 
     private var actions: some View {
         VStack(spacing: 10) {
@@ -90,19 +99,20 @@ struct RunPauseScreen: View {
             }) {
                 HStack(spacing: 10) {
                     Image(systemName: "play.fill")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 17, weight: .bold))
                     Text(L("Resume"))
-                        .font(.system(size: 17, weight: .semibold))
                 }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 58)
-                .background(Theme.ink, in: Capsule())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(RunBigButtonStyle(haptic: nil))
             // No haptic here: success comes with the "Session complete" screen, warning when discarded.
-            Button(L("Finish session"), action: onFinish)
-                .buttonStyle(SecondaryButtonStyle(haptic: nil))
+            Button(action: onFinish) {
+                HStack(spacing: 8) {
+                    Image(systemName: "flag.checkered")
+                        .font(.system(size: 15, weight: .semibold))
+                    Text(L("Finish session"))
+                }
+            }
+            .buttonStyle(SecondaryButtonStyle(haptic: nil))
             if tracker.canSkipToCooldown {
                 Button(L("Skip straight to the cool-down")) {
                     tracker.skipToCooldown()

@@ -66,6 +66,8 @@ struct RootView: View {
         // Exercise pictures follow the chosen coach.
         let _ = (GuidedExerciseCoach.coachID = store.coach.id)
         ZStack {
+            // What shows through while two languages cross-fade.
+            Color.white.ignoresSafeArea()
             ZStack {
                 if store.hasCompletedOnboarding {
                     MainTabView()
@@ -78,16 +80,19 @@ struct RootView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.35), value: store.hasCompletedOnboarding)
-            // A new language rebuilds every screen, so each sentence is read again.
-            .id(language.code)
             .environment(\.locale, AppLanguage.locale)
             .environment(\.layoutDirection, AppLanguage.isRightToLeft ? .rightToLeft : .leftToRight)
+            // A new language rebuilds every screen, so each sentence is read again: the old
+            // screens fade out while the new ones fade in. The splash is outside, it never replays.
+            .id(language.code)
+            .transition(.opacity)
             if !splashDone {
                 // The splash fades itself out, then asks to be removed.
                 AtalaSplashView(onFinished: { splashDone = true })
                     .zIndex(10)
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: language.code)
         .authSyncPrompts()
         .task(id: "\(store.coach.id)|\(language.code)|\(scenePhase == .active)") {
             // The coach's recorded voice in the app's language: downloaded once, then kept.

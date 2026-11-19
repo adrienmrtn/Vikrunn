@@ -11,9 +11,9 @@ struct Coach: Identifiable, Hashable {
 
     /// The coaches offered for now. Identifiers are kept as they were, so saved choices still match.
     static var all: [Coach] { [
-        Coach(id: 1, name: "Awa", trait: L("Sets the pace")),
         Coach(id: 3, name: "Mei", trait: L("Lively and playful")),
         Coach(id: 2, name: "Thomas", trait: L("Calm and precise")),
+        Coach(id: 1, name: "Awa", trait: L("Sets the pace")),
     ] }
 
     /// Coaches set aside for now (their pictures stay in the catalog). Someone who had chosen one

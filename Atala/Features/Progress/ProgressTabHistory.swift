@@ -3,6 +3,10 @@ import SwiftUI
 /// Run history, with the Apple Health import.
 struct ProgressTabHistory: View {
     @EnvironmentObject private var store: AppStore
+    /// The runs to list: the saved ones, or the sample ones behind the blur of the locked tab.
+    let runs: [RunRecord]
+    /// True for the sample runs, which open nothing.
+    let isSample: Bool
     @State private var importing = false
     @State private var importMessage: String?
     @State private var showAll = false
@@ -10,25 +14,19 @@ struct ProgressTabHistory: View {
     private let collapsedCount = 10
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            MainSectionTitle(title: L("History"), trailing: countText)
-                .padding(.bottom, 4)
-            if store.runs.isEmpty {
-                MainEmptyState(systemName: "figure.run",
-                               title: L("No runs yet"),
-                               message: L("Your runs will appear here. Start one with the + button, or bring in the ones you already have in Apple Health."))
-            }
-            ForEach(visibleRuns) { run in
-                NavigationLink {
-                    MainRunSummaryHost(run: run)
-                } label: {
-                    ProgressTabRunRow(run: run)
+        ProgressTabSection(title: L("History"), trailing: countText) {
+            VStack(alignment: .leading, spacing: 0) {
+                if runs.isEmpty {
+                    MainEmptyState(systemName: "figure.run",
+                                   title: L("No runs yet"),
+                                   message: L("Tap + to record a run, or bring in the ones you already have in Apple Health."))
+                } else {
+                    list
                 }
-                .buttonStyle(.plain)
-                .hapticOnTap()
             }
-            if store.runs.count > collapsedCount {
-                Button(showAll ? L("Show fewer") : L("Show all %@ runs", store.runs.count)) {
+            .progressTabCard(padding: 0)
+            if runs.count > collapsedCount {
+                Button(showAll ? L("Show fewer") : L("Show all %@ runs", runs.count)) {
                     Haptics.tap()
                     showAll.toggle()
                 }
@@ -37,20 +35,40 @@ struct ProgressTabHistory: View {
                 .frame(maxWidth: .infinity, minHeight: 44)
             }
             importButton
-                .padding(.top, 14)
+                .padding(.top, 4)
             if let importMessage {
                 Text(importMessage)
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.muted)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .multilineTextAlignment(.center)
-                    .padding(.top, 8)
             }
         }
     }
 
+    private var list: some View {
+        let visible: [RunRecord] = visibleRuns
+        let lastID: UUID? = visible.last?.id
+        return VStack(spacing: 0) {
+            ForEach(visible) { run in
+                if isSample {
+                    ProgressTabRunRow(run: run, isLast: run.id == lastID)
+                } else {
+                    NavigationLink {
+                        MainRunSummaryHost(run: run)
+                    } label: {
+                        ProgressTabRunRow(run: run, isLast: run.id == lastID)
+                    }
+                    .buttonStyle(.plain)
+                    .hapticOnTap()
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+
     private var sortedRuns: [RunRecord] {
-        store.runs.sorted { $0.date > $1.date }
+        runs.sorted { $0.date > $1.date }
     }
 
     private var visibleRuns: [RunRecord] {
@@ -58,7 +76,7 @@ struct ProgressTabHistory: View {
     }
 
     private var countText: String? {
-        store.runs.isEmpty ? nil : (store.runs.count == 1 ? L("%@ run", store.runs.count) : L("%@ runs", store.runs.count))
+        runs.isEmpty ? nil : (runs.count == 1 ? L("%@ run", runs.count) : L("%@ runs", runs.count))
     }
 
     private var importButton: some View {
@@ -112,41 +130,80 @@ struct ProgressTabHistory: View {
     }
 }
 
-/// One run of the history.
+/// One run of the history: the day, the title with time and pace, the source kept quiet, and the
+/// distance as the figure that stands out.
 private struct ProgressTabRunRow: View {
     let run: RunRecord
+    let isLast: Bool
 
     var body: some View {
         HStack(spacing: 12) {
-            IconTile(systemName: ProgressTabStats.sourceSymbol(run.source), size: 38)
-            VStack(alignment: .leading, spacing: 1) {
+            dateTile
+            VStack(alignment: .leading, spacing: 3) {
                 Text(run.title.isEmpty ? L("Run") : L(run.title))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                     .lineLimit(1)
-                Text("\(Fmt.day(run.date, "EEE d MMM")) · \(ProgressTabStats.sourceTitle(run.source))")
-                    .font(.system(size: 12))
+                Text("\(Fmt.duration(run.durationSec)) · \(Fmt.pace(run.avgPace))/km")
+                    .font(.system(size: 13))
                     .foregroundStyle(Theme.muted)
                     .lineLimit(1)
+                HStack(spacing: 4) {
+                    Image(systemName: ProgressTabStats.sourceSymbol(run.source))
+                        .font(.system(size: 9, weight: .semibold))
+                    Text(ProgressTabStats.sourceTitle(run.source))
+                        .font(.system(size: 11))
+                        .lineLimit(1)
+                }
+                .foregroundStyle(Theme.faint)
             }
             Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 1) {
-                Text(Fmt.km(run.distanceKm))
-                    .font(.system(size: 15, weight: .semibold))
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(ProgressTabStats.number(run.distanceKm))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.ink)
-                Text("\(Fmt.duration(run.durationSec)) · \(Fmt.pace(run.avgPace))/km")
-                    .font(.system(size: 12))
+                Text("km")
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Theme.muted)
             }
+            .lineLimit(1)
+            .layoutPriority(1)
             Image(systemName: "chevron.right")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.faint)
+                .accessibilityHidden(true)
         }
-        .frame(minHeight: 58)
+        .padding(.vertical, 12)
+        .frame(minHeight: 72)
         .contentShape(Rectangle())
         .overlay(alignment: .bottom) {
-            Rectangle().fill(Theme.hairline).frame(height: 1)
+            if !isLast {
+                Rectangle().fill(Theme.hairline).frame(height: 1)
+            }
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var dateTile: some View {
+        VStack(spacing: 0) {
+            Text(Fmt.day(run.date, "d"))
+                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .foregroundStyle(Theme.ink)
+            Text(Fmt.day(run.date, "MMM"))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Theme.muted)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .frame(width: 44, height: 46)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var accessibilityText: String {
+        let title: String = run.title.isEmpty ? L("Run") : L(run.title)
+        let date: String = Fmt.day(run.date, "EEEE d MMMM")
+        let figures: String = "\(Fmt.km(run.distanceKm)), \(Fmt.duration(run.durationSec)), \(Fmt.pace(run.avgPace))/km"
+        return "\(title), \(date), \(figures), \(ProgressTabStats.sourceTitle(run.source))"
     }
 }

@@ -2,43 +2,21 @@ import Foundation
 
 /// What is free and what needs Atala Pro (a subscription, its free trial included).
 ///
-/// Free: the sessions of the first week, without the coach's voice; free runs with GPS; the simple
-/// run summary and the history; streaks; a few coach messages a day.
-/// Pro: the rest of the plan, the coach's voice, guided strength and stretching, the detailed run
-/// figures, moving sessions, and the coach chat without a daily limit.
+/// Free, for good: the whole plan and its sessions, runs with GPS, the run summary, guided strength
+/// and stretching, streaks.
+/// Pro: talking to the coach, the Progress tab, the coach's voice, the detailed run figures.
 @MainActor
 enum ProAccess {
-    /// Coach messages a day without Atala Pro.
-    static let freeCoachMessagesPerDay = 3
-
-    private static let freeWeekEndKey = "atala.pro.freeWeekEnd"
-
     static var isPro: Bool { PurchaseService.shared.isPro }
 
-    /// End of the free week: seven full days from the day the first plan was seen on this phone.
-    /// Set once, so rebuilding the plan does not start another free week.
-    static func freeWeekEnd(plan: TrainingPlan?) -> Date? {
-        let defaults = UserDefaults.standard
-        let saved = defaults.double(forKey: freeWeekEndKey)
-        if saved > 0 { return Date(timeIntervalSince1970: saved) }
-        guard plan != nil else { return nil }
-        let calendar = Calendar.plan
-        let today = calendar.startOfDay(for: Date())
-        guard let end = calendar.date(byAdding: .day, value: 7, to: today) else { return nil }
-        defaults.set(end.timeIntervalSince1970, forKey: freeWeekEndKey)
-        return end
-    }
-
-    /// Erasing the phone's data starts over: the next plan gets its free week.
-    static func reset() {
-        UserDefaults.standard.removeObject(forKey: freeWeekEndKey)
-    }
-
-    /// True when the session is after the free week and the user has no subscription.
+    /// Sessions are never locked: the plan is free. Kept so older call sites read the same.
     static func isLocked(_ workout: Workout, plan: TrainingPlan?) -> Bool {
-        guard !isPro else { return false }
-        guard let end = freeWeekEnd(plan: plan) else { return false }
-        return workout.date >= end
+        false
+    }
+
+    /// Nothing to reset any more (there used to be a free week).
+    static func reset() {
+        UserDefaults.standard.removeObject(forKey: "atala.pro.freeWeekEnd")
     }
 
     /// The coach's voice is part of Atala Pro: without it the cues are shown but not spoken.
@@ -49,12 +27,8 @@ enum ProAccess {
         return silent
     }
 
-    /// Messages the user sent to the coach today.
-    static func coachMessagesToday(in messages: [ChatMessage]) -> Int {
-        messages.filter { $0.role == .user && Calendar.plan.isDateInToday($0.date) }.count
-    }
-
+    /// Talking to the coach is part of Atala Pro.
     static func canMessageCoach(_ messages: [ChatMessage]) -> Bool {
-        isPro || coachMessagesToday(in: messages) < freeCoachMessagesPerDay
+        isPro
     }
 }

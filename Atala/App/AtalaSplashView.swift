@@ -14,7 +14,7 @@ struct AtalaSplashView: View {
     @State private var taglineShown = false
     @State private var leaving = false
 
-    static var tagline: String { L("Running made effortless") }
+    static var tagline: String { L("Your Running Coach") }
 
     var body: some View {
         ZStack {

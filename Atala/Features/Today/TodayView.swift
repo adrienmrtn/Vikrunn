@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Home screen: today's session, the week at a glance and a short word from the coach.
+/// Home screen, from top to bottom: the header, today's session with its button, a short word
+/// from the coach, the Atala Pro card on the free plan, then the week and what comes next.
 struct TodayView: View {
     @EnvironmentObject private var store: AppStore
     @EnvironmentObject private var chrome: MainChrome
@@ -22,9 +23,8 @@ struct TodayView: View {
                         .padding(.horizontal, 12)
                         .padding(.top, -56)
                         .mainStagedAppear(index: 3)
+                    // What belongs to today's session: a run to count, the other sessions of the day.
                     Group {
-                        ProJourneyCard()
-                            .padding(.top, 14)
                         if let pending = store.mainUncountedRunToday {
                             MainCountRunCard(run: pending.run, session: pending.session)
                                 .padding(.top, 14)
@@ -39,15 +39,21 @@ struct TodayView: View {
                         }
                     }
                     .mainStagedAppear(index: 4)
+                    Group {
+                        coachLine
+                            .padding(.top, 16)
+                            .mainStagedAppear(index: 5)
+                        // Free plan only, and always under the session and the coach's word.
+                        ProUpsellCard()
+                            .padding(.top, 12)
+                            .mainStagedAppear(index: 6)
+                    }
                     if let week = store.mainThisWeek {
                         TodayWeekVolume(week: week)
-                            .padding(.top, 18)
-                            .mainStagedAppear(index: 5)
+                            .padding(.top, 24)
+                            .mainStagedAppear(index: 7)
                     }
                     TodayRaceCountdown()
-                        .mainStagedAppear(index: 6)
-                    coachLine
-                        .padding(.top, 20)
                         .mainStagedAppear(index: 7)
                     if !upcoming.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
@@ -125,13 +131,15 @@ struct TodayView: View {
 
     // MARK: Sections
 
-    /// Logo and profile, the greeting, then the date line with the streak.
+    /// Logo, the gift chip while the offer runs and the profile; the greeting; then the date line
+    /// with the streak.
     private var topHeader: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center) {
                 BrandLogo(style: .full, height: 22)
                     .foregroundStyle(Theme.forest)
                 Spacer(minLength: 8)
+                GiftOfferChip()
                 profileButton
             }
             .frame(height: 44)
