@@ -6,7 +6,7 @@ struct WorkoutDetailSteps: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(workout.kind.isRun ? "Step by step" : "Exercises")
+            Text(workout.kind.isRun ? L("Step by step") : L("Exercises"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Theme.ink)
                 .padding(.bottom, 4)
@@ -25,7 +25,7 @@ private extension WorkoutDetailSteps {
     @ViewBuilder
     var runSteps: some View {
         if workout.blocks.isEmpty {
-            Text("Run as you feel, with no set structure.")
+            Text(L("Run as you feel, with no set structure."))
                 .font(.system(size: 14))
                 .foregroundStyle(Theme.muted)
                 .padding(.vertical, 10)
@@ -86,7 +86,7 @@ private struct WorkoutDetailRepeatBlock: View {
                 .frame(width: 44)
                 .frame(maxHeight: .infinity)
                 .background(Theme.orange, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .accessibilityLabel("\(block.repeats) times")
+                .accessibilityLabel(L("%@ times", block.repeats))
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(block.steps) { step in
                     stepLine(step)
@@ -160,7 +160,7 @@ enum WorkoutDetailFormat {
             if let range { parts.append(range) }
             return parts.isEmpty ? nil : parts.joined(separator: ", ")
         case .work, .steady:
-            return range ?? "Free pace"
+            return range ?? L("Free pace")
         case .exercise:
             return nil
         }
@@ -171,7 +171,7 @@ enum WorkoutDetailFormat {
     }
 
     static func seconds(_ seconds: Int) -> String {
-        seconds % 60 == 0 ? "\(seconds / 60) min" : Fmt.duration(seconds)
+        seconds % 60 == 0 ? L("%@ min", seconds / 60) : Fmt.duration(seconds)
     }
 
     /// Distance or duration of the step.

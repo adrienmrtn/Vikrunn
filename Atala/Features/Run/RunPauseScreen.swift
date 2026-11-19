@@ -16,7 +16,7 @@ struct RunPauseScreen: View {
                 }
                 clock
                 statsCard
-                RunCoachBubble(coach: coach, text: "Take your time. We start again whenever you like.",
+                RunCoachBubble(coach: coach, text: L("Take your time. We start again whenever you like."),
                                showsSpeaker: false)
             }
             .padding(.horizontal, Theme.screenPadding)
@@ -31,7 +31,7 @@ struct RunPauseScreen: View {
 
     private var clock: some View {
         VStack(spacing: 6) {
-            Text("Paused")
+            Text(L("Paused"))
                 .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 14)
@@ -55,12 +55,12 @@ struct RunPauseScreen: View {
 
     private var positionLine: String {
         let distance = RunFormat.distance(tracker.distance)
-        guard tracker.hasSteps else { return "Free run · \(distance)" }
-        if tracker.stepsComplete { return "Session complete · \(distance)" }
+        guard tracker.hasSteps else { return L("Free run") + " · " + distance }
+        if tracker.stepsComplete { return L("Session complete") + " · " + distance }
         if let rep = RunFormat.repetition(at: tracker.stepIndex, in: tracker.steps) {
-            return "Rep \(rep.number) of \(rep.total) · \(distance)"
+            return L("Rep %@ of %@ · %@", rep.number, rep.total, distance)
         }
-        let title = tracker.currentStep?.kind.title ?? "Run"
+        let title = tracker.currentStep?.kind.title ?? L("Run")
         return "\(title) · \(distance)"
     }
 
@@ -72,12 +72,12 @@ struct RunPauseScreen: View {
 
     private var statItems: [(value: String, label: String)] {
         var items: [(value: String, label: String)] = [
-            (value: Fmt.pace(tracker.averagePace), label: "Average pace"),
-            (value: RunFormat.distance(tracker.distance), label: "Distance"),
+            (value: Fmt.pace(tracker.averagePace), label: L("Average pace")),
+            (value: RunFormat.distance(tracker.distance), label: L("Distance")),
         ]
         if tracker.hasSteps {
             let current = tracker.stepsComplete ? tracker.steps.count : tracker.stepIndex + 1
-            items.append((value: "\(current) of \(tracker.steps.count)", label: "Step"))
+            items.append((value: L("%@ of %@", current, tracker.steps.count), label: L("Step")))
         }
         return items
     }
@@ -91,7 +91,7 @@ struct RunPauseScreen: View {
                 HStack(spacing: 10) {
                     Image(systemName: "play.fill")
                         .font(.system(size: 16, weight: .bold))
-                    Text("Resume")
+                    Text(L("Resume"))
                         .font(.system(size: 17, weight: .semibold))
                 }
                 .foregroundStyle(.white)
@@ -101,10 +101,10 @@ struct RunPauseScreen: View {
             }
             .buttonStyle(.plain)
             // No haptic here: success comes with the "Session complete" screen, warning when discarded.
-            Button("Finish session", action: onFinish)
+            Button(L("Finish session"), action: onFinish)
                 .buttonStyle(SecondaryButtonStyle(haptic: nil))
             if tracker.canSkipToCooldown {
-                Button("Skip straight to the cool-down") {
+                Button(L("Skip straight to the cool-down")) {
                     tracker.skipToCooldown()
                     onResume()
                 }

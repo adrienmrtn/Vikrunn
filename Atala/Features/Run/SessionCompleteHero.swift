@@ -265,7 +265,7 @@ struct SessionCompleteHero: View {
 
     /// "Session complete", one word after the other, rising into place.
     private var title: some View {
-        let words = ["Session", "complete"]
+        let words = L("Session complete").split(separator: " ").map { String($0) }
         let shown = stage >= SessionCompleteStage.title
         return HStack(spacing: 9) {
             ForEach(words.indices, id: \.self) { index in
@@ -281,7 +281,7 @@ struct SessionCompleteHero: View {
         .lineLimit(1)
         .minimumScaleFactor(0.7)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Session complete")
+        .accessibilityLabel(L("Session complete"))
         .accessibilityAddTraits(.isHeader)
     }
 }

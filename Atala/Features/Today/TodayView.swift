@@ -51,7 +51,7 @@ struct TodayView: View {
                         .mainStagedAppear(index: 7)
                     if !upcoming.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            MainSectionTitle(title: "Coming up")
+                            MainSectionTitle(title: L("Coming up"))
                             TodayUpcomingList(workouts: upcoming)
                         }
                         .padding(.top, 24)
@@ -72,7 +72,7 @@ struct TodayView: View {
             }
             // Own header instead of the system bar: the logo sits flat on the page, with no bar
             // button background behind it.
-            .navigationTitle("Today")
+            .navigationTitle(L("Today"))
             .toolbar(.hidden, for: .navigationBar)
         }
     }
@@ -115,9 +115,9 @@ struct TodayView: View {
         var parts: [String] = [Fmt.day(Date(), "EEEE d MMMM")]
         if let plan = store.plan {
             if let number = store.mainCurrentWeekNumber {
-                parts.append("Week \(number) of \(plan.weeks.count)")
+                parts.append(L("Week %@ of %@", number, plan.weeks.count))
             } else if store.mainPlanEnded {
-                parts.append("Plan complete")
+                parts.append(L("Plan complete"))
             }
         }
         return parts.joined(separator: " · ")
@@ -136,7 +136,7 @@ struct TodayView: View {
             }
             .frame(height: 44)
             HStack(alignment: .center, spacing: 10) {
-                Text("Hello, \(store.firstName)")
+                Text(L("Hello, %@", store.firstName))
                     .font(Theme.title(32))
                     .foregroundStyle(Theme.ink)
                     .lineLimit(1)
@@ -173,7 +173,7 @@ struct TodayView: View {
                 .overlay(Circle().stroke(Theme.hairline, lineWidth: 1))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Profile and settings")
+        .accessibilityLabel(L("Profile and settings"))
     }
 
     /// A runner photo matching the gender given in onboarding, or the illustration otherwise.
@@ -193,9 +193,9 @@ struct TodayView: View {
     private var heroCard: some View {
         if store.plan == nil {
             TodayMessageCard(
-                title: "No plan yet",
-                message: "Set your goal and your running days in your profile and your plan will be ready in a moment.",
-                actionTitle: "Open my profile"
+                title: L("No plan yet"),
+                message: L("Set your goal and your running days in your profile and your plan will be ready in a moment."),
+                actionTitle: L("Open my profile")
             ) {
                 chrome.showProfile = true
             }
@@ -213,7 +213,7 @@ struct TodayView: View {
         HStack(alignment: .top, spacing: 12) {
             CoachAvatar(coach: store.coach, size: 40)
             VStack(alignment: .leading, spacing: 4) {
-                Text("\(store.coach.name), your coach")
+                Text(L("%@, your coach", store.coach.name))
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Theme.green)
                 Text(TodayCoachLine.text(store: store, todayRun: todayRun, next: store.nextRun))
@@ -236,54 +236,54 @@ struct TodayView: View {
 enum TodayCoachLine {
     static func text(store: AppStore, todayRun: Workout?, next: Workout?) -> String {
         guard store.plan != nil else {
-            return "Tell me your goal and the days you can run, and I will build your plan."
+            return L("Tell me your goal and the days you can run, and I will build your plan.")
         }
         if let run = todayRun {
             switch run.status {
             case .done:
                 return doneLine(tone: store.answers.tone)
             case .missed:
-                return "No drama about this one. If you did run, tell me and I will count it."
+                return L("No drama about this one. If you did run, tell me and I will count it.")
             case .planned:
                 return plannedLine(run)
             }
         }
         guard let next else {
             if store.mainPlanEnded {
-                return "You have done everything on the plan. Tell me what you want to aim for next."
+                return L("You have done everything on the plan. Tell me what you want to aim for next.")
             }
-            return "No run left on the plan. Keep up the strength and stretching, they count too."
+            return L("No run left on the plan. Keep up the strength and stretching, they count too.")
         }
         let day = Weekday.long(Calendar.plan.mondayIndex(of: next.date))
-        var line = "No run today. Rest is when your body gets stronger. Next up: \(next.title) on \(day)."
+        var line = L("No run today. Rest is when your body gets stronger. Next up: %@ on %@.", next.title, day)
         let missedThisWeek = store.mainThisWeek?.workouts.contains { $0.status == .missed } ?? false
         if missedThisWeek {
-            line += " Don't chase the missed session, just pick the plan up where it is."
+            line += " " + L("Don't chase the missed session, just pick the plan up where it is.")
         }
         return line
     }
 
     private static func doneLine(tone: CoachTone) -> String {
         switch tone {
-        case .kind: return "Nice work today. Eat well, sleep well, and let the session sink in."
-        case .direct: return "Session done. Recover properly tonight."
-        case .playful: return "Ticked off. The sofa is all yours tonight."
+        case .kind: return L("Nice work today. Eat well, sleep well, and let the session sink in.")
+        case .direct: return L("Session done. Recover properly tonight.")
+        case .playful: return L("Ticked off. The sofa is all yours tonight.")
         }
     }
 
     private static func plannedLine(_ run: Workout) -> String {
         switch run.kind {
         case .easy, .free:
-            return "Keep it truly easy today: you should be able to talk the whole way."
+            return L("Keep it truly easy today: you should be able to talk the whole way.")
         case .long:
-            return "Slow and steady today. The distance does the work, not the speed."
+            return L("Slow and steady today. The distance does the work, not the speed.")
         case .intervals, .tempo, .racePace:
             if let pace = run.targetPace {
-                return "Start a touch under control, then settle on \(Fmt.pace(pace))/km. The last efforts should look like the first."
+                return L("Start a touch under control, then settle on %@/km. The last efforts should look like the first.", Fmt.pace(pace))
             }
-            return "Start a touch under control. The last efforts should look like the first."
+            return L("Start a touch under control. The last efforts should look like the first.")
         case .race:
-            return "This is your day. Start calm, hold your pace, and trust your training."
+            return L("This is your day. Start calm, hold your pace, and trust your training.")
         case .strength, .stretching:
             return run.subtitle
         }

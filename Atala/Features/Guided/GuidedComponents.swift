@@ -68,7 +68,7 @@ struct GuidedExerciseAnimation: View {
                 .opacity(deep ? 1 : 0)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(info.name): \(info.summary)")
+        .accessibilityLabel(L("%@: %@", info.name, info.summary))
         .task(id: loopKey) {
             await loop()
         }
@@ -111,7 +111,7 @@ struct GuidedTimerRing: View {
     /// 0...1, share of the time already spent.
     let progress: Double
     let text: String
-    var caption: String = "seconds"
+    var caption: String = L("seconds")
     var tint: Color = Theme.green
     var size: CGFloat = 132
 
@@ -139,7 +139,7 @@ struct GuidedTimerRing: View {
         }
         .frame(width: size, height: size)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(text) \(caption) left")
+        .accessibilityLabel(L("%@ %@ left", text, caption))
     }
 }
 

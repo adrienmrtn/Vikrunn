@@ -4,15 +4,17 @@ import UIKit
 /// What is shared from a run summary: a short text and a rendered card.
 enum RunSummaryShare {
     static func title(for run: RunRecord) -> String {
-        run.title.isEmpty ? "Run" : run.title
+        run.title.isEmpty ? L("Run") : L(run.title)
     }
 
     /// "Easy run · 6.10 km in 35:12 (5:46/km) · Tuesday 17 November · Atala"
     static func text(for run: RunRecord) -> String {
         var parts: [String] = [title(for: run)]
-        var figures = "\(RunFormat.distance(run.distanceM)) in \(Fmt.duration(run.durationSec))"
-        if run.avgPace > 0 { figures += " (\(Fmt.pace(run.avgPace))/km)" }
-        parts.append(figures)
+        if run.avgPace > 0 {
+            parts.append(L("%@ in %@ (%@/km)", RunFormat.distance(run.distanceM), Fmt.duration(run.durationSec), Fmt.pace(run.avgPace)))
+        } else {
+            parts.append(L("%@ in %@", RunFormat.distance(run.distanceM), Fmt.duration(run.durationSec)))
+        }
         parts.append(Fmt.day(run.date))
         parts.append("Atala")
         return parts.joined(separator: " · ")
@@ -47,9 +49,9 @@ struct RunSummaryShareCard: View {
                     .lineLimit(2)
             }
             HStack(alignment: .top, spacing: 12) {
-                figure(RunFormat.distance(run.distanceM), "Distance")
-                figure(Fmt.duration(run.durationSec), "Duration")
-                figure(run.avgPace > 0 ? "\(Fmt.pace(run.avgPace))/km" : "--", "Average pace")
+                figure(RunFormat.distance(run.distanceM), L("Distance"))
+                figure(Fmt.duration(run.durationSec), L("Duration"))
+                figure(run.avgPace > 0 ? "\(Fmt.pace(run.avgPace))/km" : "--", L("Average pace"))
             }
         }
         .padding(24)
@@ -92,7 +94,7 @@ struct RunSummaryActions: View {
             HStack(spacing: 10) {
                 shareButton
                 Button(action: talkToCoach) {
-                    Label("Talk to my coach", systemImage: "bubble.left")
+                    Label(L("Talk to my coach"), systemImage: "bubble.left")
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }
@@ -102,14 +104,14 @@ struct RunSummaryActions: View {
                 Haptics.warning()
                 confirmDelete = true
             } label: {
-                Text("Delete this run")
+                Text(L("Delete this run"))
                     .font(.system(size: 15, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 44)
             }
-            .confirmationDialog("Delete this run?", isPresented: $confirmDelete, titleVisibility: .visible) {
-                Button("Delete", role: .destructive) { deleteRun() }
-                Button("Cancel", role: .cancel) {}
+            .confirmationDialog(L("Delete this run?"), isPresented: $confirmDelete, titleVisibility: .visible) {
+                Button(L("Delete"), role: .destructive) { deleteRun() }
+                Button(L("Cancel"), role: .cancel) {}
             } message: {
                 Text(deleteMessage)
             }
@@ -131,24 +133,24 @@ struct RunSummaryActions: View {
             ShareLink(item: shareImage,
                       message: Text(text),
                       preview: SharePreview(RunSummaryShare.title(for: run), image: shareImage)) {
-                Label("Share", systemImage: "square.and.arrow.up")
+                Label(L("Share"), systemImage: "square.and.arrow.up")
             }
             .buttonStyle(SecondaryButtonStyle())
         } else {
             ShareLink(item: text) {
-                Label("Share", systemImage: "square.and.arrow.up")
+                Label(L("Share"), systemImage: "square.and.arrow.up")
             }
             .buttonStyle(SecondaryButtonStyle())
         }
     }
 
     private var deleteMessage: String {
-        var text = "It is removed from your history and your totals."
+        var text = L("It is removed from your history and your totals.")
         if let id = run.workoutID, store.workout(id: id) != nil {
-            text += " Its session goes back to not done."
+            text += " " + L("Its session goes back to not done.")
         }
         if run.source == .health {
-            text += " It stays in Apple Health and will not be imported again."
+            text += " " + L("It stays in Apple Health and will not be imported again.")
         }
         return text
     }

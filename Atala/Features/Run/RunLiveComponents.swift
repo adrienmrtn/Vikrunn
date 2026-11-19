@@ -88,17 +88,17 @@ struct RunPaceGauge: View {
             }
             .frame(height: 20)
             HStack {
-                Text("Too slow")
+                Text(L("Too slow"))
                 Spacer()
-                Text("\(Fmt.pace(paceSlow)) to \(Fmt.pace(paceFast))")
+                Text(L("%@ to %@", Fmt.pace(paceSlow), Fmt.pace(paceFast)))
                 Spacer()
-                Text("Too fast")
+                Text(L("Too fast"))
             }
             .font(.system(size: 12))
             .foregroundStyle(Theme.muted)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Pace \(Fmt.pace(pace)), target \(Fmt.pace(paceSlow)) to \(Fmt.pace(paceFast))")
+        .accessibilityLabel(L("Pace %@, target %@ to %@", Fmt.pace(pace), Fmt.pace(paceSlow), Fmt.pace(paceFast)))
     }
 }
 
@@ -182,10 +182,10 @@ struct RunLockOverlay: View {
                     .onLongPressGesture(minimumDuration: 0.8, maximumDistance: 60, perform: onUnlock) { isPressing in
                         pressing = isPressing
                     }
-                    .accessibilityLabel("Unlock the screen")
+                    .accessibilityLabel(L("Unlock the screen"))
                     .accessibilityAddTraits(.isButton)
                     .accessibilityAction { onUnlock() }
-                Text("Screen locked. Hold to unlock.")
+                Text(L("Screen locked. Hold to unlock."))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
             }

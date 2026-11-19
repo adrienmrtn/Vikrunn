@@ -57,75 +57,75 @@ struct ManualRunEntryView: View {
     }
 
     private var pacePreview: String {
-        if distanceKm <= 0 || durationSec <= 0 { return "Enter a distance and a duration." }
-        if distanceKm < 0.1 { return "The distance is too short to be saved." }
-        if distanceKm > 100 { return "That is more than 100 km. Check the distance." }
-        if durationSec < 60 { return "The duration must be at least one minute." }
-        if pace < 120 { return "That is \(Fmt.pace(pace)) per km, faster than anyone runs. Check the distance and the duration." }
-        if pace > 1800 { return "That is \(Fmt.pace(pace)) per km. Check the distance and the duration." }
-        return "That is \(Fmt.pace(pace)) per km."
+        if distanceKm <= 0 || durationSec <= 0 { return L("Enter a distance and a duration.") }
+        if distanceKm < 0.1 { return L("The distance is too short to be saved.") }
+        if distanceKm > 100 { return L("That is more than 100 km. Check the distance.") }
+        if durationSec < 60 { return L("The duration must be at least one minute.") }
+        if pace < 120 { return L("That is %@ per km, faster than anyone runs. Check the distance and the duration.", Fmt.pace(pace)) }
+        if pace > 1800 { return L("That is %@ per km. Check the distance and the duration.", Fmt.pace(pace)) }
+        return L("That is %@ per km.", Fmt.pace(pace))
     }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    DatePicker("Date", selection: $date, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
+                    DatePicker(L("Date"), selection: $date, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
                     HStack {
-                        Text("Distance")
+                        Text(L("Distance"))
                         Spacer()
                         TextField("0.0", text: $distanceText)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .frame(maxWidth: 110)
                             .focused($distanceFocused)
-                            .accessibilityLabel("Distance in kilometres")
+                            .accessibilityLabel(L("Distance in kilometres"))
                         Text("km")
                             .foregroundStyle(Theme.muted)
                     }
                 } header: {
-                    Text(workout?.title ?? "Run")
+                    Text(workout?.title ?? L("Run"))
                 } footer: {
-                    Text("Ran on a treadmill? Enter the distance and time shown on the machine.")
+                    Text(L("Ran on a treadmill? Enter the distance and time shown on the machine."))
                 }
 
                 Section {
                     durationPickers
                 } header: {
-                    Text("Duration")
+                    Text(L("Duration"))
                 } footer: {
                     Text(pacePreview)
                 }
 
                 Section {
-                    Picker("How was it?", selection: $feeling) {
-                        Text("Not set").tag(Optional<Feeling>.none)
+                    Picker(L("How was it?"), selection: $feeling) {
+                        Text(L("Not set")).tag(Optional<Feeling>.none)
                         ForEach(Feeling.allCases) { option in
                             Text(option.title).tag(Optional<Feeling>.some(option))
                         }
                     }
                 } footer: {
-                    Text("Optional. It helps your coach tune the next sessions.")
+                    Text(L("Optional. It helps your coach tune the next sessions."))
                 }
             }
-            .navigationTitle("Add a run")
+            .navigationTitle(L("Add a run"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button(L("Cancel")) {
                         Haptics.tap()
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
+                    Button(L("Save")) { save() }
                         .fontWeight(.semibold)
                         .disabled(!isValid)
                 }
                 // The decimal pad has no return key.
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Done") { distanceFocused = false }
+                    Button(L("Done")) { distanceFocused = false }
                         .fontWeight(.semibold)
                 }
             }
@@ -135,9 +135,9 @@ struct ManualRunEntryView: View {
 
     private var durationPickers: some View {
         HStack(spacing: 0) {
-            durationWheel("h", selection: $hours, range: 0..<10)
-            durationWheel("min", selection: $minutes, range: 0..<60)
-            durationWheel("s", selection: $seconds, range: 0..<60)
+            durationWheel(L("h"), selection: $hours, range: 0..<10)
+            durationWheel(L("min"), selection: $minutes, range: 0..<60)
+            durationWheel(L("s"), selection: $seconds, range: 0..<60)
         }
         .frame(height: 120)
     }

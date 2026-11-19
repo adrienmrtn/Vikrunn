@@ -37,16 +37,16 @@ struct GuidedSessionView: View {
             .sheet(item: $howTo, onDismiss: { closeHowTo() }) { info in
                 GuidedHowToSheet(info: info)
             }
-            .confirmationDialog("End this session?", isPresented: $confirmEnd, titleVisibility: .visible) {
-                Button("Mark as done anyway") {
+            .confirmationDialog(L("End this session?"), isPresented: $confirmEnd, titleVisibility: .visible) {
+                Button(L("Mark as done anyway")) {
                     Haptics.success()
                     leave(markDone: true)
                 }
-                Button("Leave without saving", role: .destructive) {
+                Button(L("Leave without saving"), role: .destructive) {
                     Haptics.warning()
                     leave(markDone: false)
                 }
-                Button("Keep going", role: .cancel) {}
+                Button(L("Keep going"), role: .cancel) {}
             } message: {
                 Text(endMessage)
             }
@@ -82,7 +82,7 @@ struct GuidedSessionView: View {
     private var endMessage: String {
         let done = engine.completedExercises.count
         let total = engine.exercises.count
-        return "You completed \(done) of \(total) exercises."
+        return L("You completed %@ of %@ exercises.", done, total)
     }
 
     // MARK: Actions
@@ -113,7 +113,7 @@ struct GuidedSessionView: View {
                       speech: line, display: line, settings: settings, interrupt: true)
         case .halfway:
             Haptics.tap()
-            voice.say(clips: [.halfway], speech: "Halfway.", display: "Halfway.", settings: settings)
+            voice.say(clips: [.halfway], speech: L("Halfway."), display: L("Halfway."), settings: settings)
         case .countdown(let seconds):
             // Light, light, medium, as before a run.
             Haptics.play(seconds == 1 ? .confirm : .tap)
@@ -121,8 +121,8 @@ struct GuidedSessionView: View {
                       settings: settings, interrupt: true)
         case .finished:
             // The success haptic comes with the check mark of the "Session complete" screen.
-            voice.say(clips: [.done], speech: "Session complete. Well done.",
-                      display: "Session complete. Well done.", settings: settings, interrupt: true)
+            voice.say(clips: [.done], speech: L("Session complete. Well done."),
+                      display: L("Session complete. Well done."), settings: settings, interrupt: true)
         }
     }
 

@@ -41,8 +41,8 @@ enum RunFormat {
     }
 
     static func shortDuration(_ seconds: Int) -> String {
-        if seconds < 120 && seconds % 60 != 0 { return "\(seconds) s" }
-        if seconds % 60 == 0 { return "\(seconds / 60) min" }
+        if seconds < 120 && seconds % 60 != 0 { return L("%@ s", seconds) }
+        if seconds % 60 == 0 { return L("%@ min", seconds / 60) }
         return Fmt.duration(seconds)
     }
 
@@ -54,19 +54,19 @@ enum RunFormat {
     }
 
     static func spokenDistance(_ metres: Int) -> String {
-        if metres < 1000 { return "\(metres) metres" }
-        if metres == 1000 { return "1 kilometre" }
-        if metres % 1000 == 0 { return "\(metres / 1000) kilometres" }
-        return String(format: "%.1f kilometres", Double(metres) / 1000)
+        if metres < 1000 { return L("%@ metres", metres) }
+        if metres == 1000 { return L("1 kilometre") }
+        if metres % 1000 == 0 { return L("%@ kilometres", metres / 1000) }
+        return L("%@ kilometres", String(format: "%.1f", Double(metres) / 1000))
     }
 
     static func spokenDuration(_ seconds: Int) -> String {
         let total = max(0, seconds)
         let hours = total / 3600, minutes = (total % 3600) / 60, secs = total % 60
         var parts: [String] = []
-        if hours > 0 { parts.append(hours == 1 ? "1 hour" : "\(hours) hours") }
-        if minutes > 0 { parts.append(minutes == 1 ? "1 minute" : "\(minutes) minutes") }
-        if secs > 0 || parts.isEmpty { parts.append(secs == 1 ? "1 second" : "\(secs) seconds") }
+        if hours > 0 { parts.append(hours == 1 ? L("1 hour") : L("%@ hours", hours)) }
+        if minutes > 0 { parts.append(minutes == 1 ? L("1 minute") : L("%@ minutes", minutes)) }
+        if secs > 0 || parts.isEmpty { parts.append(secs == 1 ? L("1 second") : L("%@ seconds", secs)) }
         return parts.joined(separator: " ")
     }
 
@@ -89,21 +89,21 @@ enum RunFormat {
 
     /// "Warm-up" or "Fast · 3 of 6".
     static func pill(at index: Int, in steps: [WorkoutStep]) -> String {
-        guard steps.indices.contains(index) else { return "Free run" }
+        guard steps.indices.contains(index) else { return L("Free run") }
         let title = steps[index].kind.title
-        if let rep = repetition(at: index, in: steps) { return "\(title) · \(rep.number) of \(rep.total)" }
+        if let rep = repetition(at: index, in: steps) { return L("%@ · %@ of %@", title, rep.number, rep.total) }
         return title
     }
 
     /// "Next: 800 m fast", "Next: recovery 400 m", "Last step".
     static func next(after index: Int, in steps: [WorkoutStep]) -> String {
         let nextIndex = index + 1
-        guard steps.indices.contains(nextIndex) else { return "Last step" }
+        guard steps.indices.contains(nextIndex) else { return L("Last step") }
         let step = steps[nextIndex]
         let quantity = amount(step)
         switch step.kind {
-        case .work: return "Next: \(quantity) fast"
-        default: return "Next: \(step.kind.title.lowercased()) \(quantity)"
+        case .work: return L("Next: %@ fast", quantity)
+        default: return L("Next: %@ %@", step.kind.title.lowercased(), quantity)
         }
     }
 
@@ -116,29 +116,31 @@ enum RunFormat {
     static func stepCue(at index: Int, in steps: [WorkoutStep]) -> String {
         guard steps.indices.contains(index) else { return "" }
         let step = steps[index]
-        var text = "\(step.kind.title), \(amount(step))."
         if step.kind == .work, let pace = targetPace(step) {
-            text += " Target \(Fmt.pace(pace))/km."
+            return L("%@, %@. Target %@/km.", step.kind.title, amount(step), Fmt.pace(pace))
         } else if step.kind != .work, !step.label.isEmpty {
-            text += " \(step.label)."
+            return L("%@, %@. %@.", step.kind.title, amount(step), step.label)
         }
-        return text
+        return L("%@, %@.", step.kind.title, amount(step))
     }
 
     /// The same announcement, written to be read aloud.
     static func stepSpeech(at index: Int, in steps: [WorkoutStep]) -> String {
         guard steps.indices.contains(index) else { return "" }
         let step = steps[index]
-        var text = step.kind.title
-        if let rep = repetition(at: index, in: steps) { text += ", \(rep.number) of \(rep.total)" }
-        text += ", \(spokenAmount(step))"
+        let title = step.kind.title
+        let quantity = spokenAmount(step)
         if step.kind == .work, let pace = targetPace(step) {
-            text += ", target \(Fmt.pace(pace)) per kilometre."
+            if let rep = repetition(at: index, in: steps) {
+                return L("%@, %@ of %@, %@, target %@ per kilometre.", title, rep.number, rep.total, quantity, Fmt.pace(pace))
+            }
+            return L("%@, %@, target %@ per kilometre.", title, quantity, Fmt.pace(pace))
         } else if step.kind != .work, !step.label.isEmpty {
-            text += ". \(step.label)."
-        } else {
-            text += "."
+            return L("%@, %@. %@.", title, quantity, step.label)
         }
-        return text
+        if let rep = repetition(at: index, in: steps) {
+            return L("%@, %@ of %@, %@.", title, rep.number, rep.total, quantity)
+        }
+        return L("%@, %@.", title, quantity)
     }
 }

@@ -12,12 +12,12 @@ struct RunSplitsCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Pace per kilometre")
+                Text(L("Pace per kilometre"))
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(Theme.ink)
                 Spacer(minLength: 8)
                 if let fastestID {
-                    Text("Fastest: km \(fastestID)")
+                    Text(L("Fastest: km %@", fastestID))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(Theme.green)
                 }
@@ -65,7 +65,7 @@ struct RunSplitsCard: View {
                 .frame(width: 48, alignment: .trailing)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Kilometre \(label(split)), \(Fmt.pace(split.pace)) per kilometre")
+        .accessibilityLabel(L("Kilometre %@, %@ per kilometre", label(split), Fmt.pace(split.pace)))
     }
 }
 
@@ -80,7 +80,7 @@ struct RunElevationCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Elevation")
+                Text(L("Elevation"))
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(Theme.ink)
                 Spacer(minLength: 8)
@@ -100,9 +100,9 @@ struct RunElevationCard: View {
             }
             .frame(height: 92)
             HStack {
-                Text("Lowest \(Int(lowest.rounded())) m")
+                Text(L("Lowest %@ m", Int(lowest.rounded())))
                 Spacer(minLength: 8)
-                Text("Highest \(Int(highest.rounded())) m")
+                Text(L("Highest %@ m", Int(highest.rounded())))
             }
             .font(.system(size: 12))
             .foregroundStyle(Theme.muted)
@@ -112,7 +112,7 @@ struct RunElevationCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .card(radius: 24)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Elevation: \(gainM) metres of climb")
+        .accessibilityLabel(L("Elevation: %@ metres of climb", gainM))
     }
 
     /// The altitude line across the width; `closed` adds the area underneath.

@@ -24,7 +24,7 @@ struct RunCountdownScreen: View {
                     dial
                     Spacer(minLength: 20)
                     coachLine
-                    Text("Tap the screen to start right away")
+                    Text(L("Tap the screen to start right away"))
                         .font(.system(size: 14))
                         .foregroundStyle(Theme.greenOnDark)
                         .padding(.top, 44)
@@ -35,7 +35,7 @@ struct RunCountdownScreen: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Start right away")
+        .accessibilityLabel(L("Start right away"))
         .onAppear {
             withAnimation(.easeOut(duration: 1).repeatForever(autoreverses: false)) {
                 pulsing = true

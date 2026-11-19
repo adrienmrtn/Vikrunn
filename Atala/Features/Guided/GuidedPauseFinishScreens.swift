@@ -16,7 +16,7 @@ struct GuidedPauseScreen: View {
                 RunStatsRow(items: statItems)
                     .padding(18)
                     .card(radius: 24)
-                RunCoachBubble(coach: coach, text: "Take your time. We pick it up whenever you like.",
+                RunCoachBubble(coach: coach, text: L("Take your time. We pick it up whenever you like."),
                                showsSpeaker: false)
             }
             .padding(.horizontal, Theme.screenPadding)
@@ -31,7 +31,7 @@ struct GuidedPauseScreen: View {
 
     private var clock: some View {
         VStack(spacing: 6) {
-            Text("Paused")
+            Text(L("Paused"))
                 .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 14)
@@ -55,19 +55,24 @@ struct GuidedPauseScreen: View {
     }
 
     private var positionLine: String {
-        guard let segment = engine.current, let exercise = engine.currentExercise else { return "Session" }
-        var line = exercise.info.name
-        if let side = segment.side, segment.kind != .rest { line += ", \(side.spoken)" }
-        if exercise.sets > 1 { line += " · set \(segment.setNumber) of \(exercise.sets)" }
-        return line
+        guard let segment = engine.current, let exercise = engine.currentExercise else { return L("Session") }
+        let name = exercise.info.name
+        if let side = segment.side, segment.kind != .rest {
+            if exercise.sets > 1 {
+                return L("%@, %@ · set %@ of %@", name, side.spoken, segment.setNumber, exercise.sets)
+            }
+            return L("%@, %@", name, side.spoken)
+        }
+        if exercise.sets > 1 { return L("%@ · set %@ of %@", name, segment.setNumber, exercise.sets) }
+        return name
     }
 
     private var statItems: [(value: String, label: String)] {
         let number = (engine.current?.exerciseIndex ?? 0) + 1
         return [
-            (value: "\(number) of \(engine.exercises.count)", label: "Exercise"),
-            (value: "\(engine.completedExercises.count)", label: "Completed"),
-            (value: Fmt.minutes(max(1, Int((Double(engine.plannedSeconds) / 60).rounded()))), label: "Planned"),
+            (value: L("%@ of %@", number, engine.exercises.count), label: L("Exercise")),
+            (value: "\(engine.completedExercises.count)", label: L("Completed")),
+            (value: Fmt.minutes(max(1, Int((Double(engine.plannedSeconds) / 60).rounded()))), label: L("Planned")),
         ]
     }
 
@@ -80,7 +85,7 @@ struct GuidedPauseScreen: View {
                 HStack(spacing: 10) {
                     Image(systemName: "play.fill")
                         .font(.system(size: 16, weight: .bold))
-                    Text("Resume")
+                    Text(L("Resume"))
                         .font(.system(size: 17, weight: .semibold))
                 }
                 .foregroundStyle(.white)
@@ -89,7 +94,7 @@ struct GuidedPauseScreen: View {
                 .background(Theme.ink, in: Capsule())
             }
             .buttonStyle(.plain)
-            Button("End session", action: onEnd)
+            Button(L("End session"), action: onEnd)
                 .buttonStyle(SecondaryButtonStyle())
         }
         .padding(.horizontal, Theme.screenPadding)
@@ -113,18 +118,18 @@ struct GuidedFinishScreen: View {
     /// "5 exercises · 12 min"
     private var dataLine: String {
         let minutes = max(1, Int((Double(elapsedSec) / 60).rounded()))
-        return "\(doneCount) \(doneCount == 1 ? "exercise" : "exercises") · \(minutes) min"
+        return doneCount == 1 ? L("%@ exercise · %@ min", doneCount, minutes) : L("%@ exercises · %@ min", doneCount, minutes)
     }
 
     private var stats: [SessionCompleteStat] {
         let total = totalCount
         let kindTitle = workout.kind.title
         return [
-            SessionCompleteStat(value: Double(elapsedSec), label: "Total time",
+            SessionCompleteStat(value: Double(elapsedSec), label: L("Total time"),
                                 format: { Fmt.duration(Int($0.rounded())) }),
-            SessionCompleteStat(value: Double(doneCount), label: "Exercises done",
-                                format: { "\(Int($0.rounded())) of \(total)" }),
-            SessionCompleteStat(value: 0, label: "Session",
+            SessionCompleteStat(value: Double(doneCount), label: L("Exercises done"),
+                                format: { L("%@ of %@", Int($0.rounded()), total) }),
+            SessionCompleteStat(value: 0, label: L("Session"),
                                 format: { _ in kindTitle }),
         ]
     }
@@ -135,10 +140,10 @@ struct GuidedFinishScreen: View {
                               stats: stats,
                               coach: coach,
                               coachLine: coachLine,
-                              buttonTitle: "Done",
+                              buttonTitle: L("Done"),
                               onPrimary: { onDone(feeling) }) {
             VStack(alignment: .leading, spacing: 9) {
-                Text("How did it feel? (optional)")
+                Text(L("How did it feel? (optional)"))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                 ForEach(Feeling.allCases) { option in
@@ -153,23 +158,23 @@ struct GuidedFinishScreen: View {
 
     private var coachLine: String {
         if feeling == .pain {
-            return "Thank you for telling me. Take it easy today, and tell me more in the chat whenever you like."
+            return L("Thank you for telling me. Take it easy today, and tell me more in the chat whenever you like.")
         }
         if doneCount < totalCount {
-            return "Every bit counts. You showed up, and that is what builds the habit."
+            return L("Every bit counts. You showed up, and that is what builds the habit.")
         }
         if workout.kind == .strength {
-            return "Well done. Stronger legs and core will carry you through the end of your runs."
+            return L("Well done. Stronger legs and core will carry you through the end of your runs.")
         }
-        return "Well done. A few calm minutes like these help you feel fresh for your next run."
+        return L("Well done. A few calm minutes like these help you feel fresh for your next run.")
     }
 
     private func subtitle(for option: Feeling) -> String {
         switch option {
-        case .easy: return "I could have done more"
-        case .good: return "Just right"
-        case .hard: return "That was a lot for me"
-        case .pain: return "I'd rather tell \(coach.name)"
+        case .easy: return L("I could have done more")
+        case .good: return L("Just right")
+        case .hard: return L("That was a lot for me")
+        case .pain: return L("I'd rather tell %@", coach.name)
         }
     }
 }
