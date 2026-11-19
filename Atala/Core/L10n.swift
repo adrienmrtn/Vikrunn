@@ -111,9 +111,9 @@ func L(_ key: String, _ values: CustomStringConvertible...) -> String {
 }
 
 extension String {
-    /// A translated title placed inside a sentence: lower case in English ("your tempo run"),
-    /// untouched elsewhere, where capitals carry meaning (German nouns, Turkish dotted letters).
+    /// A translated title placed inside a sentence: lower case with the language's own rules
+    /// ("your tempo run", Turkish dotted letters), except in German, where nouns keep their capital.
     var midSentence: String {
-        AppLanguage.current == "en" ? lowercased() : self
+        AppLanguage.current == "de" ? self : lowercased(with: AppLanguage.locale)
     }
 }
