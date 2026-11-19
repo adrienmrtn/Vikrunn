@@ -445,7 +445,7 @@ struct OnboardingPaywallScreen: View {
     @EnvironmentObject private var nav: OnboardingNavigator
 
     var body: some View {
-        PaywallView(closeDelay: 5) {
+        PaywallView(closeDelay: 7) {
             nav.next(store)
         }
         .onAppear {
@@ -477,6 +477,6 @@ extension View {
 }
 
 #Preview("Paywall") {
-    PaywallView(closeDelay: 5, onFinished: {})
+    PaywallView(closeDelay: 7, onFinished: {})
         .environmentObject(AppStore.preview)
 }

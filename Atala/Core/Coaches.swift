@@ -11,9 +11,9 @@ struct Coach: Identifiable, Hashable {
 
     /// The coaches offered for now. Identifiers are kept as they were, so saved choices still match.
     static var all: [Coach] { [
-        Coach(id: 3, name: "Mei", trait: L("Lively and playful")),
-        Coach(id: 2, name: "Thomas", trait: L("Calm and precise")),
-        Coach(id: 1, name: "Awa", trait: L("Sets the pace")),
+        Coach(id: 3, name: localName(3, "Mei"), trait: L("Lively and playful")),
+        Coach(id: 2, name: localName(2, "Thomas"), trait: L("Calm and precise")),
+        Coach(id: 1, name: localName(1, "Awa"), trait: L("Sets the pace")),
     ] }
 
     /// Coaches set aside for now (their pictures stay in the catalog). Someone who had chosen one
@@ -23,6 +23,25 @@ struct Coach: Identifiable, Hashable {
         Coach(id: 5, name: "Claire", trait: L("Thirty years of running")),
         Coach(id: 6, name: "Idriss", trait: L("Direct and motivating")),
     ] }
+
+    /// First names by language, in the order Awa (1), Thomas (2), Mei (3): each country meets
+    /// coaches with names from home. English and French keep the original names.
+    private static let localNames: [String: [String]] = [
+        "es": ["Lucía", "Mateo", "Carmen"], "de": ["Lena", "Jonas", "Mia"], "it": ["Giulia", "Luca", "Sofia"],
+        "pt-BR": ["Ana", "Lucas", "Júlia"], "pt-PT": ["Inês", "Tiago", "Marta"], "nl": ["Emma", "Daan", "Sanne"],
+        "sv": ["Elsa", "Erik", "Maja"], "da": ["Freja", "Mads", "Ida"], "no": ["Ingrid", "Lars", "Nora"],
+        "fi": ["Aino", "Mikko", "Emma"], "pl": ["Zuzanna", "Jakub", "Maja"], "cs": ["Tereza", "Jakub", "Eliška"],
+        "sk": ["Zuzana", "Martin", "Nina"], "hu": ["Anna", "Bence", "Zsófia"], "ro": ["Ioana", "Andrei", "Maria"],
+        "hr": ["Ana", "Luka", "Petra"], "sl": ["Ana", "Luka", "Nika"], "el": ["Ελένη", "Νίκος", "Μαρία"],
+        "tr": ["Elif", "Emre", "Zeynep"], "ru": ["Аня", "Максим", "Маша"], "ar": ["ليلى", "كريم", "نور"],
+        "he": ["נועה", "יונתן", "מאיה"], "ja": ["さくら", "はると", "ゆい"]
+    ]
+
+    /// The coach's first name in the app's language, `fallback` where the original is kept.
+    private static func localName(_ id: Int, _ fallback: String) -> String {
+        guard let names = localNames[AppLanguage.current], (1...names.count).contains(id) else { return fallback }
+        return names[id - 1]
+    }
 
     /// The men, offered or set aside: they share the recorded male voice.
     static let maleIDs: Set<Int> = [2, 4, 6]
