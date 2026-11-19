@@ -294,7 +294,9 @@ final class AuthService: ObservableObject {
         if response.status >= 500 {
             return .server(L("Our server is having a moment. Please try again shortly."))
         }
-        return .server(L("That didn't work (%@). Please try again.", response.status))
+        // The status and the server's own code: enough to tell which setting is wrong.
+        let detail: String = code.isEmpty ? String(response.status) : String(response.status) + " " + code
+        return .server(L("That didn't work (%@). Please try again.", detail))
     }
 
     static func map(_ error: Error) -> AuthError {
