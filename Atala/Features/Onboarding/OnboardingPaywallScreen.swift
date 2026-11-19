@@ -116,7 +116,7 @@ struct PaywallView: View {
     /// Buys the chosen plan when the store is ready; otherwise moves on, as the placeholder did.
     private func startTrial() {
         Haptics.confirm()
-        guard purchases.canPurchase else {
+        if PurchaseService.isPlaceholder {
             // No store in this build: the button stands in for the purchase.
             purchases.setPlaceholderPro(true)
             onFinished()

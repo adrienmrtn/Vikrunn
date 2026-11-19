@@ -15,18 +15,23 @@ enum ProAccess {
 
     static var isPro: Bool { PurchaseService.shared.isPro }
 
-    /// End of the free week: the Monday after the first week of the first plan built on this phone.
+    /// End of the free week: seven full days from the day the first plan was seen on this phone.
     /// Set once, so rebuilding the plan does not start another free week.
     static func freeWeekEnd(plan: TrainingPlan?) -> Date? {
         let defaults = UserDefaults.standard
         let saved = defaults.double(forKey: freeWeekEndKey)
         if saved > 0 { return Date(timeIntervalSince1970: saved) }
-        guard let first = plan?.weeks.first else { return nil }
+        guard plan != nil else { return nil }
         let calendar = Calendar.plan
-        let start = calendar.startOfDay(for: first.startDate)
-        guard let end = calendar.date(byAdding: .day, value: 7, to: start) else { return nil }
+        let today = calendar.startOfDay(for: Date())
+        guard let end = calendar.date(byAdding: .day, value: 7, to: today) else { return nil }
         defaults.set(end.timeIntervalSince1970, forKey: freeWeekEndKey)
         return end
+    }
+
+    /// Erasing the phone's data starts over: the next plan gets its free week.
+    static func reset() {
+        UserDefaults.standard.removeObject(forKey: freeWeekEndKey)
     }
 
     /// True when the session is after the free week and the user has no subscription.

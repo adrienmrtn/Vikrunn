@@ -41,7 +41,7 @@ struct RunSummaryView: View {
                 if shown.route.count >= 2 {
                     RunRouteMap(route: shown.route)
                 }
-                if fastSplits.count >= 2 {
+                if purchases.isPro, fastSplits.count >= 2 {
                     RunRepsCard(splits: fastSplits)
                 }
                 detailCards(analysis)

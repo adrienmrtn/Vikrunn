@@ -109,6 +109,23 @@ final class PurchaseService: ObservableObject {
         #endif
     }
 
+    /// Call when the account is signed out or erased: the next person on this phone must not
+    /// inherit the subscription state.
+    func signOut() {
+        #if canImport(RevenueCat)
+        guard started else { return }
+        isPro = false
+        Task { @MainActor in
+            if !Purchases.shared.isAnonymous {
+                _ = try? await Purchases.shared.logOut()
+            }
+            await refresh()
+        }
+        #else
+        setPlaceholderPro(false)
+        #endif
+    }
+
     /// Reloads the plans and whether Atala Pro is active.
     func refresh() async {
         #if canImport(RevenueCat)
@@ -141,6 +158,8 @@ final class PurchaseService: ObservableObject {
             isPro = result.customerInfo.entitlements[Self.entitlementID]?.isActive == true
             return isPro ? .purchased : .failed("The purchase went through but Atala Pro is not active yet. Tap Restore purchases in a moment.")
         } catch {
+            // Some versions of the SDK report a cancelled purchase as an error.
+            if (error as? ErrorCode) == .purchaseCancelledError { return .cancelled }
             return .failed(error.localizedDescription)
         }
         #else

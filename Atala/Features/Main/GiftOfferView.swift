@@ -247,7 +247,9 @@ struct GiftOfferView: View {
     /// Buys the gift when the store has it; otherwise closes, as a placeholder.
     private func claim() {
         Haptics.confirm()
-        guard gift != nil else {
+        if PurchaseService.isPlaceholder {
+            // No store in this build: the button stands in for the purchase.
+            purchases.setPlaceholderPro(true)
             dismiss()
             return
         }
