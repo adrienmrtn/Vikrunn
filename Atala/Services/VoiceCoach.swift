@@ -3,6 +3,8 @@ import SwiftUI
 import AVFoundation
 
 /// Speaks the coach's cues during a run and keeps the last one for the coach bubble.
+/// A coach with recorded clips (see `VoiceClip`) speaks with their own voice; the phone's
+/// synthesized voice says everything else, and everything for a coach without recordings.
 /// Music from other apps is lowered while the coach talks, then comes back.
 @MainActor
 final class VoiceCoach: NSObject, ObservableObject {
@@ -14,6 +16,12 @@ final class VoiceCoach: NSObject, ObservableObject {
     private var lastDriftCue: Date = .distantPast
     private var wasOffTarget = false
     private var pending = 0
+
+    /// Recorded clips: the one playing, the ones waiting behind it, and the last one of each line.
+    private var player: AVAudioPlayer?
+    private var clipQueue: [URL] = []
+    private var clipsPlaying = false
+    private var lastClipNames: [String] = []
 
     /// Seconds between two pace remarks, at least.
     private let driftInterval: TimeInterval = 30
@@ -56,6 +64,8 @@ final class VoiceCoach: NSObject, ObservableObject {
     func say(_ speech: String, display: String, settings: VoiceSettings) {
         lastCue = display
         guard settings.enabled, !speech.isEmpty else { return }
+        // Two voices at once would be unintelligible: the newer cue wins.
+        stopClips()
         activateAudio()
         let utterance = AVSpeechUtterance(string: speech)
         utterance.voice = voice
@@ -72,11 +82,91 @@ final class VoiceCoach: NSObject, ObservableObject {
         say(speech, display: display, settings: settings)
     }
 
+    /// Shows a cue and says it with the coach's recorded voice: the clips play one after the other.
+    /// When the chosen coach has no recording for one of them, `speech` is synthesized instead.
+    func say(clips: [VoiceClip], speech: String, display: String, settings: VoiceSettings) {
+        lastCue = display
+        guard settings.enabled else { return }
+        let coachID = GuidedExerciseCoach.coachID
+        var names: [String] = []
+        var urls: [URL] = []
+        for clip in clips {
+            guard let found = clip.url(coachID: coachID, avoiding: lastClipNames.last(where: { Self.sameLine($0, clip, coachID) })) else {
+                say(speech, display: display, settings: settings)
+                return
+            }
+            names.append(found.name)
+            urls.append(found.url)
+        }
+        guard !urls.isEmpty else {
+            say(speech, display: display, settings: settings)
+            return
+        }
+        lastClipNames = Array((lastClipNames + names).suffix(12))
+        play(clips: urls)
+    }
+
+    /// True when `name` is a recording of the same line as `clip` for this coach.
+    private static func sameLine(_ name: String, _ clip: VoiceClip, _ coachID: Int) -> Bool {
+        let other = clip.resourceName(coachID: coachID, avoiding: nil)
+        guard let cut = other.lastIndex(of: "_") else { return false }
+        return name.hasPrefix(other[...cut])
+    }
+
     /// Stops talking right away (end of the run, flow closed).
     func stop() {
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
+        player?.stop()
+        player = nil
+        clipQueue = []
+        clipsPlaying = false
         pending = 0
         deactivateAudio()
+    }
+
+    // MARK: Recorded clips
+
+    /// Plays the files one after the other. A set of clips counts as one cue for the audio session.
+    private func play(clips urls: [URL]) {
+        if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
+        stopClips()
+        activateAudio()
+        clipQueue = urls
+        clipsPlaying = true
+        pending += 1
+        playNextClip()
+    }
+
+    private func playNextClip() {
+        while !clipQueue.isEmpty {
+            let url = clipQueue.removeFirst()
+            if let next = try? AVAudioPlayer(contentsOf: url) {
+                next.delegate = self
+                player = next
+                if next.play() { return }
+            }
+        }
+        // Nothing left (or nothing playable): the cue is over.
+        player = nil
+        if clipsPlaying {
+            clipsPlaying = false
+            utteranceEnded()
+        }
+    }
+
+    /// Cuts the recorded clips without releasing the audio session (something else is about to speak).
+    private func stopClips() {
+        guard clipsPlaying else { return }
+        player?.stop()
+        player = nil
+        clipQueue = []
+        clipsPlaying = false
+        pending = max(0, pending - 1)
+    }
+
+    fileprivate func clipEnded() {
+        guard clipsPlaying else { return }
+        playNextClip()
     }
 
     // MARK: Tracker events
@@ -87,14 +177,19 @@ final class VoiceCoach: NSObject, ObservableObject {
             wasOffTarget = false
             lastDriftCue = Date().addingTimeInterval(-driftInterval + 15)
             guard settings.announceSteps else { return }
-            say(RunFormat.stepSpeech(at: index, in: tracker.steps),
-                display: RunFormat.stepCue(at: index, in: tracker.steps),
-                settings: settings)
+            let speech = RunFormat.stepSpeech(at: index, in: tracker.steps)
+            let display = RunFormat.stepCue(at: index, in: tracker.steps)
+            if tracker.steps.indices.contains(index), let clip = VoiceClip.opening(tracker.steps[index].kind) {
+                say(clips: [clip], speech: speech, display: display, settings: settings)
+            } else {
+                say(speech, display: display, settings: settings)
+            }
 
         case .sessionComplete:
             wasOffTarget = false
             guard settings.announceSteps else { return }
-            say("Session complete. Well done. Stop whenever you are ready.",
+            say(clips: [.complete],
+                speech: "Session complete. Well done. Stop whenever you are ready.",
                 display: "Session complete. Well done. Stop whenever you're ready.",
                 settings: settings)
 
@@ -117,7 +212,13 @@ final class VoiceCoach: NSObject, ObservableObject {
             speech += " Average pace, \(Fmt.pace(pace)) per kilometre."
             display += " Average \(Fmt.pace(pace)) /km."
         }
-        say(speech, display: display, settings: settings)
+        if (1...VoiceClip.lastKilometre).contains(count) {
+            // The recorded voice gives the kilometre and a word of encouragement; the time and
+            // the pace stay on screen. The synthesized sentence is the fallback.
+            say(clips: [.km(count), .cheer], speech: speech, display: display, settings: settings)
+        } else {
+            say(speech, display: display, settings: settings)
+        }
     }
 
     /// During fast steps, tells the runner when the pace drifts out of the target range.
@@ -135,11 +236,13 @@ final class VoiceCoach: NSObject, ObservableObject {
             wasOffTarget = true
             let target = Fmt.pace((fast + slow) / 2)
             if tooFast {
-                say("A little too fast. Ease off towards \(target) per kilometre.",
+                say(clips: [.fast],
+                    speech: "A little too fast. Ease off towards \(target) per kilometre.",
                     display: "A little too fast. Ease off towards \(target) /km.",
                     settings: settings)
             } else {
-                say("A little too slow. Pick it up towards \(target) per kilometre.",
+                say(clips: [.slow],
+                    speech: "A little too slow. Pick it up towards \(target) per kilometre.",
                     display: "A little too slow. Pick it up towards \(target) /km.",
                     settings: settings)
             }
@@ -186,6 +289,20 @@ extension VoiceCoach: AVSpeechSynthesizerDelegate {
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         Task { @MainActor [weak self] in
             self?.utteranceEnded()
+        }
+    }
+}
+
+extension VoiceCoach: AVAudioPlayerDelegate {
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor [weak self] in
+            self?.clipEnded()
+        }
+    }
+
+    nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        Task { @MainActor [weak self] in
+            self?.clipEnded()
         }
     }
 }

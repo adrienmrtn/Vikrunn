@@ -144,7 +144,12 @@ struct RunFlowView: View {
         guard phase == .countdown else { return }
         Haptics.strong()
         UIApplication.shared.isIdleTimerDisabled = true
-        if !tracker.hasSteps { voice.show("Off you go. Run the way you feel.") }
+        if !tracker.hasSteps {
+            voice.say(clips: [.start],
+                      speech: "Off you go. Run the way you feel.",
+                      display: "Off you go. Run the way you feel.",
+                      settings: store.settings.voice)
+        }
         tracker.start()
         phase = .active
     }
