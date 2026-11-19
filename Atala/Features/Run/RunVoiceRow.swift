@@ -65,10 +65,8 @@ struct CoachVoiceRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityElement(children: .ignore)
         .accessibilityLabel(L("%@'s voice, included in Atala Pro", coachName))
         .accessibilityHint(L("Shows what Atala Pro includes"))
-        .accessibilityAddTraits(.isButton)
     }
 
     private func texts(subtitle: String) -> some View {
