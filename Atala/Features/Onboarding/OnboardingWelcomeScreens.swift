@@ -165,6 +165,9 @@ struct OnboardingWelcomeScreen: View {
                 Text(slide.title)
                     .font(Theme.title(28))
                     .foregroundStyle(Theme.ink)
+                    // Always whole: longer languages take two lines or shrink a little, never "…".
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.6)
                     .accessibilityAddTraits(.isHeader)
                 Text(slide.text)
                     .font(.system(size: 16))
