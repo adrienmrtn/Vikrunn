@@ -135,6 +135,7 @@ struct RunReadyScreen: View {
     }
 
     private var voiceSubtitle: String {
+        guard ProAccess.isPro else { return "Included in Atala Pro" }
         guard store.settings.voice.enabled else { return "Off for this run" }
         return tracker.hasSteps ? "Announces each step" : "Announces each kilometre"
     }

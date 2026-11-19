@@ -67,7 +67,30 @@ final class PurchaseService: ObservableObject {
 
     private var started = false
 
-    private init() {}
+    private static let placeholderKey = "atala.placeholder.pro"
+
+    /// True in a build without the RevenueCat package: nothing can be bought, and the paywall's
+    /// main button stands in for a purchase so the free and the Pro sides can both be tried.
+    static var isPlaceholder: Bool {
+        #if canImport(RevenueCat)
+        return false
+        #else
+        return true
+        #endif
+    }
+
+    private init() {
+        if Self.isPlaceholder {
+            isPro = UserDefaults.standard.bool(forKey: Self.placeholderKey)
+        }
+    }
+
+    /// Placeholder builds only: pretends the subscription was bought (or not), on this phone.
+    func setPlaceholderPro(_ active: Bool) {
+        guard Self.isPlaceholder else { return }
+        UserDefaults.standard.set(active, forKey: Self.placeholderKey)
+        isPro = active
+    }
 
     /// Starts the SDK once, then loads the offers and the subscription state.
     /// `userID` is the account's identifier, nil for a guest.

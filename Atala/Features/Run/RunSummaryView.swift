@@ -7,6 +7,8 @@ struct RunSummaryView: View {
     private let onDone: (() -> Void)?
 
     @EnvironmentObject private var store: AppStore
+    @ObservedObject private var purchases = PurchaseService.shared
+    @State private var showPaywall = false
     @Environment(\.dismiss) private var dismiss
 
     init(run: RunRecord) {
@@ -42,12 +44,7 @@ struct RunSummaryView: View {
                 if fastSplits.count >= 2 {
                     RunRepsCard(splits: fastSplits)
                 }
-                if analysis.kmSplits.count >= 2 {
-                    RunSplitsCard(splits: analysis.kmSplits, fastestID: analysis.fastestSplit?.id)
-                }
-                if let gain = analysis.elevationGainM, analysis.elevation.count >= 2 {
-                    RunElevationCard(points: analysis.elevation, gainM: gain)
-                }
+                detailCards(analysis)
                 coachLine
                 if let feeling = shown.feeling {
                     feelingRow(feeling)
@@ -67,6 +64,46 @@ struct RunSummaryView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .proPaywall(isPresented: $showPaywall)
+    }
+
+    /// Pace per kilometre and elevation: shown with Atala Pro, offered otherwise.
+    @ViewBuilder
+    private func detailCards(_ analysis: RunAnalysis) -> some View {
+        let hasSplits = analysis.kmSplits.count >= 2
+        let hasElevation = analysis.elevationGainM != nil && analysis.elevation.count >= 2
+        if purchases.isPro {
+            if hasSplits {
+                RunSplitsCard(splits: analysis.kmSplits, fastestID: analysis.fastestSplit?.id)
+            }
+            if let gain = analysis.elevationGainM, hasElevation {
+                RunElevationCard(points: analysis.elevation, gainM: gain)
+            }
+        } else if hasSplits || hasElevation {
+            Button {
+                showPaywall = true
+            } label: {
+                HStack(spacing: 14) {
+                    IconTile(systemName: "lock.fill", size: 44)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Pace per kilometre and elevation")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Theme.ink)
+                        Text("See the detail of every run with Atala Pro")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.muted)
+                    }
+                    Spacer(minLength: 4)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.faint)
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .card(radius: 22)
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     // MARK: Header
@@ -114,10 +151,10 @@ struct RunSummaryView: View {
             if let peak = shown.maxHeartRate {
                 RunSummaryStat(value: "\(peak) bpm", label: "Max heart rate", large: false)
             }
-            if let gain = analysis.elevationGainM {
+            if purchases.isPro, let gain = analysis.elevationGainM {
                 RunSummaryStat(value: "+\(gain) m", label: "Elevation gain", large: false)
             }
-            if let fastest = analysis.fastestSplit {
+            if purchases.isPro, let fastest = analysis.fastestSplit {
                 RunSummaryStat(value: "\(Fmt.pace(fastest.pace))/km", label: "Fastest kilometre", large: false)
             }
         }
