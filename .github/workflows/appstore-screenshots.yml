@@ -1,7 +1,7 @@
 name: App Store screenshots
 
-# Renders the App Store screenshots from appstore/screenshots/src and uploads them to
-# App Store Connect. Started by hand only: Actions > App Store screenshots > Run workflow.
+# Renders the App Store screenshots from appstore/screenshots/src and uploads them, and the
+# texts of fastlane/metadata when asked, to App Store Connect. Started by hand only: Actions > App Store screenshots > Run workflow.
 on:
   workflow_dispatch:
     inputs:
@@ -9,6 +9,14 @@ on:
         description: "Upload to App Store Connect (off = only render, download them from the run)"
         type: boolean
         default: true
+      screenshots:
+        description: "Upload the screenshots"
+        type: boolean
+        default: true
+      metadata:
+        description: "Upload the texts of fastlane/metadata (name, subtitle, keywords, description, links)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -59,4 +67,4 @@ jobs:
           for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
             if [ -z "${!name}" ]; then echo "::error::Secret $name is missing (Settings > Secrets and variables > Actions)"; exit 1; fi
           done
-          fastlane ios screenshots
+          fastlane ios store screenshots:${{ inputs.screenshots }} metadata:${{ inputs.metadata }}

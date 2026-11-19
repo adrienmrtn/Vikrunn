@@ -1,8 +1,13 @@
 default_platform(:ios)
 
 platform :ios do
-  desc "Upload the App Store screenshots of fastlane/screenshots to App Store Connect (no binary, no submission)"
-  lane :screenshots do
+  desc "Upload the App Store page to App Store Connect: screenshots, texts or both (no binary, no submission)"
+  # fastlane ios store screenshots:true metadata:false
+  lane :store do |options|
+    with_screenshots = options.fetch(:screenshots, true).to_s == "true"
+    with_metadata = options.fetch(:metadata, false).to_s == "true"
+    UI.user_error!("Nothing to upload: pass screenshots:true and/or metadata:true") unless with_screenshots || with_metadata
+
     api_key = app_store_connect_api_key(
       key_id: ENV.fetch("ASC_KEY_ID"),
       issuer_id: ENV.fetch("ASC_ISSUER_ID"),
@@ -10,28 +15,57 @@ platform :ios do
       in_house: false
     )
 
-    shots = File.expand_path("screenshots", __dir__)
-    UI.user_error!("No screenshots in #{shots}. Run appstore/screenshots/render.sh first.") unless Dir.exist?(shots)
-
-    # deliver stops on a folder it does not know as an App Store language: set those aside.
     known = FastlaneCore::Languages::ALL_LANGUAGES
-    skipped = File.expand_path("screenshots-skipped", __dir__)
-    Dir.children(shots).sort.each do |name|
-      next unless File.directory?(File.join(shots, name))
-      next if known.include?(name)
-      UI.important("#{name} is not a language this fastlane version knows: its screenshots are not uploaded")
-      FileUtils.mkdir_p(skipped)
-      FileUtils.mv(File.join(shots, name), File.join(skipped, name))
+    shots = File.expand_path("screenshots", __dir__)
+    locales = []
+
+    if with_screenshots
+      UI.user_error!("No screenshots in #{shots}. Run appstore/screenshots/render.sh first.") unless Dir.exist?(shots)
+      # deliver stops on a folder it does not know as an App Store language: set those aside.
+      skipped = File.expand_path("screenshots-skipped", __dir__)
+      Dir.children(shots).sort.each do |name|
+        next unless File.directory?(File.join(shots, name))
+        next if known.include?(name)
+        UI.important("#{name} is not a language this fastlane version knows: its screenshots are not uploaded")
+        FileUtils.mkdir_p(skipped)
+        FileUtils.mv(File.join(shots, name), File.join(skipped, name))
+      end
+      locales = Dir.children(shots).select { |name| File.directory?(File.join(shots, name)) }.sort
+      UI.message("Screenshots for #{locales.count} languages: #{locales.join(', ')}")
     end
-    locales = Dir.children(shots).select { |name| File.directory?(File.join(shots, name)) }.sort
-    UI.message("Uploading screenshots for #{locales.count} languages: #{locales.join(', ')}")
+
+    # Without the texts, deliver reads an empty folder: it still adds the languages the
+    # screenshots need, and changes no text of the store page.
+    metadata = File.expand_path("metadata", __dir__)
+    unless with_metadata
+      metadata = File.expand_path("metadata-none", __dir__)
+      FileUtils.mkdir_p(metadata)
+    end
+
+    # deliver 2.242 stops with "No data" on a version whose App Review information was never
+    # opened. An empty record, the one App Store Connect creates when that form is first
+    # shown, is enough for it to go on.
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(**api_key)
+    app = Spaceship::ConnectAPI::App.find(CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier))
+    UI.user_error!("The app is not in this App Store Connect account") unless app
+    version = app.get_edit_app_store_version(platform: Spaceship::ConnectAPI::Platform::IOS)
+    UI.user_error!("No version of the app can be edited in App Store Connect") unless version
+    review_detail = begin
+      version.fetch_app_store_review_detail
+    rescue StandardError
+      nil
+    end
+    unless review_detail
+      UI.message("Creating the empty App Review information record")
+      version.create_app_store_review_detail(attributes: { demo_account_required: false })
+    end
 
     deliver(
       api_key: api_key,
+      metadata_path: metadata,
       screenshots_path: shots,
-      # Adds the languages that are missing on the version. There is no metadata folder,
-      # so no text of the store page is changed.
       languages: locales,
+      skip_screenshots: !with_screenshots,
       skip_binary_upload: true,
       skip_app_version_update: true,
       overwrite_screenshots: true,
@@ -40,5 +74,10 @@ platform :ios do
       precheck_include_in_app_purchases: false,
       force: true
     )
+  end
+
+  desc "Upload only the screenshots"
+  lane :screenshots do
+    store(screenshots: true, metadata: false)
   end
 end
