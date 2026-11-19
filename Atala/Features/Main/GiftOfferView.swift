@@ -200,8 +200,8 @@ struct GiftOfferView: View {
                 (Text(L("Billed %@ a year, instead of ", yearlyPrice))
                     + Text(fullPrice).strikethrough()
                     + Text("."))
-                    .font(.system(size: 15))
-                    .foregroundColor(Theme.greenOnDark)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(Color.white)
             }
             .multilineTextAlignment(.center)
         }
@@ -232,6 +232,11 @@ struct GiftOfferView: View {
                 .foregroundStyle(Theme.greenOnDark)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+            // Apple asks for both links next to the price of a subscription.
+            Text(LocalizedStringKey(L("[Terms of use](https://vikstudios.com/atala/terms) · [Privacy policy](https://vikstudios.com/atala)")))
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.greenOnDark)
+                .tint(Color.white)
         }
         .padding(.horizontal, Theme.screenPadding)
         .padding(.bottom, 10)

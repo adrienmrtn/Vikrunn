@@ -201,7 +201,7 @@ enum OnboardingSampleReviews {
                          text: L("I finally ran 10 km under 45 minutes with Atala. It helped so much."),
                          author: "Marie", photo: AtalaPhotos.woman),
         OnboardingReview(id: 2,
-                         text: L("Atala helped me lose 10 kg in just a few months. I strongly recommend it."),
+                         text: L("Atala helped me get in better shape in just a few months. I strongly recommend it."),
                          author: "Thomas", photo: AtalaPhotos.man),
         OnboardingReview(id: 3,
                          text: L("A friend recommended Atala. I didn't know you could have a coach this good at this price."),
