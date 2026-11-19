@@ -11,21 +11,24 @@ struct ProLockModifier: ViewModifier {
     let buttonTitle: String
 
     func body(content: Content) -> some View {
-        if purchases.isPro {
-            content
-        } else {
-            content
-                .blur(radius: 9)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-                .overlay {
-                    ZStack {
-                        Color.white.opacity(0.35).ignoresSafeArea()
-                        card
+        // The paywall hangs on the outer group, so it survives the moment the lock goes away.
+        Group {
+            if purchases.isPro {
+                content
+            } else {
+                content
+                    .blur(radius: 9)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                    .overlay {
+                        ZStack {
+                            Color.white.opacity(0.35).ignoresSafeArea()
+                            card
+                        }
                     }
-                }
-                .proPaywall(isPresented: $showPaywall)
+            }
         }
+        .proPaywall(isPresented: $showPaywall)
     }
 
     private var card: some View {

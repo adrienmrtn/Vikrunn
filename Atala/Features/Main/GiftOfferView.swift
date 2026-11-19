@@ -10,7 +10,7 @@ enum GiftOfferSchedule {
     private static let lastKey = "atala.gift.lastShown"
     private static let endKey = "atala.gift.offerEnd"
     static let maxShows = 3
-    private static let minInterval: TimeInterval = 24 * 3600
+    private static let minInterval: TimeInterval = 8 * 3600
     /// How long the offer stays available once it was shown for the first time.
     static let window: TimeInterval = 24 * 3600
     /// Seconds after the main screen appears: the launch splash and the entrance are over by then.
