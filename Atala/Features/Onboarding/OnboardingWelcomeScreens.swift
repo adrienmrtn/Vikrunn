@@ -77,7 +77,7 @@ struct OnboardingWelcomeScreen: View {
         }
     }
 
-    /// The slides move on by themselves every few seconds, in a loop, until the user swipes.
+    /// The slides move on by themselves every few seconds, up to the last one, until the user swipes.
     @MainActor
     private func playSlides() async {
         guard !reduceMotion else { return }
@@ -90,7 +90,8 @@ struct OnboardingWelcomeScreen: View {
             let current = page ?? 0
             // The user moved to another slide by hand: leave them in charge.
             guard current == autoPage else { return }
-            let next = (current + 1) % count
+            let next = current + 1
+            guard next < count else { return }
             autoPage = next
             withAnimation(.easeInOut(duration: 0.7)) {
                 page = next

@@ -49,7 +49,11 @@ struct OnboardingVolumeScreen: View {
                 ForEach(WeeklyVolume.allCases) { volume in
                     OptionCard(title: volume.title,
                                selected: store.answers.weeklyVolume == volume,
-                               action: { store.answers.weeklyVolume = volume }) {
+                               action: {
+                                   store.answers.weeklyVolume = volume
+                                   // The recent-result question is skipped for someone who does not run yet.
+                                   if volume == .notYet { store.answers.recentResult = nil }
+                               }) {
                         VignetteImage(name: volume.vignette)
                     }
                 }
