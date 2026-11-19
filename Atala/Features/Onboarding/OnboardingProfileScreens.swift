@@ -6,7 +6,6 @@ struct OnboardingGenderScreen: View {
 
     var body: some View {
         OnboardingScaffold(title: "You are…",
-                           subtitle: "So I know who I'm talking to. Your paces come from your running, not from this answer.",
                            canContinue: store.answers.gender != nil) {
             VStack(spacing: 10) {
                 ForEach(Gender.allCases) { gender in
@@ -15,9 +14,6 @@ struct OnboardingGenderScreen: View {
                     }
                 }
             }
-            Text("This stays on your profile and is never shown to anyone.")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.muted)
         }
     }
 }
@@ -26,22 +22,12 @@ struct OnboardingGenderScreen: View {
 struct OnboardingExperienceScreen: View {
     @EnvironmentObject private var store: AppStore
 
-    private func subtitle(_ experience: Experience) -> String {
-        switch experience {
-        case .starting: return "Everything is new, we start from scratch"
-        case .underSixMonths: return "The basics are settling in"
-        case .sixMonthsToTwoYears: return "You run regularly"
-        case .overTwoYears: return "You know the drill"
-        }
-    }
-
     var body: some View {
         OnboardingScaffold(title: "How long have you been running?",
                            canContinue: store.answers.experience != nil) {
             VStack(spacing: 9) {
                 ForEach(Experience.allCases) { experience in
                     OptionCard(title: experience.title,
-                               subtitle: subtitle(experience),
                                selected: store.answers.experience == experience,
                                action: { store.answers.experience = experience }) {
                         VignetteImage(name: experience.vignette)
@@ -56,22 +42,12 @@ struct OnboardingExperienceScreen: View {
 struct OnboardingVolumeScreen: View {
     @EnvironmentObject private var store: AppStore
 
-    private func subtitle(_ volume: WeeklyVolume) -> String {
-        switch volume {
-        case .under10: return "A run or two, or nothing yet"
-        case .from10to25: return "Two or three runs most weeks"
-        case .over25: return "Running is already a habit"
-        }
-    }
-
     var body: some View {
         OnboardingScaffold(title: "How much do you run in a week?",
-                           subtitle: "Think of a normal week these days, not your best one.",
                            canContinue: store.answers.weeklyVolume != nil) {
             VStack(spacing: 9) {
                 ForEach(WeeklyVolume.allCases) { volume in
                     OptionCard(title: volume.title,
-                               subtitle: subtitle(volume),
                                selected: store.answers.weeklyVolume == volume,
                                action: { store.answers.weeklyVolume = volume }) {
                         VignetteImage(name: volume.vignette)
@@ -129,7 +105,6 @@ struct OnboardingHealthScreen: View {
 
     var body: some View {
         OnboardingScaffold(title: "Anything about your health I should know?",
-                           subtitle: "Tick what applies to you today.",
                            canContinue: !store.answers.healthFlags.isEmpty) {
             VStack(spacing: 9) {
                 ForEach(OnboardingHealthOption.all) { option in
@@ -142,10 +117,6 @@ struct OnboardingHealthScreen: View {
                     }
                 }
             }
-            Text("I'm a coach, not a doctor: I never diagnose. If something hurts, see a health professional and I'll lighten your plan.")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.muted)
-                .lineSpacing(3)
         }
     }
 }
@@ -178,31 +149,28 @@ struct OnboardingMirrorScreen: View {
         }
     }
 
-    private var rows: [(String, String)] {
-        [
-            ("Level", level),
-            ("Aerobic speed (VMA)", String(format: "%.1f km/h", vma)),
-            ("Usual volume", "\((store.answers.weeklyVolume ?? .under10).title) a week"),
-            ("Easy pace", "\(Fmt.pace(PlanEngine.paceFor(vma: vma, fraction: 0.65))) /km"),
-        ]
+    private var usualVolume: String {
+        let volume = store.answers.weeklyVolume ?? .under10
+        return volume == .notYet ? "Not running yet" : "\(volume.title) a week"
     }
 
-    /// One stage per block (header, estimate, each row), then one more for the buttons.
-    private var stageDelays: [Double] {
-        [0.35, 0.3] + Array(repeating: 0.2, count: rows.count) + [0.4]
+    private var easyPace: String {
+        "\(Fmt.pace(PlanEngine.paceFor(vma: vma, fraction: 0.65))) /km"
     }
+
+    /// Header, hero card, the two tiles, the volume line, then the buttons.
+    private static let stageDelays: [Double] = [0.3, 0.35, 0.35, 0.25, 0.4]
 
     var body: some View {
-        let rows = self.rows
         OnboardingScaffold(buttonTitle: "That's me",
-                           buttonsVisible: stage >= rows.count + 3,
+                           buttonsVisible: stage >= Self.stageDelays.count,
                            secondaryTitle: "Change something",
                            onSecondary: { nav.go(to: .experience, forward: false, store: store) }) {
             HStack(spacing: 12) {
                 CoachAvatar(coach: store.coach, size: 52)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Here's what I see")
-                        .font(Theme.title(24))
+                        .font(Theme.title(26))
                         .foregroundStyle(Theme.ink)
                         .accessibilityAddTraits(.isHeader)
                     Text(source)
@@ -213,47 +181,94 @@ struct OnboardingMirrorScreen: View {
             .onboardingStaged(0, stage: stage)
             estimateCard
                 .onboardingStaged(1, stage: stage)
-            VStack(spacing: 0) {
-                ForEach(rows.indices, id: \.self) { index in
-                    VStack(spacing: 0) {
-                        Divider().overlay(Theme.hairline)
-                        HStack {
-                            Text(rows[index].0)
-                                .font(.system(size: 15))
-                                .foregroundStyle(Theme.muted)
-                            Spacer(minLength: 12)
-                            Text(rows[index].1)
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(Theme.ink)
-                        }
-                        .frame(height: 52)
-                        if index == rows.count - 1 {
-                            Divider().overlay(Theme.hairline)
-                        }
-                    }
-                    .onboardingStaged(index + 2, stage: stage)
-                }
+            HStack(spacing: 12) {
+                tile(symbol: "bolt.fill", tint: Theme.orangeDeep, background: Theme.orangeTint,
+                     value: String(format: "%.1f km/h", vma), label: "Aerobic speed (VMA)")
+                tile(symbol: "figure.run", tint: Theme.green, background: Theme.greenTint,
+                     value: easyPace, label: "Easy pace")
             }
+            .onboardingStaged(2, stage: stage)
+            HStack(spacing: 12) {
+                IconTile(systemName: "calendar", tint: Theme.yellowDeep, background: Theme.yellowTint, size: 40)
+                Text("Usual volume")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Theme.muted)
+                Spacer(minLength: 8)
+                Text(usualVolume)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity)
+            .card(radius: 20)
+            .accessibilityElement(children: .combine)
+            .onboardingStaged(3, stage: stage)
         }
-        .onboardingStageSequence($stage, delays: stageDelays)
+        .onboardingStageSequence($stage, delays: Self.stageDelays)
     }
 
+    /// The headline figure, white on green, with the level as a chip.
     private var estimateCard: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Your \(reference.title), if you ran it today")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.muted)
-            Text(Fmt.goalTime(PlanEngine.predictedSeconds(vma: vma, goal: reference) ?? 0))
-                .font(.system(size: 48, weight: .bold))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center) {
+                Text("YOUR \(reference.title.uppercased()) TODAY")
+                    .font(.system(size: 12, weight: .bold))
+                    .kerning(0.8)
+                    .foregroundStyle(Theme.greenOnDark)
+                Spacer(minLength: 8)
+                Text(level)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Theme.forest)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.white, in: Capsule())
+            }
+            OnboardingCountingValue(value: stage > 1 ? Double(PlanEngine.predictedSeconds(vma: vma, goal: reference) ?? 0) : 0,
+                                    format: { Fmt.goalTime($0) })
+                .font(.system(size: 60, weight: .bold))
                 .monospacedDigit()
-                .foregroundStyle(Theme.ink)
-            Text("That's your starting point. We set your goal right after.")
-                .font(.system(size: 14))
-                .foregroundStyle(Theme.body)
+                .foregroundStyle(Color.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .animation(.easeOut(duration: 0.9), value: stage)
+            Text("Your starting point. Your goal comes next.")
+                .font(.system(size: 15))
+                .foregroundStyle(Theme.greenOnDark)
         }
-        .padding(20)
+        .padding(22)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .card(radius: 24)
+        .background(
+            LinearGradient(colors: [Theme.green, Theme.forest], startPoint: .topLeading, endPoint: .bottomTrailing),
+            in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+        )
+        .shadow(color: Theme.green.opacity(0.25), radius: 16, x: 0, y: 10)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Your \(reference.title) today: \(Fmt.goalTime(PlanEngine.predictedSeconds(vma: vma, goal: reference) ?? 0)). Level: \(level).")
+    }
+
+    private func tile(symbol: String, tint: Color, background: Color, value: String, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            IconTile(systemName: symbol, tint: tint, background: background, size: 40)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 22, weight: .bold))
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text(label)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.muted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card(radius: 22)
+        .accessibilityElement(children: .combine)
     }
 }
 

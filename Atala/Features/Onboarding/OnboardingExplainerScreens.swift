@@ -7,8 +7,8 @@ struct OnboardingHelloScreen: View {
     @State private var finished = false
 
     private var speech: String {
-        "I'm \(store.coach.name), and I'll be your coach all the way to your goal. "
-            + "Answer a few questions and we'll build your plan together."
+        "I'm \(store.coach.name), and I'll be with you all the way to your goal. "
+            + "Tell me about your running and we'll build your plan together."
     }
 
     var body: some View {
@@ -21,7 +21,7 @@ struct OnboardingHelloScreen: View {
                 }
         }, top: {
             VStack(alignment: .leading, spacing: 8) {
-                OnboardingSpokenText(text: "Hello \(store.firstName)!",
+                OnboardingSpokenText(text: "Nice to meet you, \(store.firstName).",
                                      size: 28, weight: .bold, color: Theme.ink, lineSpacing: 2,
                                      startDelay: OnboardingRevealTiming.speech,
                                      onFinished: { greeted = true })
@@ -96,7 +96,7 @@ struct OnboardingCoachReplyScreen: View {
     private var detail: String {
         let answers = store.answers
         let goal = answers.goal ?? .regular
-        if goal == .regular {
+        if goal.isOpenEnded {
             return "A running habit is built session after session. I'll be there for each one."
         }
         if let target = answers.targetSeconds {

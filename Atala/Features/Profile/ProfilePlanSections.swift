@@ -14,7 +14,7 @@ struct ProfileGoalSection: View {
                     Text(goal.title).tag(Optional(goal))
                 }
             }
-            if let goal = draft.goal, goal != .regular {
+            if let goal = draft.goal, !goal.isOpenEnded {
                 Toggle("I have a race date", isOn: hasRace)
                 if draft.hasRace {
                     DatePicker("Race date", selection: raceDate, in: earliestRace..., displayedComponents: .date)

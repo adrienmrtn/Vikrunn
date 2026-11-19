@@ -31,15 +31,22 @@ struct RunSummaryView: View {
     }
 
     var body: some View {
-        ScrollView {
+        let analysis = RunAnalysis(run: shown)
+        return ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
-                statsCard
+                statsCard(analysis)
                 if shown.route.count >= 2 {
                     RunRouteMap(route: shown.route)
                 }
                 if fastSplits.count >= 2 {
                     RunRepsCard(splits: fastSplits)
+                }
+                if analysis.kmSplits.count >= 2 {
+                    RunSplitsCard(splits: analysis.kmSplits, fastestID: analysis.fastestSplit?.id)
+                }
+                if let gain = analysis.elevationGainM, analysis.elevation.count >= 2 {
+                    RunElevationCard(points: analysis.elevation, gainM: gain)
                 }
                 coachLine
                 if let feeling = shown.feeling {
@@ -95,7 +102,7 @@ struct RunSummaryView: View {
 
     // MARK: Figures
 
-    private var statsCard: some View {
+    private func statsCard(_ analysis: RunAnalysis) -> some View {
         let columns: [GridItem] = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
         return LazyVGrid(columns: columns, alignment: .leading, spacing: 16) {
             RunSummaryStat(value: RunFormat.distance(shown.distanceM), label: "Distance", large: true)
@@ -103,6 +110,15 @@ struct RunSummaryView: View {
             RunSummaryStat(value: "\(Fmt.pace(shown.avgPace))/km", label: "Average pace", large: false)
             if let heartRate = shown.avgHeartRate {
                 RunSummaryStat(value: "\(heartRate) bpm", label: "Average heart rate", large: false)
+            }
+            if let peak = shown.maxHeartRate {
+                RunSummaryStat(value: "\(peak) bpm", label: "Max heart rate", large: false)
+            }
+            if let gain = analysis.elevationGainM {
+                RunSummaryStat(value: "+\(gain) m", label: "Elevation gain", large: false)
+            }
+            if let fastest = analysis.fastestSplit {
+                RunSummaryStat(value: "\(Fmt.pace(fastest.pace))/km", label: "Fastest kilometre", large: false)
             }
         }
         .padding(18)

@@ -22,15 +22,18 @@ struct ProgressTabView: View {
                             .padding(.top, 14)
                             .mainStagedAppear(index: 3)
                     }
+                    MainStreakCard(streak: store.streak)
+                        .padding(.top, 18)
+                        .mainStagedAppear(index: 4)
                     totalsRow
                         .padding(.top, 16)
-                        .mainStagedAppear(index: 4)
+                        .mainStagedAppear(index: 5)
                     ProgressTabBestsList(bests: ProgressTabStats.bests(store.runs))
                         .padding(.top, 18)
-                        .mainStagedAppear(index: 5)
+                        .mainStagedAppear(index: 6)
                     ProgressTabHistory()
                         .padding(.top, 18)
-                        .mainStagedAppear(index: 6)
+                        .mainStagedAppear(index: 7)
                 }
                 .padding(.horizontal, Theme.screenPadding)
                 .padding(.top, 4)

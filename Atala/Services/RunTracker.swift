@@ -24,6 +24,8 @@ struct RunFix: Sendable {
     var lon: Double
     var accuracy: Double
     var timestamp: Date
+    /// Metres above sea level, nil when the fix has no usable altitude.
+    var altitude: Double?
 }
 
 /// Records a run: time, distance, pace, route and the steps of a structured session.

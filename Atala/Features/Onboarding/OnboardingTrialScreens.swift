@@ -30,13 +30,13 @@ struct OnboardingTrialScreen: View {
         let list = benefits
         return OnboardingScaffold(buttonsVisible: stage >= Self.stageDelays.count) {
             CoachAvatar(coach: store.coach, size: 96)
-            OnboardingEmphasisText(text: "We want you to try Atala for free for \(OnboardingPaywallOffer.trialDays) days",
+            OnboardingEmphasisText(text: "That's why we really want you to try Atala Pro for free.",
                                    size: 32,
                                    lineSpacing: 5,
-                                   highlight: "for free",
+                                   highlight: "for free.",
                                    onFinished: { emphasised = true })
                 .accessibilityAddTraits(.isHeader)
-            Text("Your plan, your coach, every feature. You pay nothing today.")
+            Text("So we can reach your goal together. \(OnboardingPaywallOffer.trialDays) days, every feature, nothing to pay today.")
                 .font(.system(size: 17))
                 .foregroundStyle(Color(hex: 0x5A5A5A))
                 .lineSpacing(5)
@@ -176,12 +176,12 @@ struct OnboardingReminderScreen: View {
                             .animation(.easeInOut(duration: 0.16).repeatForever(autoreverses: true), value: ringing)
                     )
                     .accessibilityHidden(true)
-                OnboardingEmphasisText(text: "We'll tell you before your trial ends",
+                OnboardingEmphasisText(text: "We'll remind you before your free trial ends",
                                        size: 28,
                                        centered: true,
                                        onFinished: { emphasised = true })
                     .accessibilityAddTraits(.isHeader)
-                Text("You get a reminder the day before. You have time to decide, with no surprise on your account.")
+                Text("No worries :) You get a reminder the day before, so you can try Atala with peace of mind.")
                     .font(.system(size: 17))
                     .foregroundStyle(Color(hex: 0x5A5A5A))
                     .lineSpacing(5)

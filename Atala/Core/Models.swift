@@ -17,7 +17,8 @@ enum Gender: String, Codable, CaseIterable, Identifiable {
 }
 
 enum GoalType: String, Codable, CaseIterable, Identifiable {
-    case fiveK, tenK, half, regular
+    // `shape` was added later: the raw value is the case name, so saved answers still decode.
+    case fiveK, tenK, half, regular, shape
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -25,6 +26,7 @@ enum GoalType: String, Codable, CaseIterable, Identifiable {
         case .tenK: return "10K"
         case .half: return "Half marathon"
         case .regular: return "Run regularly"
+        case .shape: return "Get in shape"
         }
     }
     var subtitle: String {
@@ -32,16 +34,17 @@ enum GoalType: String, Codable, CaseIterable, Identifiable {
         case .fiveK: return "Your first distance"
         case .tenK: return "The great classic"
         case .half: return "21.1 km"
-        case .regular: return "Stay fit, no race planned"
+        case .regular: return "A steady habit, no race planned"
+        case .shape: return "I just want to feel fit and strong"
         }
     }
-    /// Race distance in kilometres, nil for "run regularly".
+    /// Race distance in kilometres, nil for the goals without a race.
     var distanceKm: Double? {
         switch self {
         case .fiveK: return 5
         case .tenK: return 10
         case .half: return 21.0975
-        case .regular: return nil
+        case .regular, .shape: return nil
         }
     }
     var vignette: String {
@@ -50,8 +53,21 @@ enum GoalType: String, Codable, CaseIterable, Identifiable {
         case .tenK: return "vignette_goal_10k"
         case .half: return "vignette_goal_half"
         case .regular: return "vignette_goal_regular"
+        case .shape: return "vignette_why_athletic"
         }
     }
+    /// True for the goals with no race distance, date or target time ("run regularly", "get in shape").
+    var isOpenEnded: Bool {
+        switch self {
+        case .regular, .shape: return true
+        case .fiveK, .tenK, .half: return false
+        }
+    }
+}
+
+extension Optional where Wrapped == GoalType {
+    /// False while no goal is chosen.
+    var isOpenEnded: Bool { self?.isOpenEnded ?? false }
 }
 
 enum Experience: String, Codable, CaseIterable, Identifiable {
@@ -76,10 +92,12 @@ enum Experience: String, Codable, CaseIterable, Identifiable {
 }
 
 enum WeeklyVolume: String, Codable, CaseIterable, Identifiable {
-    case under10, from10to25, over25
+    // `notYet` was added later: the raw value is the case name, so saved answers still decode.
+    case notYet, under10, from10to25, over25
     var id: String { rawValue }
     var title: String {
         switch self {
+        case .notYet: return "I don't run yet"
         case .under10: return "Less than 10 km"
         case .from10to25: return "10 to 25 km"
         case .over25: return "More than 25 km"
@@ -87,6 +105,7 @@ enum WeeklyVolume: String, Codable, CaseIterable, Identifiable {
     }
     var vignette: String {
         switch self {
+        case .notYet: return "vignette_exp_1"
         case .under10: return "vignette_volume_1"
         case .from10to25: return "vignette_volume_2"
         case .over25: return "vignette_volume_3"
@@ -428,6 +447,8 @@ struct RoutePoint: Codable, Equatable {
     var lat: Double
     var lon: Double
     var time: Date
+    /// Altitude in metres. Nil for routes recorded before altitude was kept, or when the GPS had none.
+    var alt: Double?
     var coordinate: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: lat, longitude: lon) }
 }
 
@@ -459,6 +480,8 @@ struct RunRecord: Codable, Identifiable, Equatable {
     var route: [RoutePoint] = []
     var splits: [RunSplit] = []
     var feeling: Feeling?
+    /// Highest heart rate of the run, when Apple Health had one. Added later, so it stays last.
+    var maxHeartRate: Int?
 
     var distanceKm: Double { distanceM / 1000 }
     var avgPace: Int { distanceM > 0 ? Int(Double(durationSec) / (distanceM / 1000)) : 0 }

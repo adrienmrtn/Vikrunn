@@ -72,16 +72,18 @@ extension View {
 struct MainHeroImage: View {
     let name: String
     var height: CGFloat = 170
+    /// Which part of the picture stays visible when it is cropped to the frame.
+    var alignment: Alignment = .center
 
     var body: some View {
         Color.clear
             .frame(maxWidth: .infinity)
             .frame(height: height)
-            .overlay(
+            .overlay(alignment: alignment) {
                 Image(name)
                     .resizable()
                     .scaledToFill()
-            )
+            }
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .accessibilityHidden(true)
     }
@@ -199,7 +201,7 @@ struct MainSectionTitle: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(Theme.ink)
             Spacer(minLength: 8)
             if let trailing {

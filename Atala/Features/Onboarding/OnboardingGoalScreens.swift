@@ -1,13 +1,13 @@
 import SwiftUI
 
-/// Screen 12: the goal. Only the four goals of the first version.
+/// Screen 12: the goal.
 struct OnboardingGoalScreen: View {
     @EnvironmentObject private var store: AppStore
 
     private func select(_ goal: GoalType) {
         store.answers.goal = goal
-        if goal == .regular {
-            // The race and target screens are skipped for this goal.
+        if goal.isOpenEnded {
+            // The race and target screens are skipped for these goals.
             store.answers.hasRace = false
             store.answers.raceDate = nil
             store.answers.targetSeconds = nil
@@ -170,17 +170,16 @@ struct OnboardingWhyScreen: View {
         case .tenK: return "Why this 10K?"
         case .half: return "Why this half marathon?"
         case .regular: return "Why do you want to run regularly?"
+        case .shape: return "Why do you want to get in shape?"
         }
     }
 
     var body: some View {
         OnboardingScaffold(title: title,
-                           subtitle: "I'll remind you on the days it gets hard.",
                            canContinue: store.answers.motivation != nil) {
             VStack(spacing: 9) {
                 ForEach(Motivation.allCases) { motivation in
                     OptionCard(title: motivation.title,
-                               subtitle: motivation.subtitle,
                                selected: store.answers.motivation == motivation,
                                action: { store.answers.motivation = motivation }) {
                         VignetteImage(name: motivation.vignette)

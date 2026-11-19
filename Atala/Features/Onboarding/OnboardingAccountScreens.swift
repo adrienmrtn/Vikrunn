@@ -135,7 +135,7 @@ struct OnboardingLoadingScreen: View {
             sessions == 1 ? "Placing your session of the week" : "Placing your \(sessions) sessions a week",
             "Adding strength and stretching",
         ]
-        if answers.hasRace, let date = answers.raceDate, answers.goal != .regular {
+        if answers.hasRace, let date = answers.raceDate, !answers.goal.isOpenEnded {
             list.append("Easing off before \(Fmt.day(date, "d MMMM"))")
         } else {
             list.append("Balancing your \(PlanEngine.maxWeeks) weeks")
@@ -146,7 +146,7 @@ struct OnboardingLoadingScreen: View {
     private var subtitle: String {
         let answers = store.answers
         var text = OnboardingCopy.goalHeadline(answers)
-        if answers.hasRace, let date = answers.raceDate, answers.goal != .regular {
+        if answers.hasRace, let date = answers.raceDate, !answers.goal.isOpenEnded {
             text += " · \(Fmt.day(date, "d MMMM"))"
         }
         return text

@@ -33,7 +33,7 @@ struct OnboardingProjectionScreen: View {
 
     private func title(_ plan: TrainingPlan) -> String {
         let weeks = OnboardingCopy.weeks(plan.weeks.count)
-        if plan.goal == .regular {
+        if plan.goal.isOpenEnded {
             return "\(weeks) to make running a habit"
         }
         let gain = gainSeconds(plan)
@@ -55,7 +55,7 @@ struct OnboardingProjectionScreen: View {
     }
 
     private func verdict(_ plan: TrainingPlan) -> String {
-        if plan.goal == .regular {
+        if plan.goal.isOpenEnded {
             return "A steady build-up, never more than you can absorb"
         }
         if let target = plan.targetSeconds, let aimed = plan.predictedSeconds, aimed > target {
@@ -78,7 +78,7 @@ struct OnboardingProjectionScreen: View {
 
     private func heroCard(_ plan: TrainingPlan) -> some View {
         let firstKm = plan.weeks.first?.plannedKm ?? 0
-        let usesTimes = plan.goal != .regular && plan.currentSeconds != nil
+        let usesTimes = !plan.goal.isOpenEnded && plan.currentSeconds != nil
         // The big number starts from today's value and travels to where the plan leads.
         let startValue: Double = usesTimes ? Double(plan.currentSeconds ?? 0) : firstKm
         let endValue: Double = usesTimes
@@ -147,7 +147,7 @@ struct OnboardingProjectionScreen: View {
 
     /// The curve from today's level to the goal: it draws itself while the big number counts.
     private func chart(_ plan: TrainingPlan) -> some View {
-        let usesTimes = plan.goal != .regular && plan.currentSeconds != nil
+        let usesTimes = !plan.goal.isOpenEnded && plan.currentSeconds != nil
         let startValue: String
         let goalValue: String
         if usesTimes {
@@ -235,55 +235,102 @@ enum OnboardingSampleReviews {
     ]
 }
 
-/// Screen 23: what runners say (placeholders for now).
+/// Screen 23: what runners say (sample content until real reviews are collected).
 struct OnboardingReviewsScreen: View {
-    var body: some View {
-        OnboardingScaffold(title: "What runners say") {
-            ratingCard
-            VStack(spacing: 10) {
-                ForEach(OnboardingSampleReviews.reviews) { review in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(review.text)
-                            .font(.system(size: 15))
-                            .foregroundStyle(Theme.ink)
-                            .lineSpacing(3)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(review.author)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Theme.muted)
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .card()
-                }
-            }
-        }
+    /// 1 rating, then one stage per review, then the button.
+    @State private var stage = 0
+
+    private static var delays: [Double] {
+        [0.15] + Array(repeating: 0.3, count: OnboardingSampleReviews.reviews.count) + [0.35]
     }
 
-    private var ratingCard: some View {
-        HStack(spacing: 16) {
-            Text(OnboardingSampleReviews.rating)
-                .font(.system(size: 40, weight: .bold))
-                .foregroundStyle(Theme.ink)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 3) {
-                    ForEach(0..<5, id: \.self) { _ in
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 15))
-                            .foregroundStyle(Theme.yellow)
-                    }
+    var body: some View {
+        OnboardingScaffold(title: "Runners love their Atala coach",
+                           buttonsVisible: stage >= Self.delays.count) {
+            ratingHeader
+                .onboardingStaged(0, stage: stage)
+            VStack(spacing: 12) {
+                ForEach(Array(OnboardingSampleReviews.reviews.enumerated()), id: \.element.id) { index, review in
+                    reviewCard(review)
+                        .onboardingStaged(index + 1, stage: stage)
                 }
-                .accessibilityHidden(true)
-                Text(OnboardingSampleReviews.ratingCaption)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 18)
-        .card(radius: 24)
+        .onboardingStageSequence($stage, delays: Self.delays)
+    }
+
+    private func stars(size: CGFloat) -> some View {
+        HStack(spacing: 3) {
+            ForEach(0..<5, id: \.self) { _ in
+                Image(systemName: "star.fill")
+                    .font(.system(size: size))
+                    .foregroundStyle(Theme.yellow)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private var ratingHeader: some View {
+        VStack(spacing: 6) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "laurel.leading")
+                    .font(.system(size: 40, weight: .regular))
+                    .foregroundStyle(Theme.yellow)
+                    .accessibilityHidden(true)
+                Text(OnboardingSampleReviews.rating)
+                    .font(.system(size: 52, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+                Image(systemName: "laurel.trailing")
+                    .font(.system(size: 40, weight: .regular))
+                    .foregroundStyle(Theme.yellow)
+                    .accessibilityHidden(true)
+            }
+            stars(size: 18)
+            Text(OnboardingSampleReviews.ratingCaption)
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.muted)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 22)
+        .padding(.horizontal, 16)
+        .background(Theme.yellowTint, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func initials(_ author: String) -> String {
+        let letters = author.split(separator: " ").prefix(2).compactMap { $0.first }
+        return String(letters).uppercased()
+    }
+
+    private func reviewCard(_ review: OnboardingReview) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            stars(size: 13)
+            Text(review.text)
+                .font(.system(size: 16))
+                .foregroundStyle(Theme.ink)
+                .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(Theme.greenTint)
+                    .frame(width: 32, height: 32)
+                    .overlay(
+                        Text(initials(review.author))
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Theme.green)
+                    )
+                    .accessibilityHidden(true)
+                Text(review.author)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.body)
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card(radius: 22)
+        .accessibilityElement(children: .combine)
     }
 }
 

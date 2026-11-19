@@ -32,7 +32,7 @@ enum OnboardingPaywallCopy {
     /// First line: the goal in the user's own terms.
     static func goalLine(answers: OnboardingAnswers, plan: TrainingPlan?) -> String {
         let goal = answers.goal ?? plan?.goal ?? .regular
-        if goal == .regular {
+        if goal.isOpenEnded {
             switch answers.runDays.count {
             case 0: return "Running every week, for good."
             case 1: return "Running once a week, for good."

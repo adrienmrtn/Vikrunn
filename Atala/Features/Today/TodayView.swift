@@ -9,16 +9,22 @@ struct TodayView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(subtitle)
-                        .font(.system(size: 13))
-                        .foregroundStyle(Theme.muted)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .mainStagedAppear(index: 0)
+                    HStack(spacing: 8) {
+                        Text(subtitle)
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.muted)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        Spacer(minLength: 0)
+                        if store.streak.current > 0 {
+                            MainStreakChip(streak: store.streak)
+                        }
+                    }
+                    .mainStagedAppear(index: 0)
                     TodayWeekStrip()
                         .padding(.top, 14)
                         .mainStagedAppear(index: 1)
-                    MainHeroImage(name: "illu_today", height: 190)
+                    heroImage
                         .padding(.top, 16)
                         .mainStagedAppear(index: 2)
                     heroCard
@@ -48,12 +54,15 @@ struct TodayView: View {
                     TodayRaceCountdown()
                         .mainStagedAppear(index: 6)
                     coachLine
-                        .padding(.top, 16)
+                        .padding(.top, 20)
                         .mainStagedAppear(index: 7)
                     if !upcoming.isEmpty {
-                        TodayUpcomingList(workouts: upcoming)
-                            .padding(.top, 12)
-                            .mainStagedAppear(index: 8)
+                        VStack(alignment: .leading, spacing: 8) {
+                            MainSectionTitle(title: "Coming up")
+                            TodayUpcomingList(workouts: upcoming)
+                        }
+                        .padding(.top, 24)
+                        .mainStagedAppear(index: 8)
                     }
                 }
                 .padding(.horizontal, Theme.screenPadding)
@@ -65,6 +74,10 @@ struct TodayView: View {
             .navigationTitle("Hello, \(store.firstName)")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    BrandLogo(style: .full, height: 18)
+                        .foregroundStyle(Theme.forest)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     profileButton
                 }
@@ -132,6 +145,19 @@ struct TodayView: View {
         .accessibilityLabel("Profile and settings")
     }
 
+    /// A runner photo matching the gender given in onboarding, or the illustration otherwise.
+    @ViewBuilder
+    private var heroImage: some View {
+        switch store.answers.gender {
+        case .man:
+            MainHeroImage(name: "hero_today_man", height: 280, alignment: .top)
+        case .woman:
+            MainHeroImage(name: "hero_today_woman", height: 280, alignment: .top)
+        case .other, .undisclosed, nil:
+            MainHeroImage(name: "illu_today", height: 190)
+        }
+    }
+
     @ViewBuilder
     private var heroCard: some View {
         if store.plan == nil {
@@ -153,20 +179,24 @@ struct TodayView: View {
     }
 
     private var coachLine: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                CoachAvatar(coach: store.coach, size: 22)
-                Text("Note from \(store.coach.name)")
-                    .font(.system(size: 13, weight: .semibold))
+        HStack(alignment: .top, spacing: 12) {
+            CoachAvatar(coach: store.coach, size: 40)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(store.coach.name), your coach")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Theme.green)
+                Text(TodayCoachLine.text(store: store, todayRun: todayRun, next: store.nextRun))
+                    .font(.system(size: 15))
+                    .lineSpacing(4)
                     .foregroundStyle(Theme.ink)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Text(TodayCoachLine.text(store: store, todayRun: todayRun, next: store.nextRun))
-                .font(.system(size: 14))
-                .lineSpacing(4)
-                .foregroundStyle(Theme.body)
-                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.greenTint, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 }
 

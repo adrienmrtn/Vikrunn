@@ -9,7 +9,8 @@ extension RunTracker: CLLocationManagerDelegate {
             RunFix(lat: location.coordinate.latitude,
                    lon: location.coordinate.longitude,
                    accuracy: location.horizontalAccuracy,
-                   timestamp: location.timestamp)
+                   timestamp: location.timestamp,
+                   altitude: location.verticalAccuracy > 0 ? location.altitude : nil)
         }
         Task { @MainActor [weak self] in
             self?.ingest(fixes)
@@ -78,7 +79,11 @@ extension RunTracker {
         gps = Self.quality(for: fix.accuracy)
 
         guard state == .running, fix.accuracy <= 30 else { return }
-        let location = CLLocation(latitude: fix.lat, longitude: fix.lon)
+        let location = CLLocation(coordinate: CLLocationCoordinate2D(latitude: fix.lat, longitude: fix.lon),
+                                  altitude: fix.altitude ?? 0,
+                                  horizontalAccuracy: fix.accuracy,
+                                  verticalAccuracy: fix.altitude == nil ? -1 : 5,
+                                  timestamp: fix.timestamp)
         guard let previous = lastPoint, let previousTime = lastPointTime else {
             // First point after a start or a resume: nothing to measure yet.
             lastPoint = location
@@ -140,7 +145,8 @@ extension RunTracker {
         lastRoutePoint = location
         route.append(RoutePoint(lat: location.coordinate.latitude,
                                 lon: location.coordinate.longitude,
-                                time: time))
+                                time: time,
+                                alt: location.verticalAccuracy > 0 ? location.altitude : nil))
     }
 }
 
@@ -188,7 +194,14 @@ extension RunTracker {
         let baseLon = 2.3376
         let lat = baseLat + radius * cos(angle) / 111_320
         let lon = baseLon + radius * sin(angle) / (111_320 * cos(baseLat * Double.pi / 180))
-        addDistance(metres, at: CLLocation(latitude: lat, longitude: lon), time: now)
+        // A gentle hill on each lap, so the summary has an elevation profile to draw.
+        let altitude = 38 + 7 * sin(angle)
+        let location = CLLocation(coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+                                  altitude: altitude,
+                                  horizontalAccuracy: 5,
+                                  verticalAccuracy: 5,
+                                  timestamp: now)
+        addDistance(metres, at: location, time: now)
     }
 
     private func simulatedPace() -> Int {

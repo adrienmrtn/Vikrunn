@@ -194,13 +194,9 @@ struct OnboardingFirstNameScreen: View {
 
     var body: some View {
         OnboardingScaffold(title: "What's your first name?",
-                           subtitle: "Your coach will call you by your first name.",
                            canContinue: !trimmed.isEmpty,
                            onContinue: submit) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Your first name")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Theme.ink)
                 TextField("First name", text: $store.answers.firstName)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(Theme.ink)

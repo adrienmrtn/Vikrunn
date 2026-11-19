@@ -59,85 +59,37 @@ struct OnboardingCommitmentScreen: View {
         }
     }
 
+    /// "I'll run 3 times a week for 8 weeks."
     private var pledge: Text {
-        let answers = store.answers
-        let goal = answers.goal ?? .regular
-        let start = Text("I, \(store.firstName), commit to running ")
+        Text("I'll run ")
             + Text(frequency).foregroundColor(Theme.green)
             + Text(" for ")
             + Text(OnboardingCopy.weeks(weekCount)).foregroundColor(Theme.green)
-        if goal == .regular {
-            return start + Text(" to make running part of my life.")
-        }
-        let finish = start + Text(" to finish my \(OnboardingCopy.goalNoun(goal))")
-        if let target = answers.targetSeconds {
-            return finish + Text(" in ") + Text(Fmt.goalTime(target)).foregroundColor(Theme.orangeDeep) + Text(".")
-        }
-        return finish + Text(".")
-    }
-
-    private var reason: String? {
-        guard let motivation = store.answers.motivation else { return nil }
-        switch motivation {
-        case .athletic: return "Because I want an athletic body."
-        case .prove: return "Because I want to prove to myself I can do it."
-        case .record: return "Because I want to beat my record."
-        case .health: return "Because I want to take care of my health."
-        case .clearHead: return "Because I want to clear my head."
-        case .together: return "Because I want to run with people I love."
-        }
+            + Text(".")
     }
 
     var body: some View {
-        OnboardingScaffold(title: "Are you ready for your plan?",
-                           buttonTitle: "I commit",
+        OnboardingScaffold(title: "\(store.firstName), promise yourself you'll be consistent with your running and you'll reach your goal.",
+                           buttonTitle: "I promise",
                            canContinue: !strokes.isEmpty,
                            tinted: true) {
             card
-            Text("A commitment to yourself, not a contract: it binds you to nothing else. Your signature is not saved.")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.muted)
-                .lineSpacing(3)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
         }
     }
 
     private var card: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("MY COMMITMENT")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Theme.green)
-                Spacer()
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(Theme.green)
-                    .accessibilityHidden(true)
-            }
+        VStack(alignment: .leading, spacing: 14) {
             pledge
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(Theme.ink)
                 .lineSpacing(5)
                 .fixedSize(horizontal: false, vertical: true)
-            if let reason {
-                Text(reason)
-                    .font(.system(size: 14))
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
             signatureArea
-            HStack {
-                Text("Signed on \(Fmt.day(Date(), "d MMMM yyyy"))")
-                Spacer(minLength: 8)
-                Text("Witness: \(store.coach.name)")
-            }
-            .font(.system(size: 12))
-            .foregroundStyle(Theme.muted)
+            Text("\(Fmt.day(Date(), "d MMMM yyyy")) · your signature stays on this screen")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.muted)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 22)
-        .padding(.bottom, 16)
+        .padding(20)
         .background(Color.white, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         .shadow(color: Theme.green.opacity(0.12), radius: 15, x: 0, y: 10)
     }
@@ -168,7 +120,7 @@ struct OnboardingCommitmentScreen: View {
                 .frame(height: 44)
             }
         }
-        .frame(height: 130)
+        .frame(height: 150)
     }
 }
 

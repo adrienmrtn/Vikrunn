@@ -11,7 +11,7 @@ struct ProfilePacesSection: View {
                 row("Long run", plan.paces.long)
                 row("Tempo", plan.paces.tempo)
                 row("Intervals", plan.paces.interval)
-                row(plan.goal == .regular ? "Brisk" : "Race pace", plan.paces.race)
+                row(plan.goal.isOpenEnded ? "Brisk" : "Race pace", plan.paces.race)
             } else {
                 Text("Your paces appear once your plan is built.")
                     .foregroundStyle(Theme.muted)

@@ -157,9 +157,10 @@ struct OnboardingCoachScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             OnboardingHeaderSpace()
-            Text("Choose your coach")
+            Text("First, let's choose your coach")
                 .font(Theme.title(28))
                 .foregroundStyle(Theme.ink)
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Theme.screenPadding)

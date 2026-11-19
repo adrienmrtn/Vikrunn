@@ -138,6 +138,30 @@ final class HealthKitService {
         }
     }
 
+    /// Average and highest heart rate recorded in Health between two dates (a watch worn during a run
+    /// tracked with the phone). Nil when Health has nothing for that time. Asks for nothing: call it
+    /// only when the user already turned the Health import on.
+    func heartRate(from start: Date, to end: Date) async -> (average: Int, peak: Int)? {
+        guard let healthStore, end > start else { return nil }
+        let type = HKQuantityType(.heartRate)
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: [])
+        let unit = HKUnit.count().unitDivided(by: HKUnit.minute())
+        return await withCheckedContinuation { (continuation: CheckedContinuation<(average: Int, peak: Int)?, Never>) in
+            let query = HKStatisticsQuery(quantityType: type,
+                                          quantitySamplePredicate: predicate,
+                                          options: [.discreteAverage, .discreteMax]) { _, statistics, _ in
+                guard let average = statistics?.averageQuantity()?.doubleValue(for: unit),
+                      average > 20, average < 260 else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let peak = statistics?.maximumQuantity()?.doubleValue(for: unit) ?? average
+                continuation.resume(returning: (average: Int(average.rounded()), peak: Int(max(average, peak).rounded())))
+            }
+            healthStore.execute(query)
+        }
+    }
+
     private static func distance(of workout: HKWorkout) -> Double {
         let type = HKQuantityType(.distanceWalkingRunning)
         if let sum = workout.statistics(for: type)?.sumQuantity() {

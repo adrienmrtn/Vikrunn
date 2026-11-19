@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Wide sign-in button of the options sheet (54 pt, radius 16, icon on the left).
+/// Wide sign-in button of the options sheet (54 pt, radius 16, icon and title centred together).
 struct AuthProviderButton<Icon: View>: View {
     let title: String
     var dark: Bool = false
@@ -15,16 +15,18 @@ struct AuthProviderButton<Icon: View>: View {
                     .frame(width: 22, height: 22)
                 Text(title)
                     .font(.system(size: 16, weight: .semibold))
-                Spacer(minLength: 0)
-                if loading {
-                    ProgressView()
-                        .tint(dark ? Color.white : Theme.ink)
-                }
             }
             .foregroundStyle(dark ? Color.white : Theme.ink)
             .padding(.horizontal, 18)
             .frame(maxWidth: .infinity)
             .frame(height: 54)
+            .overlay(alignment: .trailing) {
+                if loading {
+                    ProgressView()
+                        .tint(dark ? Color.white : Theme.ink)
+                        .padding(.trailing, 18)
+                }
+            }
             .background(dark ? Theme.ink : Color.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)

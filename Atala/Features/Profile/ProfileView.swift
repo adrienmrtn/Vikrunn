@@ -102,7 +102,7 @@ struct ProfileView: View {
         if draft.goal != saved.goal { return true }
         if draft.runDays.sorted() != saved.runDays.sorted() { return true }
         if draft.longRunDay != saved.longRunDay { return true }
-        guard draft.goal != .regular else { return false }
+        guard !draft.goal.isOpenEnded else { return false }
         if draft.targetSeconds != saved.targetSeconds { return true }
         if draft.hasRace != saved.hasRace { return true }
         if draft.hasRace {
@@ -137,7 +137,7 @@ struct ProfileView: View {
 
     private func applyDraft() {
         var answers = store.answers
-        let isRace = draft.goal != nil && draft.goal != .regular
+        let isRace = draft.goal != nil && !draft.goal.isOpenEnded
         answers.goal = draft.goal
         answers.hasRace = isRace && draft.hasRace && draft.raceDate != nil
         answers.raceDate = answers.hasRace ? draft.raceDate.map { Calendar.plan.startOfDay(for: $0) } : nil
