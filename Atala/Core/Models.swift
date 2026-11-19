@@ -120,7 +120,7 @@ enum Motivation: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .athletic: return L("Get an athletic body")
+        case .athletic: return L("Get in better shape")
         case .prove: return L("Prove to myself I can do it")
         case .record: return L("Beat my record")
         case .health: return L("Take care of my health")
