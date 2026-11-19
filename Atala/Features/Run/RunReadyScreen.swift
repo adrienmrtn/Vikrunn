@@ -362,11 +362,11 @@ private struct RunReadySessionCard: View {
     }
 
     private func line(_ row: RunReadyPlanRow) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
             Circle()
                 .fill(row.color)
                 .frame(width: 9, height: 9)
-                .alignmentGuide(.firstTextBaseline) { dimensions in dimensions[.bottom] + 2 }
+                .padding(.top, 5)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
                 Text(row.title)
