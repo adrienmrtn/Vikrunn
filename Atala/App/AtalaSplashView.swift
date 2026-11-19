@@ -32,6 +32,8 @@ struct AtalaSplashView: View {
                 .foregroundStyle(Theme.forest)
                 Text(Self.tagline)
                     .font(.system(size: 17, weight: .medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(Theme.forest.opacity(0.78))
                     .opacity(taglineShown ? 1 : 0)
                     .offset(y: taglineShown ? 0 : 12)
