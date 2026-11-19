@@ -209,15 +209,19 @@ struct SignInOptionsSheet: View {
                     .focused($focus, equals: .code)
                     .accessibilityLabel(L("6-digit code"))
                     .onChange(of: code) { _, newValue in
-                        let digits = String(newValue.filter { $0.isNumber }.prefix(6))
+                        let digits = String(newValue.filter { $0.isNumber }.prefix(10))
                         if digits != newValue {
                             code = digits
-                        } else if digits.count == 6 {
-                            verifyCode()
                         }
                     }
+                    // Submit by itself once the typing stops: the code may be longer than 6 digits.
+                    .task(id: code) {
+                        guard code.count >= 6 else { return }
+                        try? await Task.sleep(nanoseconds: 900_000_000)
+                        if !Task.isCancelled { verifyCode() }
+                    }
             }
-            AuthSubmitButton(title: L("Confirm"), enabled: code.count == 6, loading: busy == .verifyingCode,
+            AuthSubmitButton(title: L("Confirm"), enabled: code.count >= 6, loading: busy == .verifyingCode,
                              action: { verifyCode() })
             Button(action: { resendCode() }) {
                 Text(busy == .sendingCode ? L("Sending…") : L("Send a new code"))
@@ -357,7 +361,7 @@ struct SignInOptionsSheet: View {
     }
 
     private func verifyCode() {
-        guard busy == nil, code.count == 6 else { return }
+        guard busy == nil, code.count >= 6 else { return }
         busy = .verifyingCode
         errorText = nil
         infoText = nil
