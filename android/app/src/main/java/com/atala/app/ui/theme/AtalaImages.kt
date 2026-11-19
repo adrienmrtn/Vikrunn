@@ -7,8 +7,8 @@ import com.atala.app.core.model.CoachPose
 
 /**
  * The pictures of the iPhone's asset catalog, by their catalog name, so ported screens use the same
- * names as the Swift code (`AtalaImages["illu_today"]`). The files are in res/drawable-nodpi.
- * The two vector logos (logo_atala, logo_atala_mark) are not converted yet.
+ * names as the Swift code (`AtalaImages["illu_today"]`). The files are in res/drawable-nodpi, except the
+ * two vector logos (logo_atala, logo_atala_mark), converted from their SVG into res/drawable.
  */
 object AtalaImages {
     private val byName: Map<String, Int> = mapOf(
@@ -95,7 +95,8 @@ object AtalaImages {
         "illu_plan" to R.drawable.illu_plan, "illu_progress" to R.drawable.illu_progress,
         "illu_session" to R.drawable.illu_session, "illu_strength" to R.drawable.illu_strength,
         "illu_stretching" to R.drawable.illu_stretching, "illu_today" to R.drawable.illu_today,
-        "launch_logo" to R.drawable.launch_logo, "photo_community" to R.drawable.photo_community,
+        "launch_logo" to R.drawable.launch_logo, "logo_atala" to R.drawable.logo_atala,
+        "logo_atala_mark" to R.drawable.logo_atala_mark, "photo_community" to R.drawable.photo_community,
         "photo_session_complete" to R.drawable.photo_session_complete, "photo_trio" to R.drawable.photo_trio,
         "vignette_constraint_injury" to R.drawable.vignette_constraint_injury, "vignette_constraint_sleep" to R.drawable.vignette_constraint_sleep,
         "vignette_constraint_strength" to R.drawable.vignette_constraint_strength, "vignette_constraint_travel" to R.drawable.vignette_constraint_travel,
