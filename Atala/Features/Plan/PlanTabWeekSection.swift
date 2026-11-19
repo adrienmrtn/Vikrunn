@@ -3,7 +3,6 @@ import SwiftUI
 /// One week of the plan: a header line, and its sessions when expanded.
 struct PlanTabWeekSection: View {
     @EnvironmentObject private var store: AppStore
-    @ObservedObject private var purchases = PurchaseService.shared
     let week: PlanWeek
     let number: Int
     let isCurrent: Bool
@@ -34,7 +33,7 @@ struct PlanTabWeekSection: View {
                         NavigationLink {
                             WorkoutDetailView(workoutID: workout.id)
                         } label: {
-                            PlanTabSessionRow(workout: workout, locked: isLocked(workout))
+                            PlanTabSessionRow(workout: workout)
                         }
                         .buttonStyle(.plain)
                         .hapticOnTap()
@@ -52,16 +51,6 @@ struct PlanTabWeekSection: View {
     }
 
     // MARK: Data
-
-    private func isLocked(_ workout: Workout) -> Bool {
-        // Only what is still to do: a session already done or missed keeps its normal row.
-        workout.status == .planned && !purchases.isPro && ProAccess.isLocked(workout, plan: store.plan)
-    }
-
-    /// The whole week is behind the lock (a week with nothing in it is not).
-    private var weekLocked: Bool {
-        !week.workouts.isEmpty && week.workouts.allSatisfy { isLocked($0) }
-    }
 
     private var doneCount: Int { week.workouts.filter { $0.status == .done }.count }
     private var missedCount: Int { week.workouts.filter { $0.status == .missed }.count }
@@ -101,14 +90,6 @@ struct PlanTabWeekSection: View {
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
                     .background(Theme.orangeTint, in: Capsule())
-            }
-            if weekLocked {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Theme.yellowDeep)
-                    .padding(5)
-                    .background(Theme.yellowTint, in: Circle())
-                    .accessibilityLabel(L("Needs Atala Pro"))
             }
             Spacer(minLength: 8)
             Text(isExpanded ? Fmt.km(week.plannedKm) : collapsedSummary)
@@ -150,8 +131,6 @@ struct PlanTabWeekSection: View {
 /// One session of a week: dot, day, title, amount and state.
 struct PlanTabSessionRow: View {
     let workout: Workout
-    /// Behind the Atala Pro lock: the row stays readable, with a padlock in place of the amount.
-    var locked: Bool = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -182,16 +161,9 @@ struct PlanTabSessionRow: View {
                     .foregroundStyle(Theme.green)
                     .accessibilityLabel(L("Done"))
             }
-            if locked {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Theme.yellowDeep)
-                    .accessibilityLabel(L("Needs Atala Pro"))
-            } else {
-                Text(workout.mainAmountText)
-                    .font(.system(size: 13, weight: isToday ? .semibold : .regular))
-                    .foregroundStyle(isToday ? Theme.ink : Theme.muted)
-            }
+            Text(workout.mainAmountText)
+                .font(.system(size: 13, weight: isToday ? .semibold : .regular))
+                .foregroundStyle(isToday ? Theme.ink : Theme.muted)
         }
         .frame(height: 42)
         .contentShape(Rectangle())

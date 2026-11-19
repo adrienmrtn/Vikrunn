@@ -211,7 +211,7 @@ struct RecentResult: Codable, Equatable {
 /// Everything the questionnaire collects. Stored on the phone from the first answer.
 struct OnboardingAnswers: Codable, Equatable {
     var firstName: String = ""
-    var coachID: Int = 1
+    var coachID: Int = 3
     var gender: Gender?
     var experience: Experience?
     var weeklyVolume: WeeklyVolume?

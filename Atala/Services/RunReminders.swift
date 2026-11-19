@@ -3,9 +3,8 @@ import UserNotifications
 
 /// Local reminders for the sessions of the plan, on the morning of each one.
 ///
-/// Who gets them: people on the free plan, and subscribers who are past their free trial.
-/// Someone in the middle of a free trial gets none, and nothing ever reminds anyone that a
-/// trial is about to end.
+/// The plan is free, so everyone gets them, with one exception: someone in the middle of a free
+/// trial gets none. Nothing ever mentions a trial, and nothing asks anyone to subscribe.
 @MainActor
 enum RunReminders {
     /// Hour of the morning reminder, in the phone's own time zone.
@@ -27,8 +26,6 @@ enum RunReminders {
         return status == .authorized || status == .provisional
     }
 
-    private static let lockNudgeKey = "atala.reminder.lockNudgeSent"
-
     /// Removes Atala's pending reminders and schedules the coming ones again, from the plan as it
     /// is now. Safe to call often: on launch, when the plan changes, when the subscription changes.
     static func refresh(store: AppStore) async {
@@ -43,8 +40,6 @@ enum RunReminders {
         if !ours.isEmpty { center.removePendingNotificationRequests(withIdentifiers: ours) }
 
         let purchases = PurchaseService.shared
-        // A subscriber never needs the "your plan is waiting" nudge again.
-        if purchases.isPro { UserDefaults.standard.set(false, forKey: lockNudgeKey) }
 
         guard authorized, store.hasCompletedOnboarding, let plan = store.plan else { return }
         // No reminder of any kind during a free trial.
@@ -69,16 +64,8 @@ enum RunReminders {
 
             let content = UNMutableNotificationContent()
             content.sound = .default
-            if ProAccess.isLocked(workout, plan: plan) {
-                // Free plan, after the free week: one nudge ever, then silence.
-                guard !UserDefaults.standard.bool(forKey: lockNudgeKey) else { break }
-                UserDefaults.standard.set(true, forKey: lockNudgeKey)
-                content.title = L("Your plan is waiting")
-                content.body = L("%@ is next. Unlock Atala Pro and pick up where you left off.", workout.title)
-            } else {
-                content.title = title(for: workout)
-                content.body = body(for: workout, coach: coach)
-            }
+            content.title = title(for: workout)
+            content.body = body(for: workout, coach: coach)
             let trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
             let request = UNNotificationRequest(identifier: prefix + workout.id.uuidString,
                                                 content: content, trigger: trigger)

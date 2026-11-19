@@ -1,40 +1,103 @@
 import SwiftUI
 import UIKit
 
-/// When the welcome gift is shown: to people who are not subscribed, shortly after the app opens,
-/// once a day at most and three times in all. Nothing is saved to the account: it is a property
-/// of this phone.
+/// When the welcome gift is shown: to people who are not subscribed, shortly after the app opens.
+/// From the first time it is shown the offer runs for 24 hours: a small chip on the home screen
+/// counts the time down and opens the gift again. Nothing is saved to the account: it is a
+/// property of this phone.
 enum GiftOfferSchedule {
     private static let countKey = "atala.gift.shownCount"
     private static let lastKey = "atala.gift.lastShown"
+    private static let endKey = "atala.gift.offerEnd"
     static let maxShows = 3
     private static let minInterval: TimeInterval = 24 * 3600
+    /// How long the offer stays available once it was shown for the first time.
+    static let window: TimeInterval = 24 * 3600
     /// Seconds after the main screen appears: the launch splash and the entrance are over by then.
     static let delay: Double = 4
 
+    /// When the offer ends. Nil while the gift was never shown.
+    static var endDate: Date? {
+        let stamp: Double = UserDefaults.standard.double(forKey: endKey)
+        return stamp > 0 ? Date(timeIntervalSince1970: stamp) : nil
+    }
+
+    /// Seconds left before the offer ends. Zero once it is over, or while it has not started.
+    static func remaining(now: Date = Date()) -> TimeInterval {
+        guard let end = endDate else { return 0 }
+        return max(0, end.timeIntervalSince(now))
+    }
+
+    /// True from the first time the gift was shown until its 24 hours are over.
+    static var isRunning: Bool {
+        remaining() > 0
+    }
+
+    /// The full-screen gift shows by itself before the offer has started, and again (once a day
+    /// at most) while it runs. Never once the countdown has reached zero.
     static func isDue(now: Date = Date()) -> Bool {
         let defaults = UserDefaults.standard
         guard defaults.integer(forKey: countKey) < maxShows else { return false }
+        if endDate != nil, remaining(now: now) <= 0 { return false }
         let last = defaults.double(forKey: lastKey)
         return last == 0 || now.timeIntervalSince1970 - last >= minInterval
     }
 
+    /// The gift was shown by itself: counts it, and starts the 24 hours the first time.
     static func noteShown(now: Date = Date()) {
         let defaults = UserDefaults.standard
         defaults.set(defaults.integer(forKey: countKey) + 1, forKey: countKey)
         defaults.set(now.timeIntervalSince1970, forKey: lastKey)
+        if endDate == nil {
+            defaults.set(now.addingTimeInterval(window).timeIntervalSince1970, forKey: endKey)
+        }
+    }
+
+    /// "23:59:41"
+    static func clock(_ seconds: TimeInterval) -> String {
+        let total: Int = max(0, Int(seconds.rounded(.up)))
+        let hours: Int = total / 3600
+        let minutes: Int = (total % 3600) / 60
+        let secs: Int = total % 60
+        return String(format: "%02d:%02d:%02d", hours, minutes, secs)
     }
 }
 
-/// Presents the gift over the main screen when it is due.
+/// Shared between the presenter (on the app shell) and the chip of the home screen: whether the
+/// gift is on screen, and when the offer ends.
+@MainActor
+final class GiftOfferCenter: ObservableObject {
+    static let shared = GiftOfferCenter()
+
+    @Published var isPresented: Bool = false
+    /// Copy of `GiftOfferSchedule.endDate`, published so the chip appears as soon as the offer starts.
+    @Published private(set) var endDate: Date? = GiftOfferSchedule.endDate
+
+    private init() {}
+
+    /// The gift shows by itself: the first time starts the countdown.
+    func presentWhenDue() {
+        GiftOfferSchedule.noteShown()
+        endDate = GiftOfferSchedule.endDate
+        isPresented = true
+    }
+
+    /// The chip was tapped: the same gift again, while the offer runs.
+    func reopen() {
+        guard GiftOfferSchedule.isRunning else { return }
+        isPresented = true
+    }
+}
+
+/// Presents the gift over the main screen when it is due, or when the chip asks for it.
 struct GiftOfferPresenter: ViewModifier {
     @EnvironmentObject private var store: AppStore
     @ObservedObject private var purchases = PurchaseService.shared
-    @State private var shown = false
+    @ObservedObject private var center = GiftOfferCenter.shared
 
     func body(content: Content) -> some View {
         content
-            .fullScreenCover(isPresented: $shown) {
+            .fullScreenCover(isPresented: $center.isPresented) {
                 GiftOfferView()
                     .environmentObject(store)
             }
@@ -48,9 +111,62 @@ struct GiftOfferPresenter: ViewModifier {
                 guard !purchases.canPurchase || purchases.offers[.gift] != nil else { return }
                 // Never on top of a sheet, a run or an alert: it waits for the next launch instead.
                 guard !Self.somethingIsPresented else { return }
-                GiftOfferSchedule.noteShown()
-                shown = true
+                center.presentWhenDue()
             }
+    }
+}
+
+/// Small gift chip of the home screen: the time left on the offer, and a tap opens the gift again.
+/// Only the chip follows the clock, nothing around it is drawn again.
+struct GiftOfferChip: View {
+    @ObservedObject private var purchases = PurchaseService.shared
+    @ObservedObject private var center = GiftOfferCenter.shared
+
+    /// Not for subscribers, and only when the gift can really be bought (always in a build
+    /// without the store, so the chip can be tried).
+    private var available: Bool {
+        if purchases.isPro { return false }
+        if center.endDate == nil { return false }
+        return PurchaseService.isPlaceholder || purchases.offers[.gift] != nil
+    }
+
+    var body: some View {
+        if available {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let left: TimeInterval = GiftOfferSchedule.remaining(now: context.date)
+                if left > 0 {
+                    chip(GiftOfferSchedule.clock(left))
+                }
+            }
+        }
+    }
+
+    private func chip(_ clock: String) -> some View {
+        Button {
+            Haptics.tap()
+            center.reopen()
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "gift.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Theme.yellowDeep)
+                Text(clock)
+                    .font(.system(size: 12, weight: .bold))
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.forest)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 30)
+            .background(Theme.yellowTint, in: Capsule())
+            .overlay(Capsule().stroke(Theme.yellow.opacity(0.6), lineWidth: 1))
+            .frame(height: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L("Your gift. The offer ends in %@", clock))
+        .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -64,8 +180,8 @@ extension GiftOfferPresenter {
     }
 }
 
-/// "We have a gift for you": the yearly plan at half price, with no free trial. The box drops in,
-/// shakes, opens in a burst, then the offer appears.
+/// "We have a gift for you": the yearly plan at half price, paid from the first day. The box drops
+/// in, shakes, opens in a burst, then the offer appears with the time left on it.
 struct GiftOfferView: View {
     @EnvironmentObject private var store: AppStore
     @Environment(\.dismiss) private var dismiss
@@ -191,7 +307,7 @@ struct GiftOfferView: View {
                     .background(Theme.yellow, in: Capsule())
             }
             VStack(spacing: 4) {
-                Text(L("Access your full plan for only"))
+                Text(L("All of Atala Pro for only"))
                     .font(.system(size: 17))
                     .foregroundStyle(Theme.greenOnDark)
                 (Text(weeklyPrice).font(.system(size: 46, weight: .bold))
@@ -204,8 +320,31 @@ struct GiftOfferView: View {
                     .foregroundColor(Color.white)
             }
             .multilineTextAlignment(.center)
+            countdown
         }
         .padding(.horizontal, 28)
+    }
+
+    /// The time left on the offer, counted down every second. Left out once it is over.
+    private var countdown: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let left: TimeInterval = GiftOfferSchedule.remaining(now: context.date)
+            if left > 0 {
+                let clock: String = GiftOfferSchedule.clock(left)
+                HStack(spacing: 6) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 12, weight: .bold))
+                    Text(L("Offer ends in %@", clock))
+                        .font(.system(size: 14, weight: .semibold))
+                        .monospacedDigit()
+                }
+                .foregroundStyle(Color.white)
+                .padding(.horizontal, 14)
+                .frame(height: 32)
+                .background(Color.white.opacity(0.14), in: Capsule())
+                .accessibilityElement(children: .combine)
+            }
+        }
     }
 
     private var buttons: some View {

@@ -1,26 +1,6 @@
 import SwiftUI
 import UIKit
 
-extension ProAccess {
-    /// Where the user stands in the free week: day 1 to 7 and the days left after today.
-    /// Nil once the week is over, or before a plan exists.
-    static func freeWeekProgress(plan: TrainingPlan?, now: Date = Date()) -> (day: Int, daysLeft: Int)? {
-        guard let end = freeWeekEnd(plan: plan) else { return nil }
-        let calendar = Calendar.plan
-        let today = calendar.startOfDay(for: now)
-        guard today < end else { return nil }
-        let left = calendar.dateComponents([.day], from: today, to: end).day ?? 0
-        let day = min(7, max(1, 8 - left))
-        return (day, max(0, left - 1))
-    }
-
-    /// Sessions of the plan that are still ahead and behind the lock.
-    static func lockedSessionCount(plan: TrainingPlan?) -> Int {
-        guard let plan, !isPro else { return 0 }
-        return plan.allWorkouts.filter { $0.status == .planned && isLocked($0, plan: plan) }.count
-    }
-}
-
 /// Small gold "PRO" mark shown next to the name of a subscriber.
 struct ProChip: View {
     var body: some View {
@@ -40,11 +20,28 @@ struct ProChip: View {
     }
 }
 
-/// Today, for people without Atala Pro: the free week as seven steps, then what waits behind the lock.
-struct ProJourneyCard: View {
+/// One thing Atala Pro adds, as shown on the card for people without it.
+private struct ProUpsellFeature: Identifiable {
+    let id: Int
+    let symbol: String
+    let title: String
+}
+
+/// For people without Atala Pro: a compact card with what Pro adds and one button to the paywall.
+/// Hidden for subscribers. It sits below the session of the day, never above it.
+struct ProUpsellCard: View {
     @EnvironmentObject private var store: AppStore
     @ObservedObject private var purchases = PurchaseService.shared
     @State private var showPaywall = false
+
+    private var features: [ProUpsellFeature] {
+        [
+            ProUpsellFeature(id: 0, symbol: "bubble.left.and.bubble.right.fill", title: L("Talk to your coach any time")),
+            ProUpsellFeature(id: 1, symbol: "waveform", title: L("%@'s voice in your ears", store.coach.name)),
+            ProUpsellFeature(id: 2, symbol: "chart.line.uptrend.xyaxis", title: L("Your progress and predictions")),
+            ProUpsellFeature(id: 3, symbol: "list.bullet.rectangle", title: L("Every detail of your runs")),
+        ]
+    }
 
     var body: some View {
         if !purchases.isPro, store.plan != nil {
@@ -55,125 +52,69 @@ struct ProJourneyCard: View {
                 content
             }
             .buttonStyle(.plain)
+            .accessibilityHint(L("Shows what Atala Pro includes"))
             .proPaywall(isPresented: $showPaywall)
         }
     }
 
-    @ViewBuilder private var content: some View {
-        let locked = ProAccess.lockedSessionCount(plan: store.plan)
-        if let progress = ProAccess.freeWeekProgress(plan: store.plan) {
-            freeWeek(day: progress.day, daysLeft: progress.daysLeft, locked: locked)
-        } else {
-            weekOver(locked: locked)
-        }
-    }
-
-    private func freeWeekMessage(daysLeft: Int, locked: Int) -> String {
-        if daysLeft == 0 {
-            if locked == 0 { return L("Last free day. The rest of Atala unlocks with Atala Pro.") }
-            return locked == 1
-                ? L("Last free day. 1 session of your plan unlocks with Atala Pro.")
-                : L("Last free day. %@ sessions of your plan unlock with Atala Pro.", locked)
-        }
-        if daysLeft == 1 {
-            if locked == 0 { return L("1 free day left. Then the rest of Atala unlocks with Atala Pro.") }
-            return locked == 1
-                ? L("1 free day left. Then 1 session of your plan unlocks with Atala Pro.")
-                : L("1 free day left. Then %@ sessions of your plan unlock with Atala Pro.", locked)
-        }
-        if locked == 0 { return L("%@ free days left. Then the rest of Atala unlocks with Atala Pro.", daysLeft) }
-        return locked == 1
-            ? L("%@ free days left. Then 1 session of your plan unlocks with Atala Pro.", daysLeft)
-            : L("%@ free days left. Then %@ sessions of your plan unlock with Atala Pro.", daysLeft, locked)
-    }
-
-    private func freeWeek(day: Int, daysLeft: Int, locked: Int) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(L("YOUR FREE WEEK"))
-                    .font(.system(size: 12, weight: .bold))
-                    .kerning(0.8)
-                    .foregroundStyle(Theme.greenOnDark)
-                Spacer(minLength: 8)
-                Text(L("Day %@ of 7", day))
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Color.white)
-            }
-            // Seven steps: the days behind are gold, today is white, the lock waits at the end.
-            HStack(spacing: 6) {
-                ForEach(1...7, id: \.self) { step in
-                    Capsule()
-                        .fill(step < day ? Theme.yellow : (step == day ? Color.white : Color.white.opacity(0.22)))
-                        .frame(height: 8)
-                }
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Theme.yellow)
-            }
-            .accessibilityHidden(true)
-            Text(freeWeekMessage(daysLeft: daysLeft, locked: locked))
-                .font(.system(size: 14))
-                .foregroundStyle(Color.white)
-                .lineSpacing(3)
-                .fixedSize(horizontal: false, vertical: true)
-            unlockLabel
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(colors: [Theme.green, Theme.forest], startPoint: .topLeading, endPoint: .bottomTrailing),
-            in: RoundedRectangle(cornerRadius: 22, style: .continuous)
-        )
-        .accessibilityElement(children: .combine)
-    }
-
-    private func weekOver(locked: Int) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 10) {
                 Circle()
                     .fill(Theme.yellow)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 36, height: 36)
                     .overlay(
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: 19, weight: .bold))
+                        Image(systemName: "crown.fill")
+                            .font(.system(size: 15, weight: .bold))
                             .foregroundStyle(Theme.forest)
                     )
                     .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L("Your free week is done"))
-                        .font(.system(size: 18, weight: .bold))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Atala Pro")
+                        .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(Color.white)
-                    Text(locked > 0
-                         ? (locked == 1 ? L("1 session is waiting for you.") : L("%@ sessions are waiting for you.", locked))
-                         : L("Your coach and your plan are waiting for you."))
-                        .font(.system(size: 14))
+                    Text(L("Go further with your coach"))
+                        .font(.system(size: 13))
                         .foregroundStyle(Theme.greenOnDark)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer(minLength: 0)
+                Spacer(minLength: 6)
+                Text(L("Discover"))
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Theme.forest)
+                    .lineLimit(1)
+                    .padding(.horizontal, 14)
+                    .frame(height: 36)
+                    .background(Color.white, in: Capsule())
+                    .fixedSize()
             }
-            unlockLabel
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(features) { feature in
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Image(systemName: feature.symbol)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Theme.yellow)
+                            .frame(width: 20)
+                            .accessibilityHidden(true)
+                        Text(feature.title)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.white)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(colors: [Theme.green, Theme.forest], startPoint: .topLeading, endPoint: .bottomTrailing),
-            in: RoundedRectangle(cornerRadius: 22, style: .continuous)
+            in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
         )
+        .contentShape(RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
         .accessibilityElement(children: .combine)
-    }
-
-    private var unlockLabel: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "crown.fill")
-                .font(.system(size: 13, weight: .bold))
-            Text(L("Unlock Atala Pro"))
-                .font(.system(size: 15, weight: .bold))
-        }
-        .foregroundStyle(Theme.forest)
-        .frame(maxWidth: .infinity)
-        .frame(height: 44)
-        .background(Color.white, in: Capsule())
     }
 }
 
@@ -239,13 +180,11 @@ struct ProWelcomeView: View {
     @State private var stage = 0
 
     private var items: [ProUnlockedItem] {
-        let weeks = store.plan?.weeks.count ?? PlanEngine.maxWeeks
-        return [
-            ProUnlockedItem(id: 0, symbol: "calendar", title: L("All %@ of your plan", OnboardingCopy.weeks(weeks))),
+        [
+            ProUnlockedItem(id: 0, symbol: "bubble.left.and.bubble.right.fill", title: L("Your coach, any time")),
             ProUnlockedItem(id: 1, symbol: "waveform", title: L("%@'s voice on every run", store.coach.name)),
-            ProUnlockedItem(id: 2, symbol: "bubble.left.and.bubble.right.fill", title: L("Your coach, without limits")),
-            ProUnlockedItem(id: 3, symbol: "figure.cooldown", title: L("Guided strength and stretching")),
-            ProUnlockedItem(id: 4, symbol: "chart.line.uptrend.xyaxis", title: L("Every detail of your runs")),
+            ProUnlockedItem(id: 2, symbol: "chart.line.uptrend.xyaxis", title: L("Your progress and predictions")),
+            ProUnlockedItem(id: 3, symbol: "list.bullet.rectangle", title: L("Every detail of your runs")),
         ]
     }
 
@@ -382,8 +321,8 @@ struct ProWelcomeView: View {
         .environmentObject(AppStore.preview)
 }
 
-#Preview("Journey") {
-    ProJourneyCard()
+#Preview("Pro card") {
+    ProUpsellCard()
         .environmentObject(AppStore.preview)
         .padding()
 }

@@ -1,9 +1,11 @@
 import SwiftUI
 
-/// Sentence that is fully visible from the start in a light grey weight, then turns bold and dark
-/// word by word, like a highlight sweeping through it. Different from `OnboardingSpokenText`, where
-/// the words appear: here nothing appears or moves, every word keeps the room of its bold form.
-/// `onFinished` is called once, after the last word. With Reduce Motion the sentence is bold at
+/// Headline that writes itself: each word fades in and rises a few points, one after the other at
+/// an even pace, in its final bold form. Every word has its place from the start (the paragraph
+/// is laid out whole before anything shows), so nothing reflows while it appears. One phrase can
+/// be coloured. Different from `OnboardingSpokenText` only in its rhythm and look: an even pace
+/// for a headline, where the spoken text breathes at punctuation.
+/// `onFinished` is called once, after the last word. With Reduce Motion the sentence is there at
 /// once and `onFinished` is called immediately.
 struct OnboardingEmphasisText: View {
     /// The sentence. A phrase written between two `*` ("try Atala *for free* today") is the
@@ -12,22 +14,26 @@ struct OnboardingEmphasisText: View {
     var size: CGFloat = 28
     var lineSpacing: CGFloat = 4
     var centered: Bool = false
-    /// Words of this phrase (first occurrence) take `highlightColor` once emphasised. Not needed,
-    /// and ignored, when `text` carries `*` markers.
+    /// Words of this phrase (first occurrence) take `highlightColor`. Not needed, and ignored,
+    /// when `text` carries `*` markers.
     var highlight: String? = nil
     var highlightColor: Color = Theme.green
-    var restingWeight: Font.Weight = .light
-    var restingColor: Color = Theme.faint
     var emphasisWeight: Font.Weight = .bold
     var emphasisColor: Color = Theme.ink
     /// Seconds between two words.
-    var wordInterval: Double = 0.125
+    var wordInterval: Double = 0.085
+    /// The sentence starts when this becomes true (used to chain several sentences).
+    var isActive: Bool = true
     var startDelay: Double = 0.32
     var onFinished: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var lit = 0
+    @State private var revealed = false
     @State private var finished = false
+
+    private var interval: Double {
+        max(0.04, wordInterval)
+    }
 
     /// `text` cut at its `*` markers: before, highlighted, after. nil without a pair of markers.
     private var marked: [String]? {
@@ -67,61 +73,51 @@ struct OnboardingEmphasisText: View {
     }
 
     var body: some View {
-        let list = words
-        let coloured = highlightRange(in: list)
+        let list: [String] = words
+        let coloured: Range<Int> = highlightRange(in: list)
         return OnboardingWordFlowLayout(wordSpacing: size * 0.25, lineSpacing: lineSpacing, centered: centered) {
             ForEach(list.indices, id: \.self) { index in
-                word(list[index], emphasised: index < lit, highlighted: coloured.contains(index))
+                word(list[index], index: index, highlighted: coloured.contains(index))
             }
         }
         .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(plainText)
-        .task {
-            await sweep()
+        .task(id: isActive) {
+            await reveal()
         }
     }
 
-    /// The bold copy gives the word its size; the light copy sits on top of it and fades away.
-    private func word(_ value: String, emphasised: Bool, highlighted: Bool) -> some View {
-        Text(value)
+    /// The word sits in its final place and form from the start; only its opacity and a small
+    /// vertical offset change, so the layout never moves.
+    private func word(_ value: String, index: Int, highlighted: Bool) -> some View {
+        let start: Double = max(0, startDelay) + Double(index) * interval
+        let animation: Animation? = reduceMotion ? nil : OnboardingWordReveal.animation(delay: start)
+        return Text(value)
             .font(.system(size: size, weight: emphasisWeight))
             .foregroundStyle(highlighted ? highlightColor : emphasisColor)
             .lineLimit(1)
             .fixedSize()
-            .opacity(emphasised ? 1 : 0)
-            .overlay(alignment: .leading) {
-                Text(value)
-                    .font(.system(size: size, weight: restingWeight))
-                    .foregroundStyle(restingColor)
-                    .lineLimit(1)
-                    .fixedSize()
-                    .opacity(emphasised ? 0 : 1)
-            }
+            .opacity(revealed ? 1 : 0)
+            .offset(y: revealed ? 0 : OnboardingWordReveal.rise)
+            .animation(animation, value: revealed)
     }
 
     @MainActor
-    private func sweep() async {
-        guard !finished else { return }
-        let count = words.count
+    private func reveal() async {
+        guard isActive, !finished else { return }
+        let count: Int = words.count
         if reduceMotion || count == 0 {
-            lit = count
+            revealed = true
             finished = true
             onFinished()
             return
         }
-        if startDelay > 0 {
-            try? await Task.sleep(nanoseconds: UInt64(startDelay * 1_000_000_000))
-            if Task.isCancelled { return }
-        }
-        let interval = UInt64(max(0.05, wordInterval) * 1_000_000_000)
-        for index in 0..<count {
-            withAnimation(.easeOut(duration: 0.2)) {
-                lit = index + 1
-            }
-            try? await Task.sleep(nanoseconds: interval)
-            if Task.isCancelled { return }
-        }
+        // One change: every word then follows its own delay.
+        revealed = true
+        let lastStart: Double = max(0, startDelay) + Double(count - 1) * interval
+        try? await Task.sleep(nanoseconds: OnboardingWordReveal.nanoseconds(lastStart + OnboardingWordReveal.settle))
+        if Task.isCancelled { return }
         finished = true
         onFinished()
     }

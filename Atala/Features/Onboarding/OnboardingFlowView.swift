@@ -147,6 +147,24 @@ final class OnboardingNavigator: ObservableObject {
         store.finishOnboarding()
     }
 
+    /// Saves the step that follows the current one without showing it. Used when the whole flow
+    /// is about to be rebuilt (new language): the rebuilt flow restores itself on that step, so
+    /// there is one cross-fade instead of a step transition followed by a rebuild.
+    /// False when there is no next step: nothing was saved.
+    func saveNext(_ store: AppStore) -> Bool {
+        let order = OnboardingStep.order
+        var index = step.position + 1
+        while index < order.count {
+            let candidate = order[index]
+            if !isSkipped(candidate, store: store) {
+                store.onboardingStep = candidate.rawValue
+                return true
+            }
+            index += 1
+        }
+        return false
+    }
+
     func back(_ store: AppStore) {
         guard step.allowsBack else { return }
         let order = OnboardingStep.order

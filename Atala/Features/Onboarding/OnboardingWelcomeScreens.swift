@@ -16,7 +16,7 @@ private struct OnboardingWelcomeSlide: Identifiable {
 
     static var all: [OnboardingWelcomeSlide] { [
         OnboardingWelcomeSlide(id: 0, illustration: "welcome_1", photo: "welcome_photo_1",
-                               title: L("Run like you belong"),
+                               title: L("Your Running Coach"),
                                text: L("Atala is the coach behind runners who show up, from a first 5K to a half marathon.")),
         OnboardingWelcomeSlide(id: 1, illustration: "welcome_2", photo: "welcome_photo_2",
                                title: L("A plan that fits your life"),
