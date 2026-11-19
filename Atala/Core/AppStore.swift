@@ -342,6 +342,8 @@ final class AppStore: ObservableObject {
         settings = AppSettings()
         account = nil
         hasCompletedOnboarding = false
+        ProAccess.reset()
+        PurchaseService.shared.signOut()
         save()
     }
 

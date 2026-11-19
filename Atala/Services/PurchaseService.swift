@@ -67,7 +67,30 @@ final class PurchaseService: ObservableObject {
 
     private var started = false
 
-    private init() {}
+    private static let placeholderKey = "atala.placeholder.pro"
+
+    /// True in a build without the RevenueCat package: nothing can be bought, and the paywall's
+    /// main button stands in for a purchase so the free and the Pro sides can both be tried.
+    static var isPlaceholder: Bool {
+        #if canImport(RevenueCat)
+        return false
+        #else
+        return true
+        #endif
+    }
+
+    private init() {
+        if Self.isPlaceholder {
+            isPro = UserDefaults.standard.bool(forKey: Self.placeholderKey)
+        }
+    }
+
+    /// Placeholder builds only: pretends the subscription was bought (or not), on this phone.
+    func setPlaceholderPro(_ active: Bool) {
+        guard Self.isPlaceholder else { return }
+        UserDefaults.standard.set(active, forKey: Self.placeholderKey)
+        isPro = active
+    }
 
     /// Starts the SDK once, then loads the offers and the subscription state.
     /// `userID` is the account's identifier, nil for a guest.
@@ -83,6 +106,23 @@ final class PurchaseService: ObservableObject {
             }
             await refresh()
         }
+        #endif
+    }
+
+    /// Call when the account is signed out or erased: the next person on this phone must not
+    /// inherit the subscription state.
+    func signOut() {
+        #if canImport(RevenueCat)
+        guard started else { return }
+        isPro = false
+        Task { @MainActor in
+            if !Purchases.shared.isAnonymous {
+                _ = try? await Purchases.shared.logOut()
+            }
+            await refresh()
+        }
+        #else
+        setPlaceholderPro(false)
         #endif
     }
 
@@ -118,6 +158,8 @@ final class PurchaseService: ObservableObject {
             isPro = result.customerInfo.entitlements[Self.entitlementID]?.isActive == true
             return isPro ? .purchased : .failed("The purchase went through but Atala Pro is not active yet. Tap Restore purchases in a moment.")
         } catch {
+            // Some versions of the SDK report a cancelled purchase as an error.
+            if (error as? ErrorCode) == .purchaseCancelledError { return .cancelled }
             return .failed(error.localizedDescription)
         }
         #else

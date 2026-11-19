@@ -6,6 +6,7 @@ struct CoachChatView: View {
     @EnvironmentObject private var store: AppStore
     @State private var draft: String = ""
     @State private var isSending: Bool = false
+    @State private var showPaywall = false
     @FocusState private var inputFocused: Bool
 
     private static let bottomID = "coach-chat-bottom"
@@ -25,6 +26,7 @@ struct CoachChatView: View {
                     bottomBar
                 }
                 .navigationTitle(store.coach.name)
+                .proPaywall(isPresented: $showPaywall)
                 .navigationBarTitleDisplayMode(.large)
                 .task {
                     // Signed in with an empty conversation: bring back the one saved in the account.
@@ -161,6 +163,12 @@ struct CoachChatView: View {
     private func send(_ text: String) {
         let trimmed = String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(2000))
         guard !trimmed.isEmpty, !isSending else { return }
+        // Without Atala Pro, a few messages a day: the draft stays so nothing typed is lost.
+        guard ProAccess.canMessageCoach(store.messages) else {
+            Haptics.tap()
+            showPaywall = true
+            return
+        }
         Haptics.tap()
         draft = ""
         store.messages.append(ChatMessage(role: .user, text: trimmed))

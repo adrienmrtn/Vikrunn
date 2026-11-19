@@ -123,7 +123,7 @@ struct RunFlowView: View {
         tracker.onEvent = { [weak tracker, weak voice] event in
             guard let tracker, let voice else { return }
             Self.playHaptic(for: event)
-            voice.handle(event, tracker: tracker, settings: store.settings.voice)
+            voice.handle(event, tracker: tracker, settings: ProAccess.voice(store.settings.voice))
         }
     }
 
@@ -148,7 +148,7 @@ struct RunFlowView: View {
             voice.say(clips: [.start],
                       speech: "Off you go. Run the way you feel.",
                       display: "Off you go. Run the way you feel.",
-                      settings: store.settings.voice)
+                      settings: ProAccess.voice(store.settings.voice))
         }
         tracker.start()
         phase = .active

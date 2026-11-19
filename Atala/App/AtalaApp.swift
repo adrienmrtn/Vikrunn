@@ -24,6 +24,8 @@ struct AtalaApp: App {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
+                // A subscription can start, renew or end while the app is away.
+                Task { await PurchaseService.shared.refresh() }
                 store.refreshMissed()
                 SyncService.resume(store: store)
             }
@@ -64,5 +66,10 @@ struct RootView: View {
             }
         }
         .authSyncPrompts()
+        .onChange(of: store.account?.userID) { _, _ in
+            // Signing in links the purchases to the account straight away, not at the next launch.
+            let account = store.account
+            PurchaseService.shared.start(userID: account?.isGuest == false ? account?.userID : nil)
+        }
     }
 }

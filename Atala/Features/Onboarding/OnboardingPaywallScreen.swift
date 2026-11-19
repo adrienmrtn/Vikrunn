@@ -64,12 +64,21 @@ private struct OnboardingPaywallFeature: Identifiable {
     let detail: String
 }
 
-/// Screen 31: the paywall. With the RevenueCat package in the project, the main button buys the
-/// yearly plan and the prices come from the store; without it, the screen keeps its placeholder
-/// behaviour and the button simply moves on. The close cross always moves on, after a few seconds.
-struct OnboardingPaywallScreen: View {
+/// The paywall, used at the end of the entry flow and wherever the app asks for Atala Pro. With the
+/// RevenueCat package in the project, the main button buys the chosen plan and the prices come
+/// from the store; without it, the prices are examples and the button stands in for the purchase.
+struct PaywallView: View {
+    /// Seconds before the close cross appears (0 inside the app, a few seconds in onboarding).
+    var closeDelay: Double = 0
+    /// Called when the user subscribed, restored a subscription or closed the screen.
+    let onFinished: () -> Void
+
+    init(closeDelay: Double = 0, onFinished: @escaping () -> Void) {
+        self.closeDelay = closeDelay
+        self.onFinished = onFinished
+    }
+
     @EnvironmentObject private var store: AppStore
-    @EnvironmentObject private var nav: OnboardingNavigator
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var closeShown = false
     @ObservedObject private var purchases = PurchaseService.shared
@@ -107,8 +116,10 @@ struct OnboardingPaywallScreen: View {
     /// Buys the chosen plan when the store is ready; otherwise moves on, as the placeholder did.
     private func startTrial() {
         Haptics.confirm()
-        guard purchases.canPurchase else {
-            nav.next(store)
+        if PurchaseService.isPlaceholder {
+            // No store in this build: the button stands in for the purchase.
+            purchases.setPlaceholderPro(true)
+            onFinished()
             return
         }
         guard !isBuying else { return }
@@ -119,7 +130,7 @@ struct OnboardingPaywallScreen: View {
             switch outcome {
             case .purchased:
                 Haptics.success()
-                nav.next(store)
+                onFinished()
             case .cancelled:
                 break
             case .failed(let message):
@@ -135,15 +146,13 @@ struct OnboardingPaywallScreen: View {
             let restored = await purchases.restore()
             isBuying = false
             if restored {
-                nav.next(store)
+                onFinished()
             } else {
                 purchaseError = "No active Atala Pro subscription was found for this Apple Account."
             }
         }
     }
 
-    /// Seconds before the close cross appears.
-    private static let closeDelay: Double = 5
 
     private var features: [OnboardingPaywallFeature] {
         let weeks = store.plan?.weeks.count ?? PlanEngine.maxWeeks
@@ -218,7 +227,7 @@ struct OnboardingPaywallScreen: View {
             Spacer()
             Button(action: {
                 Haptics.tap()
-                nav.next(store)
+                onFinished()
             }) {
                 Image(systemName: "xmark")
                     .font(.system(size: 14, weight: .bold))
@@ -408,7 +417,7 @@ struct OnboardingPaywallScreen: View {
     @MainActor
     private func revealClose() async {
         guard !closeShown else { return }
-        try? await Task.sleep(nanoseconds: UInt64(Self.closeDelay * 1_000_000_000))
+        try? await Task.sleep(nanoseconds: UInt64(closeDelay * 1_000_000_000))
         if Task.isCancelled { return }
         if reduceMotion {
             closeShown = true
@@ -420,8 +429,44 @@ struct OnboardingPaywallScreen: View {
     }
 }
 
+/// Screen 31 of the entry flow: the paywall, with its close cross held back for a few seconds.
+struct OnboardingPaywallScreen: View {
+    @EnvironmentObject private var store: AppStore
+    @EnvironmentObject private var nav: OnboardingNavigator
+
+    var body: some View {
+        PaywallView(closeDelay: 5) {
+            nav.next(store)
+        }
+        .onAppear {
+            // Placeholder builds: coming back to the paywall starts from "not subscribed" again.
+            PurchaseService.shared.setPlaceholderPro(false)
+        }
+    }
+}
+
+/// Presents the paywall over a screen of the app when a Pro feature is asked for.
+struct ProPaywallModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    @EnvironmentObject private var store: AppStore
+
+    func body(content: Content) -> some View {
+        content.fullScreenCover(isPresented: $isPresented) {
+            PaywallView {
+                isPresented = false
+            }
+            .environmentObject(store)
+        }
+    }
+}
+
+extension View {
+    func proPaywall(isPresented: Binding<Bool>) -> some View {
+        modifier(ProPaywallModifier(isPresented: isPresented))
+    }
+}
+
 #Preview("Paywall") {
-    OnboardingPaywallScreen()
+    PaywallView(closeDelay: 5, onFinished: {})
         .environmentObject(AppStore.preview)
-        .environmentObject(OnboardingNavigator())
 }
