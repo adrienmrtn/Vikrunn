@@ -37,6 +37,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.atala.app.ui.coach.CoachScreen
 import com.atala.app.ui.guided.GuidedSessionScreen
+import com.atala.app.ui.paywall.MainAppOverlays
 import com.atala.app.ui.paywall.PaywallScreen
 import com.atala.app.ui.plan.PlanScreen
 import com.atala.app.ui.plan.WorkoutDetailScreen
@@ -108,6 +109,8 @@ fun MainScreen() {
             onPastRun = { nav.onAddPastRun(null) },
         )
     }
+    // The welcome gift and the Pro welcome, only while a tab is on screen with nothing over it.
+    MainAppOverlays(canPresent = tab != null && !showPlus)
 }
 
 private fun uuid(value: String): UUID = UUID.fromString(value)
