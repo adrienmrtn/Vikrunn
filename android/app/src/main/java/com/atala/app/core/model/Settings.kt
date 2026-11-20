@@ -18,7 +18,7 @@ data class VoiceSettings(
 @Serializable
 data class AppSettings(
     val voice: VoiceSettings = VoiceSettings(),
-    /** Named after Apple Health on the iPhone; on Android it turns the Health Connect import on. */
+    /** The iPhone's Apple Health import. Android has no health store: kept as synced, never shown. */
     val healthImportEnabled: Boolean = false,
 )
 

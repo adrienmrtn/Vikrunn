@@ -59,8 +59,10 @@ import com.atala.app.core.run.RunAnalysis
 import com.atala.app.core.run.RunFormat
 import com.atala.app.core.store.AppState
 import com.atala.app.ui.components.BottomBar
+import com.atala.app.ui.components.ChoiceDialog
 import com.atala.app.ui.components.CoachAvatar
 import com.atala.app.ui.components.CoachPoseImage
+import com.atala.app.ui.components.DialogChoice
 import com.atala.app.ui.components.HapticKind
 import com.atala.app.ui.components.IconTile
 import com.atala.app.ui.components.PrimaryButton
@@ -109,7 +111,7 @@ private fun RunSummaryContent(run: RunRecord, state: AppState, nav: Navigation) 
     val dateLine = when (run.source) {
         RunSource.Gps -> day
         RunSource.Manual -> L("%@ · Entered by hand", day)
-        // Imported from Apple Health on the iPhone; Health Connect on Android.
+        // Imported from Apple Health on an iPhone, then synced: Android records only GPS and manual runs.
         RunSource.Health -> L("%@ · From Apple Health", day)
     }
     val title = if (run.title.isEmpty()) L("Run") else L(run.title)
@@ -183,16 +185,14 @@ private fun RunSummaryContent(run: RunRecord, state: AppState, nav: Navigation) 
         var message = L("It is removed from your history and your totals.")
         if (run.workoutId != null && state.workout(run.workoutId) != null) message += " " + L("Its session goes back to not done.")
         if (run.source == RunSource.Health) message += " " + L("It stays in Apple Health and will not be imported again.")
-        RunConfirmDialog(
+        ChoiceDialog(
             title = L("Delete this run?"),
             message = message,
-            actions = listOf(
-                RunDialogAction(L("Delete"), destructive = true) {
-                    confirmDelete = false
+            choices = listOf(
+                DialogChoice(L("Delete"), destructive = true) {
                     store.deleteRun(run.id)
                     nav.onBack()
                 },
-                RunDialogAction(L("Cancel"), cancel = true) { confirmDelete = false },
             ),
             onDismiss = { confirmDelete = false },
         )

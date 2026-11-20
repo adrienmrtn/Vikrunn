@@ -1,9 +1,5 @@
 package com.atala.app.ui.paywall
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
-import android.provider.Settings
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -12,7 +8,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -25,23 +20,6 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.atala.app.core.l10n.L
-
-/** True when the phone's animations are turned off (the iPhone's Reduce Motion). */
-@Composable
-internal fun rememberReduceMotion(): Boolean {
-    val context = LocalContext.current
-    return remember(context) { reduceMotion(context) }
-}
-
-internal fun reduceMotion(context: Context): Boolean =
-    Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
-
-/** The activity behind a composable, needed by Google Play to show its purchase sheet. */
-internal tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
-}
 
 /**
  * "[Terms of use](https://…) · [Privacy policy](https://…)": the sentence with its Markdown links

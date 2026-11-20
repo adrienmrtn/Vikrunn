@@ -38,6 +38,7 @@ import androidx.navigation.toRoute
 import com.atala.app.ui.coach.CoachScreen
 import com.atala.app.ui.guided.GuidedSessionScreen
 import com.atala.app.ui.paywall.MainAppOverlays
+import com.atala.app.ui.paywall.PaywallPresence
 import com.atala.app.ui.paywall.PaywallScreen
 import com.atala.app.ui.plan.PlanScreen
 import com.atala.app.ui.plan.WorkoutDetailScreen
@@ -57,9 +58,10 @@ import java.util.UUID
  * `Modifier.safeDrawingPadding()` (or the status/navigation bar paddings it needs when it draws
  * edge to edge).
  */
+/** The app itself. [isSplashDone] is false while the launch splash still covers it. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(isSplashDone: Boolean = true) {
     val controller = rememberNavController()
     val nav = remember(controller) { controller.navigation() }
     val entry by controller.currentBackStackEntryAsState()
@@ -109,7 +111,9 @@ fun MainScreen() {
             onPastRun = { nav.onAddPastRun(null) },
         )
     }
-    // The welcome gift and the Pro welcome, only while a tab is on screen with nothing over it.
+    // The rating request comes first, once the splash is gone; the welcome gift and the Pro welcome
+    // wait behind it (see `ReviewPromptState`), only while a tab is on screen with nothing over it.
+    ReviewPrompt(isActive = isSplashDone, canPresent = tab != null && !showPlus && PaywallPresence.count == 0)
     MainAppOverlays(canPresent = tab != null && !showPlus)
 }
 

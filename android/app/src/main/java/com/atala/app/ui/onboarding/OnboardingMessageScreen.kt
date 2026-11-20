@@ -50,6 +50,7 @@ import com.atala.app.ui.components.CoachAvatar
 import com.atala.app.ui.components.HapticKind
 import com.atala.app.ui.components.PrimaryButton
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.root.collectAppState
 import com.atala.app.ui.theme.Theme
 import kotlinx.coroutines.delay
@@ -73,7 +74,7 @@ fun OnboardingMessageScreen() {
     val state by collectAppState()
     val nav = LocalOnboardingNavigator.current
     val haptics = rememberHaptics()
-    val reduceMotion = rememberProjectionReduceMotion()
+    val reduceMotion = rememberReduceMotion()
     val coach = state.coach
     val example = remember(state.answers.runDays, state.answers.longRunDay) { OnboardingPlanChangeExample.make(state.answers) }
     val topics = remember(example) { OnboardingChatTopic.all(example) }
@@ -196,7 +197,7 @@ fun OnboardingMessageScreen() {
     val scrollToken = "${entries.size}-$typing-${asked.size}-${choice != null}-$answered-$opened"
     LaunchedEffect(scrollToken) {
         delay(60)
-        if (reduceMotion) scroll.scrollTo(scroll.maxValue) else scroll.animateScrollTo(scroll.maxValue, tween(300, easing = ProjectionEaseOut))
+        if (reduceMotion) scroll.scrollTo(scroll.maxValue) else scroll.animateScrollTo(scroll.maxValue, tween(300, easing = OnboardingEasing.easeOut))
     }
 
     Column(

@@ -73,6 +73,7 @@ import com.atala.app.ui.components.BottomBar
 import com.atala.app.ui.components.HapticKind
 import com.atala.app.ui.components.PrimaryButton
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.root.LocalAppStore
 import com.atala.app.ui.root.collectAppState
 import com.atala.app.ui.theme.Theme
@@ -138,7 +139,7 @@ fun OnboardingPlanReadyScreen() {
     val state by collectAppState()
     val nav = LocalOnboardingNavigator.current
     val haptics = rememberHaptics()
-    val reduceMotion = rememberProjectionReduceMotion()
+    val reduceMotion = rememberReduceMotion()
     val density = LocalDensity.current
     val weeks = state.plan?.weeks.orEmpty().take(PlanEngine.MAX_WEEKS)
     // Number of weeks lit so far.
@@ -169,7 +170,7 @@ fun OnboardingPlanReadyScreen() {
             // The first weeks are on screen already: only follow once they reach the lower half.
             if (index >= 3) {
                 val target = (pathTop + index * rowPx + rowPx / 2 - viewport / 2f).toInt().coerceIn(0, scroll.maxValue)
-                launch { scroll.animateScrollTo(target, tween(500, easing = ProjectionEaseInOut)) }
+                launch { scroll.animateScrollTo(target, tween(500, easing = OnboardingEasing.easeInOut)) }
             }
             delay(380)
         }
@@ -178,7 +179,7 @@ fun OnboardingPlanReadyScreen() {
         launch {
             // Wait for the finish row's text to be laid out, then show it.
             delay(16)
-            scroll.animateScrollTo(scroll.maxValue, tween(500, easing = ProjectionEaseInOut))
+            scroll.animateScrollTo(scroll.maxValue, tween(500, easing = OnboardingEasing.easeInOut))
         }
     }
 

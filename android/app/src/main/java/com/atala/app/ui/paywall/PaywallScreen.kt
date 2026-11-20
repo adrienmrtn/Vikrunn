@@ -64,6 +64,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -87,7 +88,9 @@ import com.atala.app.core.purchases.PurchaseService
 import com.atala.app.ui.components.HapticKind
 import com.atala.app.ui.components.IconTile
 import com.atala.app.ui.components.SelectionMark
+import com.atala.app.ui.components.findActivity
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.root.collectAppState
 import com.atala.app.ui.theme.AtalaImages
 import com.atala.app.ui.theme.Theme
@@ -192,7 +195,7 @@ fun PaywallScreen(closeDelay: Double = 0.0, onFinished: () -> Unit) {
     ) {
         Box(Modifier.weight(1f)) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                PhotoStrip(photoNames(state.answers.gender), Modifier.padding(top = 52.dp))
+                PhotoStrip(stripPhotoNames(state.answers.gender), Modifier.padding(top = 52.dp))
                 Headline(state.firstName, PaywallCopy.goalLine(state.answers, state.plan))
                 FeatureList(features(state), Modifier.padding(start = Theme.screenPadding, end = Theme.screenPadding, top = 20.dp))
                 Column(
@@ -291,7 +294,8 @@ private fun features(state: com.atala.app.core.store.AppState): List<PaywallFeat
 }
 
 /** Photos for the moving strip, chosen from the gender given in onboarding (`AtalaPhotos.strip`). */
-private fun photoNames(gender: Gender?): List<String> = when (gender) {
+/** Photos of the moving strip, chosen from the gender given in onboarding (`AtalaPhotos.strip(for:)`). */
+internal fun stripPhotoNames(gender: Gender?): List<String> = when (gender) {
     Gender.Man -> listOf("hero_today_man", "photo_trio", "photo_community")
     Gender.Woman -> listOf("hero_today_woman", "photo_trio")
     else -> listOf("photo_trio", "hero_today_woman", "hero_today_man", "photo_community")
@@ -321,7 +325,8 @@ internal fun PhotoStrip(
     }
     // The strip moves the same way in every language.
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(modifier.fillMaxWidth().height(height).clipToBounds()) {
+        // Decoration: hidden from TalkBack.
+        Box(modifier.fillMaxWidth().height(height).clipToBounds().clearAndSetSemantics {}) {
             Row(
                 Modifier
                     .wrapContentWidth(Alignment.Start, unbounded = true)

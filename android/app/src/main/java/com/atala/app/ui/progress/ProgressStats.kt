@@ -142,7 +142,7 @@ internal object ProgressStats {
     fun sourceTitle(source: RunSource): String = when (source) {
         RunSource.Gps -> "GPS"
         RunSource.Manual -> L("Added by hand")
-        // Only runs synced from an iPhone come from a health store for now.
+        // Only runs synced from an iPhone come from a health store: Android has none.
         RunSource.Health -> "Apple Health"
     }
 }
@@ -180,7 +180,8 @@ internal object ProgressSample {
                 // A little faster as the weeks go by.
                 val pace = entry.pace - index * 2
                 val duration = (distanceM / 1000 * pace).roundToInt()
-                val source = if ((index + slot) % 3 == 0) RunSource.Health else RunSource.Gps
+                // Android has no health store: the variety comes from runs added by hand.
+                val source = if ((index + slot) % 3 == 0) RunSource.Manual else RunSource.Gps
                 result.add(RunRecord(title = entry.title, date = date, source = source, distanceM = distanceM, durationSec = duration))
                 added += 1
             }

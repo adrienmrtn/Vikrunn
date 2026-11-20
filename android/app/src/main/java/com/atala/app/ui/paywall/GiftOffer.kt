@@ -78,7 +78,9 @@ import com.atala.app.core.purchases.PurchaseOutcome
 import com.atala.app.core.purchases.PurchasePlan
 import com.atala.app.core.purchases.PurchaseService
 import com.atala.app.ui.components.HapticKind
+import com.atala.app.ui.components.findActivity
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.root.collectAppState
 import com.atala.app.ui.theme.Theme
 import kotlinx.coroutines.delay

@@ -1,6 +1,5 @@
 package com.atala.app.core.sync
 
-import com.atala.app.core.account.AuthService
 import com.atala.app.core.account.string
 import com.atala.app.core.model.SyncState
 import com.atala.app.core.store.AppStore

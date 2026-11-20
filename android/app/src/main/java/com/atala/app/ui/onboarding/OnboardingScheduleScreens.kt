@@ -150,43 +150,11 @@ fun OnboardingLongRunScreen() {
     OnboardingScaffold(title = L("Which day for your long run?"), canContinue = longDay != null && longDay in days) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             days.forEach { day ->
-                SchedulePlainOptionRow(Weekday.long(day), selected = longDay == day) {
+                OnboardingPlainOptionRow(Weekday.long(day), selected = longDay == day) {
                     store.updateAnswers { it.copy(longRunDay = day) }
                 }
             }
         }
-    }
-}
-
-/**
- * Simple 58 dp row with a radio mark (`OnboardingPlainOptionRow`). Private stand-in until the
- * shared onboarding option components are merged.
- */
-@Composable
-private fun SchedulePlainOptionRow(title: String, selected: Boolean, onClick: () -> Unit) {
-    val haptics = rememberHaptics()
-    val shape = RoundedCornerShape(16.dp)
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .height(58.dp)
-            .background(Color.White, shape)
-            .border(if (selected) 1.5.dp else 1.dp, if (selected) Theme.ink else Theme.controlBorder, shape)
-            .semantics { this.selected = selected }
-            .clickable(role = Role.RadioButton, interactionSource = null, indication = null) {
-                haptics.select()
-                onClick()
-            }
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            title,
-            style = Theme.font(16, if (selected) FontWeight.SemiBold else FontWeight.Medium),
-            color = Theme.ink,
-            modifier = Modifier.weight(1f).padding(end = 12.dp),
-        )
-        SelectionMark(selected)
     }
 }
 

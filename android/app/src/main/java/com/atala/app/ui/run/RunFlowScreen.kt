@@ -1,9 +1,6 @@
 package com.atala.app.ui.run
 
 import android.Manifest
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -11,16 +8,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -29,16 +16,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -55,12 +34,14 @@ import com.atala.app.core.run.RunTracker
 import com.atala.app.core.run.RunTrackerEvent
 import com.atala.app.core.run.RunTrackerState
 import com.atala.app.core.voice.VoicePack
+import com.atala.app.ui.components.ChoiceDialog
+import com.atala.app.ui.components.DialogChoice
 import com.atala.app.ui.components.HapticKind
+import com.atala.app.ui.components.findActivity
 import com.atala.app.ui.components.rememberHaptics
 import com.atala.app.ui.main.Navigation
 import com.atala.app.ui.root.LocalAppStore
 import com.atala.app.ui.root.collectAppState
-import com.atala.app.ui.theme.Theme
 import java.util.UUID
 
 /**
@@ -217,21 +198,19 @@ fun RunFlowScreen(workoutId: UUID?, nav: Navigation) {
     }
 
     if (confirmFinish) {
-        RunConfirmDialog(
+        ChoiceDialog(
             title = L("Finish this session?"),
             message = L("%@ in %@. It is saved to your history.", RunFormat.distance(snapshot.distance), Fmt.duration(snapshot.elapsed)),
-            actions = listOf(
-                RunDialogAction(L("Finish and save")) { finishRun(save = true) },
-                RunDialogAction(L("Not yet"), cancel = true) { confirmFinish = false },
-            ),
+            choices = listOf(DialogChoice(L("Finish and save")) { finishRun(save = true) }),
             onDismiss = { confirmFinish = false },
+            cancelTitle = L("Not yet"),
         )
     }
 
     if (confirmShortRun) {
         // A real effort in time, but no distance: location refused, or no signal (indoors).
         val noDistance = snapshot.elapsed >= 60 && snapshot.distance < 100
-        RunConfirmDialog(
+        ChoiceDialog(
             title = if (noDistance) L("No distance was recorded") else L("This session is very short"),
             message = when {
                 !noDistance -> L("Less than a minute or 100 metres were recorded.")
@@ -240,91 +219,12 @@ fun RunFlowScreen(workoutId: UUID?, nav: Navigation) {
                 else ->
                     L("The GPS signal never came through, so only your time was measured. You can save it as it is, or discard it and add the run by hand with its distance.")
             },
-            actions = listOf(
-                RunDialogAction(if (noDistance) L("Save the time only") else L("Save it anyway")) { finishRun(save = true) },
-                RunDialogAction(L("Discard it"), destructive = true) { finishRun(save = false) },
-                RunDialogAction(L("Keep going"), cancel = true) { confirmShortRun = false },
+            choices = listOf(
+                DialogChoice(if (noDistance) L("Save the time only") else L("Save it anyway")) { finishRun(save = true) },
+                DialogChoice(L("Discard it"), destructive = true) { finishRun(save = false) },
             ),
             onDismiss = { confirmShortRun = false },
+            cancelTitle = L("Keep going"),
         )
-    }
-}
-
-private fun Context.findActivity(): Activity? {
-    var current: Context? = this
-    while (current is ContextWrapper) {
-        if (current is Activity) return current
-        current = current.baseContext
-    }
-    return null
-}
-
-/** One button of a [RunConfirmDialog]. */
-data class RunDialogAction(
-    val title: String,
-    val destructive: Boolean = false,
-    val cancel: Boolean = false,
-    val action: () -> Unit,
-)
-
-/**
- * The iPhone's confirmation dialog: a title, a message and stacked choices, the cancel one apart
- * at the bottom.
- */
-@Composable
-fun RunConfirmDialog(title: String, message: String?, actions: List<RunDialogAction>, onDismiss: () -> Unit) {
-    val haptics = rememberHaptics()
-    Dialog(onDismissRequest = onDismiss) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .background(Color.White, RoundedCornerShape(24.dp))
-                .padding(top = 20.dp, bottom = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                title,
-                style = Theme.font(17, FontWeight.Bold),
-                color = Theme.ink,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 20.dp),
-            )
-            if (message != null) {
-                Text(
-                    message,
-                    style = Theme.font(14),
-                    color = Theme.muted,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp),
-                )
-            }
-            Column(Modifier.fillMaxWidth().padding(top = 14.dp), verticalArrangement = Arrangement.Top) {
-                actions.forEach { item ->
-                    HorizontalDivider(color = Theme.hairline)
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 52.dp)
-                            .clickable(role = Role.Button) {
-                                if (!item.destructive) haptics.tap()
-                                item.action()
-                            }
-                            .padding(horizontal = 16.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            item.title,
-                            style = Theme.font(17, if (item.cancel) FontWeight.SemiBold else FontWeight.Normal),
-                            color = when {
-                                item.destructive -> Color(0xFFD7332B)
-                                item.cancel -> Theme.ink
-                                else -> Theme.green
-                            },
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
-            }
-        }
     }
 }

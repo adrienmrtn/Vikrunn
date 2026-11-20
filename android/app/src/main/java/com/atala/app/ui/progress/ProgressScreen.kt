@@ -56,9 +56,9 @@ import com.atala.app.core.model.WorkoutStatus
 import com.atala.app.core.purchases.PurchaseService
 import com.atala.app.core.store.AppState
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.main.Navigation
 import com.atala.app.ui.paywall.ProLocked
-import com.atala.app.ui.paywall.rememberReduceMotion
 import com.atala.app.ui.root.collectAppState
 import com.atala.app.ui.theme.Theme
 import kotlinx.coroutines.delay

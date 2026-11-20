@@ -300,7 +300,8 @@ object AuthService {
             "otp_expired", "invalid_credentials" -> return AuthError.InvalidCode
             "email_address_invalid" -> return AuthError.InvalidEmail
             "email_address_not_authorized" ->
-                return AuthError.Server(L("We can't send a code to this address yet. Please use Apple or Google for now."))
+                // No Sign in with Apple on Android: Google is the other way in.
+                return AuthError.Server(L("We can't send a code to this address yet. Please use Google for now."))
             "provider_disabled", "email_provider_disabled", "otp_disabled", "signup_disabled",
             "oauth_provider_not_supported" -> return AuthError.ProviderUnavailable
             "session_not_found", "session_expired", "refresh_token_not_found", "refresh_token_already_used",

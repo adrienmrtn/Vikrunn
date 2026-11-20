@@ -75,5 +75,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.maps.android:maps-compose:6.2.1")
     implementation("com.revenuecat.purchases:purchases:8.10.6")
+    implementation("com.google.android.play:review-ktx:2.0.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

@@ -1,22 +1,28 @@
 package com.atala.app.ui.onboarding
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import com.atala.app.core.l10n.Fmt
 import com.atala.app.core.l10n.L
 import com.atala.app.core.model.GoalType
 import com.atala.app.core.model.Motivation
 import com.atala.app.core.model.OnboardingAnswers
 import com.atala.app.core.model.TrainingPlan
+import com.atala.app.core.purchases.PurchaseService
 import com.atala.app.ui.paywall.PaywallScreen
 import java.util.Locale
 
 /**
- * Screen 31 of the entry flow: the shared paywall (`ui.paywall.PaywallScreen`, built by the Pro
- * team), its close button held back 7 s; no way back from it.
+ * Screen 31 of the entry flow: the shared paywall (`ui.paywall.PaywallScreen`), its close button
+ * held back 7 s; no way back from it.
  */
 @Composable
 fun OnboardingPaywallScreen() {
     val nav = LocalOnboardingNavigator.current
+    LaunchedEffect(Unit) {
+        // Placeholder builds: coming back to the paywall starts from "not subscribed" again.
+        PurchaseService.setPlaceholderPro(false)
+    }
     PaywallScreen(closeDelay = 7.0, onFinished = nav::next)
 }
 

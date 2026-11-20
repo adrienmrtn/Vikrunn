@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.atala.app.core.l10n.L
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.theme.Theme
 
 /**

@@ -52,10 +52,14 @@ import com.atala.app.core.store.AppState
 import com.atala.app.ui.components.HapticKind
 import com.atala.app.ui.components.rememberHaptics
 import com.atala.app.ui.main.Navigation
+import com.atala.app.ui.onboarding.OnboardingTimeRules
 import com.atala.app.ui.root.AtalaPreview
 import com.atala.app.ui.root.LocalAppStore
 import com.atala.app.ui.root.collectAppState
 import com.atala.app.ui.theme.Theme
+import com.atala.app.ui.today.mainBuildNextPlan
+import com.atala.app.ui.today.mainPlanEnded
+import com.atala.app.ui.today.mainRebuildPlan
 import java.time.Instant
 
 /**
@@ -87,17 +91,17 @@ fun ProfileScreen(nav: Navigation) {
                 goal = goal,
                 hasRace = hasRace,
                 raceDate = if (hasRace) draft.raceDate?.let { PlanCalendar.startOfDay(it) } else null,
-                targetSeconds = if (km != null && target != null) ProfileTimeRules.clamp(target, km) else null,
+                targetSeconds = if (km != null && target != null) OnboardingTimeRules.clamp(target, km) else null,
                 runDays = days,
                 longRunDay = draft.longRunDay?.takeIf { it in days },
             )
         }
-        if (store.current.plan != null && store.current.profilePlanEnded) {
+        if (store.current.plan != null && store.current.mainPlanEnded) {
             // A finished plan: the next one also takes the level reached into account.
-            store.profileBuildNextPlan()
+            store.mainBuildNextPlan()
         } else {
             // Keeps what was done this week and never marks earlier days as missed.
-            store.profileRebuildPlan()
+            store.mainRebuildPlan()
         }
         draft = withoutPastRace(store.current.answers)
         planUpdated = true
@@ -250,7 +254,7 @@ private fun ProfileUpdateSection(
         ) {
             FormButtonRow(L("Build my plan"), bold = true, enabled = canBuild, onClick = onBuild)
         }
-        state.profilePlanEnded && !changed -> FormSection(
+        state.mainPlanEnded && !changed -> FormSection(
             footer = L("Your plan is finished. The next one starts this week, from your level today. Change the goal or the days above first if you want to."),
         ) {
             FormButtonRow(L("Build my next plan"), bold = true, enabled = canBuild, onClick = onBuild)

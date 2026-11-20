@@ -1,6 +1,5 @@
 package com.atala.app.ui.run
 
-import android.provider.Settings
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -42,10 +41,11 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -111,15 +111,6 @@ val RunBubbleShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottom
 fun TextStyle.digits(): TextStyle = copy(fontFeatureSettings = "tnum")
 
 fun TextStyle.tracking(points: Float): TextStyle = copy(letterSpacing = points.sp)
-
-/** True when the system animations are off (the iPhone's Reduce Motion). */
-@Composable
-fun rememberReduceMotion(): Boolean {
-    val context = LocalContext.current
-    return remember {
-        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
-    }
-}
 
 /**
  * One line of text that shrinks to fit its width (`.lineLimit(1).minimumScaleFactor(...)`), or
@@ -213,11 +204,12 @@ fun CoachVoiceRow(
     onText: String,
     offText: String,
     onLocked: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val haptics = rememberHaptics()
     if (isPro) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 60.dp),
+            modifier.fillMaxWidth().heightIn(min = 60.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -227,14 +219,19 @@ fun CoachVoiceRow(
         }
     } else {
         val label = L("%@'s voice, included in Atala Pro", coachName)
+        val hint = L("Shows what Atala Pro includes")
         Row(
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .heightIn(min = 60.dp)
-                .semantics(mergeDescendants = true) { contentDescription = label }
-                .clickable(role = Role.Button) {
+                .clickable(role = Role.Button, onClickLabel = hint) {
                     haptics.tap()
                     onLocked()
+                }
+                .clearAndSetSemantics {
+                    contentDescription = label
+                    role = Role.Button
+                    onClick(label = hint) { onLocked(); true }
                 },
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically,

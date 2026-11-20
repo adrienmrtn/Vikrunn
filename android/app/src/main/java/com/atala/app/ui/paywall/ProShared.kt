@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -63,6 +62,7 @@ import com.atala.app.core.l10n.L
 import com.atala.app.core.purchases.ProWelcomeState
 import com.atala.app.core.purchases.PurchasePlan
 import com.atala.app.core.purchases.PurchaseService
+import com.atala.app.core.review.ReviewPromptState
 import com.atala.app.ui.components.rememberHaptics
 import com.atala.app.ui.root.collectAppState
 import com.atala.app.ui.theme.Theme
@@ -281,6 +281,9 @@ fun MainAppOverlays(canPresent: Boolean) {
 
     LaunchedEffect(Unit) {
         delay(GiftOfferSchedule.DELAY_MS)
+        // The Google Play rating request comes first: on the launch where it is made, the gift
+        // waits a few more seconds behind it.
+        ReviewPromptState.waitBeforeOffer()
         // The subscription state may still be loading at launch: ask once more first.
         PurchaseService.refresh()
         if (PurchaseService.isPro.value || !GiftOfferSchedule.isDue()) return@LaunchedEffect
@@ -296,6 +299,8 @@ fun MainAppOverlays(canPresent: Boolean) {
         if (!isPro || ProWelcomeState.wasPlayed) return@LaunchedEffect
         val early = GiftOfferSchedule.DELAY_MS - (SystemClock.elapsedRealtime() - mountedAt)
         if (early > 0) delay(early)
+        // Never over the Google Play rating request, made a moment after arriving.
+        ReviewPromptState.waitBeforeOffer()
         // The paywall or the gift is still closing: wait until nothing is on screen.
         var ready = false
         for (attempt in 0 until 8) {

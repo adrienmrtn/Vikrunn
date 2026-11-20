@@ -1,6 +1,5 @@
 package com.atala.app.ui.today
 
-import android.provider.Settings
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -55,7 +54,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
@@ -80,6 +78,7 @@ import com.atala.app.core.store.AppState
 import com.atala.app.core.store.AppStore
 import com.atala.app.ui.components.IconTile
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.theme.AtalaImages
 import com.atala.app.ui.theme.Theme
 import kotlinx.coroutines.delay
@@ -96,15 +95,6 @@ import kotlin.math.roundToInt
  */
 
 // MARK: - Motion
-
-/** True when the system turned animations off (Settings > Accessibility > Remove animations). */
-@Composable
-internal fun rememberReduceMotion(): Boolean {
-    val context = LocalContext.current
-    return remember(context) {
-        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
-    }
-}
 
 /** The screens of the shell that open with a staged entrance. */
 internal enum class MainStagedScreen { Today, Plan }

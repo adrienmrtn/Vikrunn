@@ -4,13 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -32,9 +30,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,9 +43,11 @@ import com.atala.app.core.model.Workout
 import com.atala.app.core.model.WorkoutKind
 import com.atala.app.ui.components.CoachAvatar
 import com.atala.app.ui.components.SecondaryButton
-import com.atala.app.ui.components.SelectionMark
 import com.atala.app.ui.components.card
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.run.RunFeelingRow
+import com.atala.app.ui.run.SessionCompleteScreen
+import com.atala.app.ui.run.SessionCompleteStat
 import com.atala.app.ui.theme.Theme
 import com.atala.app.ui.today.FitText
 import com.atala.app.ui.today.lineHeight
@@ -204,14 +201,14 @@ internal fun GuidedFinishScreen(
         workout.kind == WorkoutKind.Strength -> L("Well done. Stronger legs and core will carry you through the end of your runs.")
         else -> L("Well done. A few calm minutes like these help you feel fresh for your next run.")
     }
-    GuidedSessionCompleteScreen(
-        eyebrow = workout.title,
+    SessionCompleteScreen(
         dataLine = dataLine,
         stats = stats,
         coach = coach,
         coachLine = coachLine,
         buttonTitle = L("Done"),
         onPrimary = { onDone(feeling) },
+        eyebrow = workout.title,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Text(L("How did it feel? (optional)"), style = Theme.font(13, FontWeight.SemiBold), color = Theme.ink)
@@ -222,45 +219,10 @@ internal fun GuidedFinishScreen(
                     Feeling.Hard -> L("That was a lot for me")
                     Feeling.Pain -> L("I'd rather tell %@", coach.name)
                 }
-                FeelingRow(option, subtitle, feeling == option) {
+                RunFeelingRow(option, subtitle, feeling == option) {
                     feeling = if (feeling == option) null else option
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun FeelingRow(feeling: Feeling, subtitle: String, selected: Boolean, onClick: () -> Unit) {
-    val haptics = rememberHaptics()
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 68.dp)
-            .card(selected)
-            .clip(RoundedCornerShape(Theme.cardRadius))
-            .semantics { this.selected = selected }
-            .clickable(role = Role.RadioButton) {
-                haptics.select()
-                onClick()
-            }
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            Modifier
-                .size(44.dp)
-                .background(GuidedFeelingStyle.background(feeling), CircleShape)
-                .clearAndSetSemantics {},
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(GuidedFeelingStyle.icon(feeling), null, tint = GuidedFeelingStyle.tint(feeling), modifier = Modifier.size(21.dp))
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(feeling.title, style = Theme.font(16, FontWeight.SemiBold), color = Theme.ink)
-            Text(subtitle, style = Theme.font(13), color = Theme.muted)
-        }
-        SelectionMark(selected)
     }
 }

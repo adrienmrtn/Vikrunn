@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -56,7 +58,7 @@ fun RunFeelingScreen(distanceM: Double, durationSec: Int, coach: Coach, onDone: 
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Feeling.entries.forEach { option ->
-                FeelingRow(
+                RunFeelingRow(
                     feeling = option,
                     subtitle = if (option == Feeling.Pain) L("I'd rather tell %@", coach.name) else option.subtitle,
                     selected = feeling == option,
@@ -73,14 +75,16 @@ fun RunFeelingScreen(distanceM: Double, durationSec: Int, coach: Coach, onDone: 
     }
 }
 
+/** One answer of "How did it feel?", shared by the run and the guided sessions (RunFeelingRow, GuidedFeelingRow). */
 @Composable
-private fun FeelingRow(feeling: Feeling, subtitle: String, selected: Boolean, onClick: () -> Unit) {
+fun RunFeelingRow(feeling: Feeling, subtitle: String, selected: Boolean, onClick: () -> Unit) {
     val haptics = rememberHaptics()
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 68.dp)
             .card(selected)
+            .clip(RoundedCornerShape(Theme.cardRadius))
             .semantics { this.selected = selected }
             .clickable(role = Role.RadioButton) {
                 haptics.select()

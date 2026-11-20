@@ -65,7 +65,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -81,6 +80,7 @@ import com.atala.app.ui.components.HapticKind
 import com.atala.app.ui.components.PrimaryButton
 import com.atala.app.ui.components.card
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.theme.AtalaImages
 import com.atala.app.ui.theme.Theme
 import kotlinx.coroutines.delay
@@ -205,7 +205,7 @@ fun SessionCompleteScreen(
             Box(Modifier.graphicsLayer { alpha = if (sheetShown) 1f else 0f }.background(Color.White).windowInsetsPadding(WindowInsets.navigationBars)) {
                 BottomBar {
                     Box(Modifier.graphicsLayer { alpha = if (ready) 1f else 0f }) {
-                        PrimaryButton(buttonTitle, onClick = { if (ready) onPrimary() })
+                        PrimaryButton(buttonTitle, onClick = { if (ready) onPrimary() }, haptic = if (ready) HapticKind.Confirm else null)
                     }
                 }
             }
@@ -329,8 +329,10 @@ private fun Hero(height: Dp, textTop: Dp, eyebrow: String?, dataLine: String, st
 @Composable
 private fun Title(shown: Boolean, reduceMotion: Boolean) {
     val title = L("Session complete")
-    val words = title.split(" ")
+    val words = title.split(" ").filter { it.isNotEmpty() }
     val density = LocalDensity.current
+    // Long translations take a smaller size rather than being cut (`minimumScaleFactor`).
+    val size = if (title.length > 20) 30 else 36
     Row(
         Modifier.clearAndSetSemantics { heading(); contentDescription = title },
         horizontalArrangement = Arrangement.spacedBy(9.dp),
@@ -343,7 +345,7 @@ private fun Title(shown: Boolean, reduceMotion: Boolean) {
             )
             Text(
                 word,
-                style = Theme.font(36, FontWeight.Bold).copy(shadow = Shadow(Color.Black.copy(alpha = 0.35f), Offset(0f, 2f), 8f)),
+                style = Theme.font(size, FontWeight.Bold).copy(shadow = Shadow(Color.Black.copy(alpha = 0.35f), Offset(0f, 2f), 8f)),
                 color = Color.White,
                 maxLines = 1,
                 modifier = Modifier.graphicsLayer {

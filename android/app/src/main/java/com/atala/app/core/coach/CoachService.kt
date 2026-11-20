@@ -1,6 +1,7 @@
 package com.atala.app.core.coach
 
 import com.atala.app.core.account.AuthService
+import com.atala.app.core.account.SupabaseResponse
 import com.atala.app.core.l10n.AppLanguage
 import com.atala.app.core.l10n.Fmt
 import com.atala.app.core.model.AtalaJson
@@ -15,6 +16,8 @@ import com.atala.app.core.model.WorkoutKind
 import com.atala.app.core.model.WorkoutStatus
 import com.atala.app.core.store.AppState
 import com.atala.app.core.store.AppStore
+import com.atala.app.core.sync.SyncRemote
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,6 +27,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
@@ -94,13 +98,12 @@ object CoachService {
     private suspend fun remoteReply(text: String, store: AppStore): ChatMessage? {
         if (store.current.account?.isReal != true) return null
         remotePausedUntil?.let { if (it > System.currentTimeMillis()) return null }
-        val token = AuthService.validAccessToken(store) ?: return null
         val state = store.current
         val payload = buildJsonObject {
             put("messages", history(text, state))
             put("context", context(state))
         }
-        val response = CoachRemote.send("/functions/v1/coach", "POST", token, body = payload, timeoutMs = 45_000) ?: return null
+        val response = send(store, "/functions/v1/coach", "POST", body = payload, timeoutSeconds = 45) ?: return null
         if (!response.isSuccess) {
             when (response.errorCode) {
                 "coach_not_configured" -> remotePausedUntil = System.currentTimeMillis() + 10 * 60_000
@@ -272,7 +275,6 @@ object CoachService {
     suspend fun restoreHistory(store: AppStore) {
         val account = store.current.account?.takeIf { it.isReal } ?: return
         if (store.current.messages.isNotEmpty()) return
-        val token = AuthService.validAccessToken(store) ?: return
         val userId = account.userId
         val query = listOf(
             "select" to "id,role,body,proposal,proposal_status,created_at",
@@ -280,13 +282,18 @@ object CoachService {
             "order" to "created_at.desc,seq.desc",
             "limit" to "60",
         )
-        val response = CoachRemote.send("/rest/v1/coach_messages", "GET", token, query) ?: return
-        if (!response.isSuccess) return
+        val rows = try {
+            SyncRemote.rows("coach_messages", query, store)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            return
+        }
         // The user may have written, or signed out, while the request was running.
         if (store.current.messages.isNotEmpty() || store.current.account?.userId != userId) return
 
         val hint = Regex("""\n\n\(Answer in [A-Za-z ]+\.\)$""")
-        val restored = response.rows.reversed().mapNotNull { row ->
+        val restored = rows.reversed().mapNotNull { row ->
             val body = row.string("body")?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
             val roleText = row.string("role") ?: return@mapNotNull null
             val role = if (roleText == "user") ChatRole.User else ChatRole.Coach
@@ -320,9 +327,33 @@ object CoachService {
      */
     suspend fun reportProposal(messageId: UUID, applied: Boolean, store: AppStore) {
         if (store.current.account?.isReal != true) return
-        val token = AuthService.validAccessToken(store) ?: return
         val values = buildJsonObject { put("proposal_status", if (applied) "applied" else "declined") }
-        CoachRemote.send("/rest/v1/coach_messages", "PATCH", token, listOf("id" to "eq.${messageId.toString().lowercase()}"), values)
+        try {
+            SyncRemote.update("coach_messages", listOf("id" to "eq.${messageId.toString().lowercase()}"), values, store)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            // Not recorded: the proposal may be offered again on another phone.
+        }
+    }
+
+    /**
+     * A request to the account as the signed-in user, through the account's client: the token is
+     * refreshed when needed, and once more after a 401. Null when it could not be sent (guest,
+     * signed out, offline).
+     */
+    private suspend fun send(
+        store: AppStore,
+        path: String,
+        method: String,
+        body: JsonElement? = null,
+        timeoutSeconds: Long = 30,
+    ): SupabaseResponse? = try {
+        AuthService.authorizedSend(store, path, method, body = body?.toString(), timeoutSeconds = timeoutSeconds)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+        null
     }
 
 }

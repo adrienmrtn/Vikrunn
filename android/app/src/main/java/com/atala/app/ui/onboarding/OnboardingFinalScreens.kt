@@ -7,7 +7,6 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,7 +14,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
@@ -75,13 +73,11 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atala.app.R
-import com.atala.app.core.l10n.Fmt
 import com.atala.app.core.l10n.L
-import com.atala.app.core.purchases.PurchaseService
 import com.atala.app.ui.components.HapticKind
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.root.LocalAppStore
 import com.atala.app.ui.root.collectAppState
 import com.atala.app.ui.theme.Theme
@@ -111,7 +107,7 @@ private fun FinalLogoMark(height: Int) {
 /** Atala on one side, the service it connects to on the other, and dots travelling between them. */
 @Composable
 private fun FinalLinkGraphic(icon: ImageVector, tint: Color, linked: Boolean) {
-    val reduceMotion = rememberProjectionReduceMotion()
+    val reduceMotion = rememberReduceMotion()
     val tile = 84.dp
     val shape = RoundedCornerShape(24.dp)
     Row(
@@ -145,7 +141,7 @@ private fun FinalLinkGraphic(icon: ImageVector, tint: Color, linked: Boolean) {
                     } else {
                         val transition = rememberInfiniteTransition(label = "dots")
                         val value by transition.animateFloat(
-                            0f, 1f, infiniteRepeatable(tween(900, easing = ProjectionEaseInOut), RepeatMode.Reverse), label = "pulse",
+                            0f, 1f, infiniteRepeatable(tween(900, easing = OnboardingEasing.easeInOut), RepeatMode.Reverse), label = "pulse",
                         )
                         value
                     }

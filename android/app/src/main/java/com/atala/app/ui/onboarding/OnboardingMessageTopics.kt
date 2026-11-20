@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.atala.app.core.l10n.L
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.theme.Theme
 import kotlin.math.max
 import kotlin.math.sin
@@ -96,7 +97,7 @@ internal val MessageBubbleGrey = Color(0xFFE9E9EB)
 /** Three breathing dots in a coach bubble, shown while the coach "types". */
 @Composable
 fun OnboardingTypingBubble(modifier: Modifier = Modifier) {
-    val reduceMotion = rememberProjectionReduceMotion()
+    val reduceMotion = rememberReduceMotion()
     var time by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(reduceMotion) {
         if (reduceMotion) return@LaunchedEffect
@@ -133,7 +134,7 @@ fun OnboardingQuestionChips(
     modifier: Modifier = Modifier,
 ) {
     val haptics = rememberHaptics()
-    val alpha by animateFloatAsState(if (enabled) 1f else 0.45f, tween(200, easing = ProjectionEaseOut), label = "chips")
+    val alpha by animateFloatAsState(if (enabled) 1f else 0.45f, tween(200, easing = OnboardingEasing.easeOut), label = "chips")
     val hint = L("Sends this question to your coach")
     Column(modifier.fillMaxWidth().background(Color.White)) {
         HorizontalDivider(thickness = 1.dp, color = Theme.hairline)

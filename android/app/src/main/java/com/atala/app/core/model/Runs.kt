@@ -13,7 +13,7 @@ import java.util.UUID
 enum class RunSource {
     @SerialName("gps") Gps,
     @SerialName("manual") Manual,
-    // Runs imported from Apple Health on the iPhone (Health Connect on Android).
+    // Runs imported from Apple Health on an iPhone. Never recorded on Android: they only come with the sync.
     @SerialName("health") Health,
 }
 

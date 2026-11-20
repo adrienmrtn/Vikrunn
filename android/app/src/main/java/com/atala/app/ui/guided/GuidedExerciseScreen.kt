@@ -49,6 +49,7 @@ import com.atala.app.core.exercise.GuidedPrescription
 import com.atala.app.core.l10n.L
 import com.atala.app.core.voice.VoiceClip
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.run.RunRoundButton
 import com.atala.app.ui.theme.Theme
 import com.atala.app.ui.today.FitText
 
@@ -336,7 +337,7 @@ private fun Controls(engine: GuidedSessionEngine, onPause: () -> Unit) {
             .padding(start = 28.dp, end = 28.dp, top = 10.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        GuidedRoundButton(Icons.Filled.SkipPrevious, L("Previous exercise")) { engine.previousExercise() }
+        RunRoundButton(Icons.Filled.SkipPrevious, L("Previous exercise")) { engine.previousExercise() }
         Spacer(Modifier.weight(1f))
         Box(
             Modifier
@@ -353,6 +354,6 @@ private fun Controls(engine: GuidedSessionEngine, onPause: () -> Unit) {
             Icon(Icons.Filled.Pause, null, tint = Color.White, modifier = Modifier.size(36.dp))
         }
         Spacer(Modifier.weight(1f))
-        GuidedRoundButton(Icons.Filled.SkipNext, L("Next exercise")) { engine.nextExercise() }
+        RunRoundButton(Icons.Filled.SkipNext, L("Next exercise")) { engine.nextExercise() }
     }
 }

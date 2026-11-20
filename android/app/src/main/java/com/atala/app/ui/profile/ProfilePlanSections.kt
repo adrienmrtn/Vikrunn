@@ -68,6 +68,7 @@ import com.atala.app.core.plan.PlanEngine
 import com.atala.app.core.store.AppState
 import com.atala.app.ui.components.CoachAvatar
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.onboarding.OnboardingTimeRules
 import com.atala.app.ui.root.LocalAppStore
 import com.atala.app.ui.theme.Theme
 import java.time.Instant
@@ -396,8 +397,8 @@ internal fun ProfileTargetTimeEditor(seconds: Int?, goal: GoalType, answers: Onb
     val todaySeconds = PlanEngine.predictedSeconds(PlanEngine.estimateVma(answers), goal)
     val km = goal.distanceKm
     val defaultSeconds = if (km == null) 30 * 60 else {
-        val base = todaySeconds ?: ProfileTimeRules.defaultSeconds(km)
-        ProfileTimeRules.clamp(base / 60 * 60, km)
+        val base = todaySeconds ?: OnboardingTimeRules.defaultSeconds(km)
+        OnboardingTimeRules.clamp(base / 60 * 60, km)
     }
     FormSection(footer = L("Without a target time, your paces are set from your current level.")) {
         FormToggleRow(L("Aim for a time"), seconds != null) { isOn -> onChange(if (isOn) seconds ?: defaultSeconds else null) }
@@ -428,7 +429,7 @@ internal fun ProfileTargetTimeEditor(seconds: Int?, goal: GoalType, answers: Onb
 private fun levelNote(target: Int, today: Int?, goal: GoalType): String {
     val km = goal.distanceKm
     if (today == null || km == null) return ""
-    val bounds = ProfileTimeRules.range(km)
+    val bounds = OnboardingTimeRules.range(km)
     if (target < bounds.first || target > bounds.last) {
         return L("Outside what the plan can work with: it will be brought back between %@ and %@.", Fmt.goalTime(bounds.first), Fmt.goalTime(bounds.last))
     }

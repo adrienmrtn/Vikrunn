@@ -30,14 +30,14 @@ import com.atala.app.core.model.ProAccess
 import com.atala.app.core.model.WorkoutStatus
 import com.atala.app.core.voice.VoiceClip
 import com.atala.app.core.voice.VoiceCoach
+import com.atala.app.ui.components.ChoiceDialog
+import com.atala.app.ui.components.DialogChoice
 import com.atala.app.ui.components.HapticKind
 import com.atala.app.ui.components.Haptics
 import com.atala.app.ui.components.rememberHaptics
 import com.atala.app.ui.main.Navigation
 import com.atala.app.ui.root.LocalAppStore
 import com.atala.app.ui.root.collectAppState
-import com.atala.app.ui.today.MainChoice
-import com.atala.app.ui.today.MainChoiceDialog
 import java.util.UUID
 
 private enum class GuidedFlowPhase { Ready, Active, Finish }
@@ -192,15 +192,15 @@ fun GuidedSessionScreen(workoutId: UUID, nav: Navigation) {
     howTo?.let { info -> GuidedHowToSheet(info, onDismiss = { closeHowTo() }) }
 
     if (confirmEnd) {
-        MainChoiceDialog(
+        ChoiceDialog(
             title = L("End this session?"),
             message = L("You completed %@ of %@ exercises.", engine.completedExercises.size, engine.exercises.size),
             choices = listOf(
-                MainChoice(L("Mark as done anyway")) {
+                DialogChoice(L("Mark as done anyway")) {
                     haptics.play(HapticKind.Success)
                     leave(markDone = true)
                 },
-                MainChoice(L("Leave without saving"), destructive = true) {
+                DialogChoice(L("Leave without saving"), destructive = true) {
                     haptics.play(HapticKind.Warning)
                     leave(markDone = false)
                 },

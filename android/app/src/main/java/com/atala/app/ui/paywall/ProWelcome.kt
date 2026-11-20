@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import com.atala.app.core.l10n.L
 import com.atala.app.ui.components.HapticKind
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.root.collectAppState
 import com.atala.app.ui.theme.Theme
 import kotlinx.coroutines.delay

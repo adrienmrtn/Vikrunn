@@ -64,6 +64,7 @@ import com.atala.app.core.l10n.L
 import com.atala.app.ui.auth.SignInOptionsSheet
 import com.atala.app.ui.components.PrimaryButton
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.root.LocalAppStore
 import com.atala.app.ui.root.collectAppState
 import com.atala.app.ui.theme.AtalaImages
@@ -97,13 +98,15 @@ private data class WelcomeSlide(
 /** Screen 1 (step `Welcome`): three swipeable slides, then "Get started" or "I already have an account". */
 @Composable
 fun OnboardingWelcomeScreen() {
-    val store = LocalAppStore.current
     val nav = LocalOnboardingNavigator.current
     val haptics = rememberHaptics()
     val reduceMotion = rememberReduceMotion()
     val slides = remember { WelcomeSlide.all }
     val pager = rememberPagerState { slides.size }
     var showSignIn by remember { mutableStateOf(false) }
+    // Returning user: everything saved in the account comes back and, when a plan is there, the app
+    // opens straight away. A new account simply carries on with the questions.
+    val signIn = rememberOnboardingSignIn(onContinued = { nav.go(OnboardingStep.FirstName) })
     // The page the automatic slideshow last showed. Once the user swipes elsewhere, it stops.
     var autoPage by remember { mutableIntStateOf(0) }
 
@@ -188,14 +191,12 @@ fun OnboardingWelcomeScreen() {
         SignInOptionsSheet(
             onSignedIn = { account ->
                 showSignIn = false
-                // Returning user: when the account brought a finished onboarding back, the root
-                // switches to the app. A new account simply carries on with the questions.
-                if (store.current.account == null) store.setAccount(account)
-                if (!store.current.hasCompletedOnboarding) nav.go(OnboardingStep.FirstName)
+                signIn.finish(account)
             },
             onDismiss = { showSignIn = false },
         )
     }
+    signIn.ErrorAlert()
 }
 
 @Composable

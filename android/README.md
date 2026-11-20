@@ -37,7 +37,7 @@ com.atala.app
 │   └── store/     AppStore (single source of truth), AppState, PlanMoves, SampleData
 └── ui/
     ├── theme/       Theme tokens, AtalaTheme, AtalaImages (iOS asset names -> drawables)
-    ├── components/  Buttons, Cards, CoachViews, Haptics, ScreenPlaceholder (temporary)
+    ├── components/  Buttons, Cards, CoachViews, Haptics, ChoiceDialog, Motion, Activity
     ├── root/        AtalaRoot (language cross-fade, RTL, splash, onboarding vs app), LocalAppStore
     ├── main/        MainScreen (NavHost + tab bar + "+" sheet), Routes, Navigation
     ├── onboarding/  OnboardingFlow, OnboardingNavigator, OnboardingStep, OnboardingScaffold, screens
@@ -165,5 +165,4 @@ feature stays in that feature's package.
 4. **Coach and Progress**: `ui/coach`, `ui/progress`.
 5. **Profile and paywall**: `ui/profile`, `ui/paywall` (purchases, account).
 
-Shell (`ui/root`, `ui/main`, routes, `Navigation`): one owner, the lead. `ScreenPlaceholder` goes
-away when the last screen using it is ported.
+Shell (`ui/root`, `ui/main`, routes, `Navigation`): one owner, the lead.

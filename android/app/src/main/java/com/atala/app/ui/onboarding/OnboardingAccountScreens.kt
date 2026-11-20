@@ -26,18 +26,19 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material.icons.filled.TrackChanges
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -62,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atala.app.R
+import com.atala.app.core.account.AuthSignInFlow
 import com.atala.app.core.l10n.Fmt
 import com.atala.app.core.l10n.L
 import com.atala.app.core.l10n.midSentence
@@ -70,15 +72,22 @@ import com.atala.app.core.model.OnboardingAnswers
 import com.atala.app.core.model.isOpenEnded
 import com.atala.app.core.plan.PlanEngine
 import com.atala.app.core.store.AppState
+import com.atala.app.core.store.AppStore
+import com.atala.app.core.sync.SyncSignInOutcome
+import com.atala.app.core.sync.SyncSignInPolicy
 import com.atala.app.ui.auth.SignInOptionsSheet
 import com.atala.app.ui.components.CoachAvatar
 import com.atala.app.ui.components.HapticKind
+import com.atala.app.ui.components.Haptics
 import com.atala.app.ui.components.card
 import com.atala.app.ui.components.rememberHaptics
+import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.root.LocalAppStore
 import com.atala.app.ui.root.collectAppState
 import com.atala.app.ui.theme.Theme
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 private class AccountSummaryRow(val label: String, val icon: ImageVector, val value: String)
@@ -96,25 +105,17 @@ private fun accountSummaryRows(state: AppState): List<AccountSummaryRow> {
 }
 
 /**
- * Screen 24: summary of the answers, then the sign-in options sheet (`ui.auth.SignInOptionsSheet`,
- * built by the account team). Skipped by the navigator once the phone holds an account.
+ * Screen 24: summary of the answers, then the sign-in options sheet (`ui.auth.SignInOptionsSheet`).
+ * Skipped by the navigator once the phone holds an account.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingSignInScreen() {
-    val store = LocalAppStore.current
     val state by collectAppState()
     val nav = LocalOnboardingNavigator.current
     var showOptions by remember { mutableStateOf(false) }
-
-    // A guest never replaces a real account. Restoring the plan of an account that already has one
-    // (`AuthSignInFlow.complete` on the iPhone) belongs to the account service: here the flow goes on
-    // and the plan is built next.
-    fun finishSignIn(account: Account) {
-        val current = store.current.account
-        if (account.isReal || current == null || !current.isReal) store.setAccount(account)
-        nav.next()
-    }
+    // An account that already holds a plan gets it back and opens the app. A new account carries on:
+    // the plan is built next and saved to the account.
+    val signIn = rememberOnboardingSignIn(onContinued = { nav.next() })
 
     OnboardingScaffold(onContinue = { showOptions = true }) {
         CoachAvatar(state.coach, size = 72.dp)
@@ -137,20 +138,73 @@ fun OnboardingSignInScreen() {
     }
 
     if (showOptions) {
-        ModalBottomSheet(
-            onDismissRequest = { showOptions = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = Color.White,
-        ) {
-            SignInOptionsSheet(
-                onSignedIn = { account ->
-                    showOptions = false
-                    finishSignIn(account)
-                },
-                onDismiss = { showOptions = false },
-            )
+        SignInOptionsSheet(
+            onSignedIn = { account ->
+                showOptions = false
+                signIn.finish(account)
+            },
+            onDismiss = { showOptions = false },
+        )
+    }
+    signIn.ErrorAlert()
+}
+
+/**
+ * What the onboarding does with the account `SignInOptionsSheet` returned (`finishSignIn` of the
+ * iPhone's sign-in and welcome screens): [AuthSignInFlow.complete] with
+ * [SyncSignInPolicy.PreferAccount]. A restored plan finishes the onboarding (the root switches to
+ * the app), a new account calls [onContinued], a failure shows "We couldn't open your account".
+ */
+internal class OnboardingSignIn(
+    private val store: AppStore,
+    private val scope: CoroutineScope,
+    private val haptics: Haptics,
+    private val onContinued: () -> Unit,
+) {
+    private var isRestoring = false
+    private var error by mutableStateOf<String?>(null)
+
+    fun finish(account: Account) {
+        if (isRestoring) return
+        isRestoring = true
+        scope.launch {
+            val outcome = AuthSignInFlow.complete(account, store, SyncSignInPolicy.PreferAccount)
+            isRestoring = false
+            when (outcome) {
+                SyncSignInOutcome.Restored, SyncSignInOutcome.NeedsChoice -> Unit // the root switches to the app
+                SyncSignInOutcome.Continued -> onContinued()
+                is SyncSignInOutcome.Failed -> {
+                    haptics.play(HapticKind.Error)
+                    error = outcome.failure.userMessage
+                }
+            }
         }
     }
+
+    @Composable
+    fun ErrorAlert() {
+        val message = error ?: return
+        AlertDialog(
+            onDismissRequest = { error = null },
+            containerColor = Color.White,
+            title = { Text(L("We couldn't open your account"), style = Theme.font(18, FontWeight.SemiBold), color = Theme.ink) },
+            text = { Text(message.ifEmpty { L("Please try again.") }, style = Theme.font(15), color = Theme.body) },
+            confirmButton = {
+                TextButton(onClick = { error = null }) {
+                    Text(L("OK"), style = Theme.font(15, FontWeight.SemiBold), color = Theme.green)
+                }
+            },
+        )
+    }
+}
+
+@Composable
+internal fun rememberOnboardingSignIn(onContinued: () -> Unit): OnboardingSignIn {
+    val store = LocalAppStore.current
+    val scope = rememberCoroutineScope()
+    val haptics = rememberHaptics()
+    val latest by rememberUpdatedState(onContinued)
+    return remember(store, scope, haptics) { OnboardingSignIn(store, scope, haptics) { latest() } }
 }
 
 @Composable
@@ -233,7 +287,7 @@ fun OnboardingLoadingScreen() {
     val state by collectAppState()
     val nav = LocalOnboardingNavigator.current
     val haptics = rememberHaptics()
-    val reduceMotion = rememberProjectionReduceMotion()
+    val reduceMotion = rememberReduceMotion()
     // Nanosecond clock of the first frame, 0 until the screen is on.
     var startedAt by remember { mutableLongStateOf(0L) }
     var now by remember { mutableLongStateOf(0L) }
@@ -262,7 +316,7 @@ fun OnboardingLoadingScreen() {
         else -> loadingProgress((now - startedAt).coerceAtLeast(0L) / 1_000_000_000.0)
     }
     val percent = (progress * 100).roundToInt()
-    val shown by animateFloatAsState(if (appeared) 1f else 0f, if (reduceMotion) tween(0) else tween(500, easing = ProjectionEaseOut), label = "appear")
+    val shown by animateFloatAsState(if (appeared) 1f else 0f, if (reduceMotion) tween(0) else tween(500, easing = OnboardingEasing.easeOut), label = "appear")
     val stages = remember(state.answers) { loadingStages(state.answers) }
     val ringLabel = L("Plan being built, %@ percent", percent)
 
@@ -303,7 +357,7 @@ fun OnboardingLoadingScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text("$percent %", style = Theme.font(15, FontWeight.SemiBold).projectionDigits(), color = Theme.green, modifier = Modifier.clearAndSetSemantics {})
+            Text("$percent %", style = Theme.font(15, FontWeight.SemiBold).copy(fontFeatureSettings = "tnum"), color = Theme.green, modifier = Modifier.clearAndSetSemantics {})
             Crossfade(completed, label = "loading title") { done ->
                 Text(
                     if (done) L("Your plan is ready") else L("I'm building your plan"),
@@ -362,7 +416,7 @@ private fun LoadingStageList(items: List<String>, progress: Double, appeared: Bo
             // Each line fades in a little after the one above it.
             val entrance by animateFloatAsState(
                 if (appeared) 1f else 0f,
-                if (reduceMotion) tween(0) else tween(450, delayMillis = 150 + 90 * index, easing = ProjectionEaseOut),
+                if (reduceMotion) tween(0) else tween(450, delayMillis = 150 + 90 * index, easing = OnboardingEasing.easeOut),
                 label = "line",
             )
             val color by animateColorAsState(if (done || active) Theme.ink else Theme.faint, tween(350), label = "line colour")
