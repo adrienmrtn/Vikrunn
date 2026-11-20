@@ -68,6 +68,9 @@ class OnboardingNavigator(private val store: AppStore) {
         OnboardingStep.LevelFocus -> isStarting(answers)
         OnboardingStep.LongRun -> answers.runDays.size <= 1
         OnboardingStep.SignIn -> store.current.account != null
+        // Android only: the iPhone's last step connects Apple Health, which does not exist here.
+        // The notifications step ends the flow instead.
+        OnboardingStep.HealthConnect -> true
         else -> false
     }
 
