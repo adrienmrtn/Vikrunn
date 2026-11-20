@@ -139,10 +139,13 @@ enum PlanEngine {
             if qualityCount >= 2 { qualityDays.append(otherDays[otherDays.count / 2]) }
             let easyDays = otherDays.filter { !qualityDays.contains($0) }
 
-            let longKm = runDays.count == 1 ? min(km, longCap) : min(km * 0.36, longCap)
+            // The long run keeps the biggest share of the week, whatever the number of run days.
+            let longShare: Double = runDays.count == 1 ? 1.0 : runDays.count == 2 ? 0.55 : runDays.count == 3 ? 0.40 : 0.36
+            let longKm = min(km * longShare, longCap)
             let qualityKm = km * 0.24
             let easyTotal = max(0, km - longKm - qualityKm * Double(qualityDays.count))
-            let easyKm = easyDays.isEmpty ? 0 : max(2.5, easyTotal / Double(easyDays.count))
+            // An easy run is never longer than the long run, even when the long run hits its cap.
+            let easyKm = easyDays.isEmpty ? 0 : max(2.5, min(easyTotal / Double(easyDays.count), longKm * 0.9))
 
             var workouts: [Workout] = []
             for (i, day) in qualityDays.enumerated() {

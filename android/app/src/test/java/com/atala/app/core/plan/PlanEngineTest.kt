@@ -75,14 +75,14 @@ class PlanEngineTest {
 
     private val swift = mapOf(
         "beginner5k" to """
-w0 base 2026-11-16: 1 strength; 2 easy "Easy run" 2.5km 26min @615; 3 stretching; 4 easy "Easy run" 2.5km 26min @615; 6 long "Long run" 2.7km 28min @588
-w1 base 2026-11-23: 1 strength; 2 easy "Easy run" 2.6km 28min @615; 3 stretching; 4 easy "Easy run" 2.6km 28min @615; 6 long "Long run" 2.9km 30min @588
-w2 base 2026-11-30: 1 strength; 2 easy "Easy run" 2.8km 30min @615; 3 stretching; 4 easy "Easy run" 2.8km 30min @615; 6 long "Long run" 3.1km 32min @588
-w3 base 2026-12-07: 1 strength; 2 easy "Easy run" 2.5km 26min @615; 3 stretching; 4 easy "Easy run" 2.5km 26min @615; 6 long "Long run" 2.7km 28min @588
-w4 build 2026-12-14: 1 strength; 2 intervals "3 × 800 m" 6.0km 54min @420; 3 stretching; 4 easy "Easy run" 4.1km 43min @615; 6 long "Long run" 3.7km 38min @588
-w5 build 2026-12-21: 1 strength; 2 tempo "2 × 8 min tempo" 4.8km 45min @471; 3 stretching; 4 easy "Easy run" 4.4km 47min @615; 6 long "Long run" 4.0km 41min @588
-w6 specific 2026-12-28: 1 strength; 2 racePace "3 × 1 km at race pace" 6.6km 59min @430; 3 stretching; 4 easy "Easy run" 4.8km 51min @615; 6 long "Long run" 4.3km 44min @588
-w7 specific 2027-01-04: 1 strength; 2 racePace "3 × 1 km at race pace" 6.6km 59min @430; 3 stretching; 4 easy "Easy run" 4.1km 43min @615; 6 long "Long run" 3.7km 38min @588
+w0 base 2026-11-16: 1 strength; 2 easy "Easy run" 2.5km 26min @615; 3 stretching; 4 easy "Easy run" 2.5km 26min @615; 6 long "Long run" 3.0km 31min @588
+w1 base 2026-11-23: 1 strength; 2 easy "Easy run" 2.5km 26min @615; 3 stretching; 4 easy "Easy run" 2.5km 26min @615; 6 long "Long run" 3.2km 33min @588
+w2 base 2026-11-30: 1 strength; 2 easy "Easy run" 2.6km 28min @615; 3 stretching; 4 easy "Easy run" 2.6km 28min @615; 6 long "Long run" 3.5km 36min @588
+w3 base 2026-12-07: 1 strength; 2 easy "Easy run" 2.5km 26min @615; 3 stretching; 4 easy "Easy run" 2.5km 26min @615; 6 long "Long run" 3.0km 31min @588
+w4 build 2026-12-14: 1 strength; 2 intervals "3 × 800 m" 6.0km 54min @420; 3 stretching; 4 easy "Easy run" 3.7km 39min @615; 6 long "Long run" 4.1km 42min @588
+w5 build 2026-12-21: 1 strength; 2 tempo "2 × 8 min tempo" 4.8km 45min @471; 3 stretching; 4 easy "Easy run" 4.0km 42min @615; 6 long "Long run" 4.4km 45min @588
+w6 specific 2026-12-28: 1 strength; 2 racePace "3 × 1 km at race pace" 6.6km 59min @430; 3 stretching; 4 easy "Easy run" 4.3km 46min @615; 6 long "Long run" 4.8km 49min @588
+w7 specific 2027-01-04: 1 strength; 2 racePace "3 × 1 km at race pace" 6.6km 59min @430; 3 stretching; 4 easy "Easy run" 3.7km 39min @615; 6 long "Long run" 4.1km 42min @588
         """.trimIndent(),
         "tenKTarget" to """
 w0 base 2026-11-16: 5 easy "Easy run + strides" 3.6km 28min @446; 7 long "Long run" 6.5km 49min @427
@@ -104,14 +104,14 @@ w6 specific 2026-12-28: 1 racePace "3 × 3 km at race pace" 14.1km 77min @290; 2
 w7 specific 2027-01-04: 1 racePace "3 × 3 km at race pace" 14.1km 77min @290; 2 easy "Easy run" 3.5km 23min @366; 3 strength; 4 racePace "3 × 3 km at race pace" 14.1km 77min @290; 5 easy "Easy run" 3.5km 23min @366; 6 stretching; 7 long "Long run" 15.8km 98min @349
         """.trimIndent(),
         "shape2days" to """
-w0 base 2026-11-16: 6 long "Long run" 3.6km 32min @504
-w1 base 2026-11-23: 1 strength; 2 stretching; 3 easy "Easy run" 6.9km 63min @527; 6 long "Long run" 3.9km 34min @504
-w2 base 2026-11-30: 1 strength; 2 stretching; 3 easy "Easy run + strides" 7.5km 68min @527; 6 long "Long run" 4.2km 37min @504
-w3 base 2026-12-07: 1 strength; 2 stretching; 3 easy "Easy run" 6.4km 58min @527; 6 long "Long run" 3.6km 32min @504
-w4 build 2026-12-14: 1 strength; 2 stretching; 3 easy "Easy run + strides" 8.7km 79min @527; 6 long "Long run" 4.9km 43min @504
-w5 build 2026-12-21: 1 strength; 2 stretching; 3 easy "Easy run" 9.4km 86min @527; 6 long "Long run" 5.3km 47min @504
-w6 specific 2026-12-28: 1 strength; 2 stretching; 3 easy "Easy run + strides" 10.2km 93min @527; 6 long "Long run" 5.7km 50min @504
-w7 specific 2027-01-04: 1 strength; 2 stretching; 3 easy "Easy run" 8.8km 80min @527; 6 long "Long run" 4.9km 43min @504
+w0 base 2026-11-16: 6 long "Long run" 5.5km 48min @504
+w1 base 2026-11-23: 1 strength; 2 stretching; 3 easy "Easy run" 4.9km 45min @527; 6 long "Long run" 5.9km 52min @504
+w2 base 2026-11-30: 1 strength; 2 stretching; 3 easy "Easy run + strides" 5.2km 47min @527; 6 long "Long run" 6.4km 56min @504
+w3 base 2026-12-07: 1 strength; 2 stretching; 3 easy "Easy run" 4.5km 41min @527; 6 long "Long run" 5.5km 48min @504
+w4 build 2026-12-14: 1 strength; 2 stretching; 3 easy "Easy run + strides" 6.1km 56min @527; 6 long "Long run" 7.5km 66min @504
+w5 build 2026-12-21: 1 strength; 2 stretching; 3 easy "Easy run" 6.6km 60min @527; 6 long "Long run" 8.1km 71min @504
+w6 specific 2026-12-28: 1 strength; 2 stretching; 3 easy "Easy run + strides" 7.1km 65min @527; 6 long "Long run" 8.7km 77min @504
+w7 specific 2027-01-04: 1 strength; 2 stretching; 3 easy "Easy run" 6.2km 57min @527; 6 long "Long run" 7.5km 66min @504
         """.trimIndent(),
     )
 

@@ -81,6 +81,10 @@ object RunBackupStore {
         }
     }
 
+    /** Blocks until every write and delete queued so far has run (tests: a read during a write can undo it). */
+    @androidx.annotation.VisibleForTesting
+    internal fun awaitWrites() = kotlinx.coroutines.runBlocking { io.launch {}.join() }
+
     fun delete(context: Context) {
         val file = file(context)
         io.launch { runCatching { file.delete() } }

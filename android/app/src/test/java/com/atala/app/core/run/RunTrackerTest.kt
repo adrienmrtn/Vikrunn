@@ -81,6 +81,8 @@ class RunTrackerTest {
     private fun waitForBackup(condition: (RunBackup?) -> Boolean): RunBackup? {
         val deadline = System.currentTimeMillis() + 5_000
         while (System.currentTimeMillis() < deadline) {
+            // Reading while AtomicFile is writing can discard that write: let queued writes finish first.
+            RunBackupStore.awaitWrites()
             val backup = RunBackupStore.read(context)
             if (condition(backup)) return backup
             Thread.sleep(20)
