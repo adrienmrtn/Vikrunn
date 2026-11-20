@@ -6,8 +6,9 @@ Developer API, with the service account in PLAY_SERVICE_ACCOUNT_JSON.
     python tools/play_listing.py android/play/listings.json --apply   # saves it in Play Console
     python tools/play_listing.py android/play/listings.json --screenshots build/play-screenshots --apply
 
-A language that already has a listing in Play Console keeps its texts and its screenshots, unless
---overwrite. --screenshots is the folder written by
+A language that already has a listing in Play Console keeps its texts, and a language that already
+has phone screenshots keeps them, unless --overwrite. The default language, whose graphics are set
+by hand in Play Console, keeps its screenshots too. --screenshots is the folder written by
 tools/play_screenshots.py: <folder>/<language>/*.jpg, sent in the order of their names.
 
 Saved with changesNotSentForReview: the listing is stored in Play Console and nothing is sent for
@@ -85,6 +86,9 @@ def main():
     current = {item["language"]: item for item in r.json().get("listings", [])} if r.status_code == 200 else {}
     print(f"Listings in Play Console now: {', '.join(sorted(current)) or 'none'}")
 
+    r = s.get(f"{base}/details")
+    default = r.json().get("defaultLanguage") if r.status_code == 200 else None
+
     changed = 0
     for language, fields in sorted(listings.items()):
         old = current.get(language, {})
@@ -104,8 +108,11 @@ def main():
                     sys.exit(f"{language}: Google refused ({r.status_code}) {readable(r)}")
 
         shots = local_screenshots(folder, language) if folder else []
-        if not shots or (old and not overwrite):
-            continue  # a language written by hand in Play Console keeps its own screenshots too
+        if not shots:
+            continue
+        if language == default and not overwrite:
+            print(f"{language}: default language, its screenshots are kept as they are")
+            continue
         images = f"listings/{language}/phoneScreenshots"
         r = s.get(f"{base}/{images}") if old or apply else None
         online = [image.get("sha256") for image in r.json().get("images", [])] if r is not None and r.status_code == 200 else []
