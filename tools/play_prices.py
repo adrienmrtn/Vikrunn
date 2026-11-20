@@ -30,6 +30,20 @@ def session():
     return s
 
 
+def readable(response):
+    """Google's error without JSON punctuation: GitHub masks the lines of the key file ("{", "}")."""
+    try:
+        error = response.json().get("error", {})
+        parts = [str(error.get("status", "")), str(error.get("message", ""))]
+        for detail in error.get("details", []) or []:
+            for violation in detail.get("fieldViolations", []) or []:
+                parts.append(f"field {violation.get('field')}: {violation.get('description')}")
+        text = " | ".join(p for p in parts if p)
+    except ValueError:
+        text = response.text
+    return text.replace("{", "(").replace("}", ")")[:2000]
+
+
 def money(currency, amount):
     value = Decimal(str(amount))
     units = int(value)
@@ -53,7 +67,7 @@ def main():
         pid, bp_id = product["productId"], product["basePlanId"]
         r = s.get(f"{API}/{package}/subscriptions/{pid}")
         if r.status_code != 200:
-            print(f"{pid}: cannot read ({r.status_code}) {r.text[:500]}")
+            print(f"{pid}: cannot read ({r.status_code}) {readable(r)}")
             failed = True
             continue
         sub = r.json()
@@ -89,7 +103,7 @@ def main():
         if r.status_code == 200:
             print(f"{pid}: prices updated")
         else:
-            print(f"{pid}: Google refused ({r.status_code}) {r.text[:1500]}")
+            print(f"{pid}: Google refused ({r.status_code}) {readable(r)}")
             failed = True
     sys.exit(1 if failed else 0)
 
