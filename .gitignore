@@ -10,3 +10,4 @@ fastlane/screenshots/
 fastlane/screenshots-skipped/
 fastlane/report.xml
 fastlane/metadata-none/
+__pycache__/
