@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import com.atala.app.core.l10n.L
 import com.atala.app.core.model.CoachPose
 import com.atala.app.ui.components.HapticKind
+import com.atala.app.ui.components.fontRoom
+import com.atala.app.ui.components.screenFitScale
 import com.atala.app.ui.components.rememberHaptics
 import com.atala.app.ui.components.rememberReduceMotion
 import com.atala.app.ui.root.collectAppState
@@ -113,8 +117,12 @@ fun OnboardingTapScreen(
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val rise = with(density) { 18.dp.toPx() }
+    val fontRoom = fontRoom()
 
-    Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // Small phones (and large system fonts): the words and the space above them shrink a
+        // little, so the coach keeps a good share of the screen. 1 on regular phones.
+        val scale = screenFitScale(maxHeight.value, TAP_SCREEN_REGULAR_HEIGHT * fontRoom, minimum = 0.72f)
         // The backdrop, edge to edge, clipped by the growing circle.
         Box(
             Modifier
@@ -145,14 +153,16 @@ fun OnboardingTapScreen(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .padding(start = 24.dp, end = 24.dp, top = 56.dp),
-            ) { top() }
+                    .padding(start = 24.dp, end = 24.dp, top = if (scale < 1f) 48.dp else 56.dp),
+            ) {
+                CompositionLocalProvider(LocalOnboardingTextScale provides scale) { top() }
+            }
             // The figure takes the room left, up to 500 dp high; at least 12 dp above it.
             Box(
                 Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
+                    .padding(top = 12.dp * scale),
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 Image(
@@ -166,7 +176,7 @@ fun OnboardingTapScreen(
                         .fillMaxSize()
                         .drawBehind {
                             // Soft shadow on the ground, under the feet.
-                            val radius = 100.dp.toPx()
+                            val radius = 100.dp.toPx() * scale
                             val centre = Offset(size.width / 2, size.height + 4.dp.toPx())
                             withTransform({ scale(1f, 0.12f, pivot = centre) }) {
                                 drawCircle(
@@ -188,7 +198,7 @@ fun OnboardingTapScreen(
                 shadow = hintShadow,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .padding(top = 16.dp, bottom = 14.dp),
+                    .padding(top = 16.dp * scale, bottom = 14.dp),
             )
         }
         if (step.allowsBack) {
@@ -214,3 +224,6 @@ fun OnboardingTapScreen(
         }
     }
 }
+
+/** Full screen height (dp) from which nothing is shrunk on the tap screens. */
+private const val TAP_SCREEN_REGULAR_HEIGHT = 780f

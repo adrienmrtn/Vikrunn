@@ -48,19 +48,40 @@ struct OnboardingTapScreen<Backdrop: View, Top: View>: View {
         self.top = top()
     }
 
+    /// Usable height from which nothing is shrunk (iPhone 13 mini and larger).
+    private static let regularHeight: CGFloat = 728
+
     var body: some View {
-        ZStack(alignment: .topLeading) {
+        GeometryReader { geo in
+            content(height: geo.size.height)
+        }
+        .background { revealedBackdrop }
+        .onAppear(perform: startReveal)
+        .onChange(of: canContinue) { _, ready in
+            // The coach has finished speaking: a soft tick says the screen can be tapped.
+            if ready { Haptics.soft() }
+        }
+    }
+
+    /// On small phones (iPhone SE) the words and the space above them shrink a little, so the
+    /// coach keeps a good share of the screen; the figure takes whatever room is left.
+    private func content(height: CGFloat) -> some View {
+        let scale: CGFloat = ScreenFit.scale(height, reference: Self.regularHeight, minimum: 0.84)
+        let topSpace: CGFloat = scale < 1 ? 48 : 56
+        return ZStack(alignment: .topLeading) {
             Button(action: advance) {
                 VStack(spacing: 0) {
                     top
+                        .environment(\.onboardingTextScale, scale)
+                        .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 24)
-                        .padding(.top, 56)
+                        .padding(.top, topSpace)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Spacer(minLength: 12)
-                    figure
+                    Spacer(minLength: 12 * scale)
+                    figure(scale: scale)
                         .layoutPriority(1)
                     OnboardingTapHint(color: hintColor, shadow: hintShadow, visible: canContinue)
-                        .padding(.top, 16)
+                        .padding(.top, 16 * scale)
                         .padding(.bottom, 14)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -73,12 +94,7 @@ struct OnboardingTapScreen<Backdrop: View, Top: View>: View {
             backButton
                 .opacity(contentShown ? 1 : 0)
         }
-        .background { revealedBackdrop }
-        .onAppear(perform: startReveal)
-        .onChange(of: canContinue) { _, ready in
-            // The coach has finished speaking: a soft tick says the screen can be tapped.
-            if ready { Haptics.soft() }
-        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     /// The backdrop, edge to edge, clipped by the growing circle.
@@ -114,13 +130,14 @@ struct OnboardingTapScreen<Backdrop: View, Top: View>: View {
         }
     }
 
-    private var figure: some View {
+    /// The coach takes the room left under the words, up to 500 points on the largest phones.
+    private func figure(scale: CGFloat) -> some View {
         CoachPoseView(coach: store.coach, pose: pose)
             .frame(maxWidth: 320, maxHeight: 500)
             .background(alignment: .bottom) {
                 Ellipse()
                     .fill(Color.black.opacity(0.3))
-                    .frame(width: 180, height: 20)
+                    .frame(width: 180 * scale, height: 20 * scale)
                     .blur(radius: 9)
                     .offset(y: 4)
             }

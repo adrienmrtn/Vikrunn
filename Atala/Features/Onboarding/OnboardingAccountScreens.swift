@@ -179,8 +179,12 @@ struct OnboardingLoadingScreen: View {
     }
 
     var body: some View {
-        TimelineView(.animation) { context in
-            content(progress: progress(at: context.date))
+        GeometryReader { geo in
+            // Small phones (iPhone SE): the ring, the gaps and the lines shrink so everything fits.
+            let scale: CGFloat = ScreenFit.scale(geo.size.height, reference: 700, minimum: 0.75)
+            TimelineView(.animation) { context in
+                content(progress: progress(at: context.date), scale: scale)
+            }
         }
         .padding(.horizontal, 28)
         .padding(.top, 48)
@@ -213,13 +217,13 @@ struct OnboardingLoadingScreen: View {
         nav.next(store)
     }
 
-    private func content(progress: Double) -> some View {
+    private func content(progress: Double, scale: CGFloat) -> some View {
         let percent: Int = Int((progress * 100).rounded())
-        return VStack(spacing: 26) {
+        return VStack(spacing: 26 * scale) {
             BrandLogo(style: .full, height: 22)
                 .foregroundStyle(Theme.forest)
                 .opacity(appeared ? 1 : 0)
-            ring(progress: progress, percent: percent)
+            ring(progress: progress, percent: percent, size: 180 * scale)
                 .opacity(appeared ? 1 : 0)
                 .scaleEffect(appeared ? 1 : 0.94)
             VStack(spacing: 6) {
@@ -242,12 +246,13 @@ struct OnboardingLoadingScreen: View {
             .multilineTextAlignment(.center)
             .opacity(appeared ? 1 : 0)
             .offset(y: appeared ? 0 : 8)
-            stageList(progress: progress)
+            stageList(progress: progress, rowHeight: max(42, 50 * scale))
             Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity)
     }
 
-    private func ring(progress: Double, percent: Int) -> some View {
+    private func ring(progress: Double, percent: Int, size: CGFloat) -> some View {
         ZStack {
             Circle()
                 .stroke(Theme.hairline, lineWidth: 8)
@@ -255,17 +260,17 @@ struct OnboardingLoadingScreen: View {
                 .trim(from: 0, to: CGFloat(min(max(progress, 0.002), 1)))
                 .stroke(Theme.green, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-            CoachAvatar(coach: store.coach, size: 136)
+            CoachAvatar(coach: store.coach, size: size * 136 / 180)
                 // A small breath when the ring closes.
                 .scaleEffect(completed && !reduceMotion ? 1.04 : 1)
                 .animation(.spring(response: 0.5, dampingFraction: 0.6), value: completed)
         }
-        .frame(width: 180, height: 180)
+        .frame(width: size, height: size)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L("Plan being built, %@ percent", percent))
     }
 
-    private func stageList(progress: Double) -> some View {
+    private func stageList(progress: Double, rowHeight: CGFloat) -> some View {
         let items: [String] = stages
         let count: Double = Double(max(items.count, 1))
         return VStack(spacing: 0) {
@@ -287,7 +292,7 @@ struct OnboardingLoadingScreen: View {
                             .animation(.easeInOut(duration: 0.35), value: done || active)
                         Spacer(minLength: 0)
                     }
-                    .frame(height: 50)
+                    .frame(height: rowHeight)
                 }
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 10)

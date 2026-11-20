@@ -39,6 +39,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.atala.app.ui.components.adaptiveHeight
 import com.atala.app.core.l10n.Fmt
 import com.atala.app.core.l10n.L
 import com.atala.app.core.model.CoachPose
@@ -189,7 +190,7 @@ fun OnboardingCommitmentScreen() {
             pose = CoachPose.ThumbsUp,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
+                .height(adaptiveHeight(180.dp))
                 .onboardingSpringIn(signed)
                 .clearAndSetSemantics {},
         )

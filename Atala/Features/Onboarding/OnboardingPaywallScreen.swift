@@ -184,26 +184,8 @@ struct PaywallView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    OnboardingPhotoStrip(names: AtalaPhotos.strip(for: store.answers.gender))
-                        .padding(.top, 52)
-                    headline
-                        .padding(.horizontal, Theme.screenPadding)
-                        .padding(.top, 22)
-                    featureList
-                        .padding(.horizontal, Theme.screenPadding)
-                        .padding(.top, 20)
-                    offerCard
-                        .padding(.horizontal, Theme.screenPadding)
-                        .padding(.top, 20)
-                        .padding(.bottom, 20)
-                }
-            }
-            .scrollIndicators(.hidden)
-            .scrollBounceBehavior(.basedOnSize)
-            callToAction
+        GeometryReader { geo in
+            page(height: geo.size.height)
         }
         .overlay(alignment: .top) {
             topBar
@@ -223,6 +205,34 @@ struct PaywallView: View {
             Button(L("OK"), role: .cancel) {}
         } message: {
             Text(purchaseError ?? L("Please try again."))
+        }
+    }
+
+    /// Small phones (iPhone SE): a lower photo strip, so the plans come into view sooner.
+    private func page(height: CGFloat) -> some View {
+        let stripScale: CGFloat = ScreenFit.scale(height, reference: 740, minimum: 0.75)
+        return VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    OnboardingPhotoStrip(names: AtalaPhotos.strip(for: store.answers.gender),
+                                         tileWidth: 132 * stripScale,
+                                         height: 176 * stripScale)
+                        .padding(.top, 52)
+                    headline
+                        .padding(.horizontal, Theme.screenPadding)
+                        .padding(.top, 22)
+                    featureList
+                        .padding(.horizontal, Theme.screenPadding)
+                        .padding(.top, 20)
+                    offerCard
+                        .padding(.horizontal, Theme.screenPadding)
+                        .padding(.top, 20)
+                        .padding(.bottom, 20)
+                }
+            }
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
+            callToAction
         }
     }
 
@@ -345,6 +355,7 @@ struct PaywallView: View {
                         Text(title)
                             .font(.system(size: 15, weight: .bold))
                             .foregroundStyle(Theme.ink)
+                            .layoutPriority(1)
                         if let badge {
                             Text(badge)
                                 .font(.system(size: 11, weight: .bold))
@@ -363,6 +374,9 @@ struct PaywallView: View {
                                 .background(Theme.orangeTint, in: Capsule())
                         }
                     }
+                    // Longer languages: the title and the chips shrink a little rather than being cut.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
                     Text(price)
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(Theme.ink)
@@ -415,6 +429,8 @@ struct PaywallView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .disabled(isBuying)
             }
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
             .foregroundStyle(Theme.muted)
             // Apple asks for both links next to the price of a subscription.
             Text(LocalizedStringKey(L("[Terms of use](https://vikstudios.com/atala/terms) · [Privacy policy](https://vikstudios.com/atala)")))

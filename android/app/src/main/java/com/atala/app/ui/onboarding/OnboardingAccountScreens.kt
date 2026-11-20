@@ -1,5 +1,9 @@
 package com.atala.app.ui.onboarding
 
+import androidx.compose.ui.unit.Dp
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -62,6 +66,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.atala.app.ui.components.fontRoom
+import com.atala.app.ui.components.screenFitScale
 import com.atala.app.R
 import com.atala.app.core.account.AuthSignInFlow
 import com.atala.app.ui.auth.RecoveredGoogleSignInEffect
@@ -328,56 +334,67 @@ fun OnboardingLoadingScreen() {
     val stages = remember(state.answers) { loadingStages(state.answers) }
     val ringLabel = L("Plan being built, %@ percent", percent)
 
-    Column(
+    val fontRoom = fontRoom()
+    BoxWithConstraints(
         Modifier
             .fillMaxSize()
             .background(Color.White)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(start = 28.dp, end = 28.dp, top = 48.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(26.dp),
     ) {
-        Image(
-            painterResource(R.drawable.logo_atala), contentDescription = "Atala",
-            colorFilter = ColorFilter.tint(Theme.forest),
-            modifier = Modifier.height(22.dp).alpha(shown),
-        )
-        LoadingRing(
-            progress = progress,
-            completed = completed,
-            reduceMotion = reduceMotion,
-            coachAvatar = { CoachAvatar(state.coach, size = 136.dp) },
-            modifier = Modifier
-                .graphicsLayer {
-                    alpha = shown
-                    val scale = 0.94f + 0.06f * shown
-                    scaleX = scale
-                    scaleY = scale
-                }
-                .clearAndSetSemantics { contentDescription = ringLabel },
-        )
+        // Small phones (and large system fonts): the ring, the gaps and the lines shrink so everything
+        // fits; past that, the page scrolls rather than cutting the last lines.
+        val scale = screenFitScale(maxHeight.value, 680f * fontRoom, minimum = 0.6f)
         Column(
-            Modifier.graphicsLayer {
-                alpha = shown
-                translationY = (1f - shown) * 8.dp.toPx()
-            },
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(26.dp * scale),
         ) {
-            Text("$percent %", style = Theme.font(15, FontWeight.SemiBold).copy(fontFeatureSettings = "tnum"), color = Theme.green, modifier = Modifier.clearAndSetSemantics {})
-            Crossfade(completed, label = "loading title") { done ->
-                Text(
-                    if (done) L("Your plan is ready") else L("I'm building your plan"),
-                    style = Theme.title(26),
-                    color = Theme.ink,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().semantics { heading() },
-                )
+            Image(
+                painterResource(R.drawable.logo_atala), contentDescription = "Atala",
+                colorFilter = ColorFilter.tint(Theme.forest),
+                modifier = Modifier.height(22.dp).alpha(shown),
+            )
+            LoadingRing(
+                progress = progress,
+                completed = completed,
+                reduceMotion = reduceMotion,
+                coachAvatar = { CoachAvatar(state.coach, size = 136.dp * scale) },
+                ringSize = 180.dp * scale,
+                modifier = Modifier
+                    .graphicsLayer {
+                        alpha = shown
+                        val scale = 0.94f + 0.06f * shown
+                        scaleX = scale
+                        scaleY = scale
+                    }
+                    .clearAndSetSemantics { contentDescription = ringLabel },
+            )
+            Column(
+                Modifier.graphicsLayer {
+                    alpha = shown
+                    translationY = (1f - shown) * 8.dp.toPx()
+                },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text("$percent %", style = Theme.font(15, FontWeight.SemiBold).copy(fontFeatureSettings = "tnum"), color = Theme.green, modifier = Modifier.clearAndSetSemantics {})
+                Crossfade(completed, label = "loading title") { done ->
+                    Text(
+                        if (done) L("Your plan is ready") else L("I'm building your plan"),
+                        style = Theme.title(26),
+                        color = Theme.ink,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().semantics { heading() },
+                    )
+                }
+                Text(loadingSubtitle(state.answers), style = Theme.font(15), color = Theme.muted, textAlign = TextAlign.Center)
             }
-            Text(loadingSubtitle(state.answers), style = Theme.font(15), color = Theme.muted, textAlign = TextAlign.Center)
+            LoadingStageList(stages, progress, appeared, reduceMotion, rowHeight = maxOf(40.dp, 50.dp * scale))
         }
-        LoadingStageList(stages, progress, appeared, reduceMotion)
     }
 }
 
@@ -388,10 +405,11 @@ private fun LoadingRing(
     reduceMotion: Boolean,
     coachAvatar: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    ringSize: Dp = 180.dp,
 ) {
     // A small breath when the ring closes.
     val breath by animateFloatAsState(if (completed && !reduceMotion) 1.04f else 1f, spring(dampingRatio = 0.6f, stiffness = 158f), label = "breath")
-    Box(modifier.size(180.dp), contentAlignment = Alignment.Center) {
+    Box(modifier.size(ringSize), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val width = 8.dp.toPx()
             val inset = width / 2
@@ -415,7 +433,7 @@ private fun LoadingRing(
 }
 
 @Composable
-private fun LoadingStageList(items: List<String>, progress: Double, appeared: Boolean, reduceMotion: Boolean) {
+private fun LoadingStageList(items: List<String>, progress: Double, appeared: Boolean, reduceMotion: Boolean, rowHeight: Dp = 50.dp) {
     val count = maxOf(items.size, 1).toDouble()
     Column(Modifier.fillMaxWidth()) {
         items.forEachIndexed { index, text ->
@@ -434,13 +452,13 @@ private fun LoadingStageList(items: List<String>, progress: Double, appeared: Bo
             }) {
                 HorizontalDivider(thickness = 1.dp, color = Theme.hairline)
                 Row(
-                    Modifier.fillMaxWidth().height(50.dp),
+                    Modifier.fillMaxWidth().height(rowHeight),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     LoadingStageMark(done, active)
                     // One weight for every state: the line never changes width.
-                    Text(text, style = Theme.font(15, FontWeight.Medium), color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    OnboardingFitText(text, Theme.font(15, FontWeight.Medium), color, minScale = 0.8f)
                 }
             }
         }

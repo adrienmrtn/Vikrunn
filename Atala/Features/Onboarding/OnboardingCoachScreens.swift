@@ -202,6 +202,8 @@ struct OnboardingCoachScreen: View {
             Text(L("Swipe to change coach"))
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             arrowButton(symbol: "chevron.right", label: L("Next coach"), delta: 1)
         }
     }

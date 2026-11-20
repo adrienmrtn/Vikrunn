@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.atala.app.ui.components.adaptiveHeight
 import com.atala.app.R
 import com.atala.app.core.l10n.AppLanguage
 import com.atala.app.core.l10n.Fmt
@@ -107,7 +108,8 @@ fun OnboardingPhotoCard(
     Box(
         modifier
             .fillMaxWidth()
-            .height(height)
+            // A little lower on small phones, so the text under it stays in view.
+            .height(adaptiveHeight(height, minimum = 0.75f))
             .clip(RoundedCornerShape(28.dp))
             .background(Color(0xFF1B1B1B)),
     ) {
@@ -418,7 +420,7 @@ fun OnboardingReadyScreen() {
             pose = CoachPose.ThumbsUp,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(250.dp)
+                .height(adaptiveHeight(250.dp))
                 .onboardingSpringIn(coachShown, from = 0.9f, response = 0.55, damping = 0.74)
                 .clearAndSetSemantics {},
         )

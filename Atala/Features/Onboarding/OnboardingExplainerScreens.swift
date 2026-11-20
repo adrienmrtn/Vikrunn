@@ -1,5 +1,23 @@
 import SwiftUI
 
+/// The large soft circle rising from the bottom of an explainer's backdrop, behind the coach.
+/// Sized from the screen: 630 points wide with its top 46 % of the height above the bottom on a
+/// 393 × 852 phone, the same proportions on smaller and larger ones.
+struct OnboardingBackdropCircle: View {
+    let color: Color
+
+    var body: some View {
+        GeometryReader { geo in
+            let diameter: CGFloat = max(geo.size.width * 1.6, 1)
+            let top: CGFloat = geo.size.height * 0.54
+            Circle()
+                .fill(color)
+                .frame(width: diameter, height: diameter)
+                .position(x: geo.size.width / 2, y: top + diameter / 2)
+        }
+    }
+}
+
 /// Screen 4: the chosen coach says hello, word by word, over the photo background.
 struct OnboardingHelloScreen: View {
     @EnvironmentObject private var store: AppStore
@@ -60,11 +78,8 @@ struct OnboardingGoalIntroScreen: View {
     var body: some View {
         OnboardingTapScreen(lightContent: true, canContinue: finished, pose: .present, backdrop: {
             Theme.green
-                .overlay(alignment: .bottom) {
-                    Circle()
-                        .fill(Color(hex: 0x2A6E5B))
-                        .frame(width: 630, height: 630)
-                        .offset(y: 240)
+                .overlay {
+                    OnboardingBackdropCircle(color: Color(hex: 0x2A6E5B))
                 }
         }, top: {
             VStack(alignment: .leading, spacing: 14) {
@@ -129,11 +144,8 @@ struct OnboardingCoachReplyScreen: View {
     var body: some View {
         OnboardingTapScreen(hintColor: Theme.orangeDeep, canContinue: finished, pose: .thumbsUp, backdrop: {
             Theme.orangeTint
-                .overlay(alignment: .bottom) {
-                    Circle()
-                        .fill(Color(hex: 0xF6D3BD))
-                        .frame(width: 630, height: 630)
-                        .offset(y: 240)
+                .overlay {
+                    OnboardingBackdropCircle(color: Color(hex: 0xF6D3BD))
                 }
         }, top: {
             VStack(alignment: .leading, spacing: 14) {

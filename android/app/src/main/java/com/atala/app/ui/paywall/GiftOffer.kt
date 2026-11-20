@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -71,6 +72,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.atala.app.ui.components.FillOrScrollColumn
+import com.atala.app.ui.components.rememberScreenScale
 import com.atala.app.core.l10n.L
 import com.atala.app.core.purchases.PlaceholderOffer
 import com.atala.app.core.purchases.ProPreferences
@@ -332,7 +335,9 @@ internal fun GiftOfferScreen(onClose: () -> Unit) {
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Theme.green, Theme.forest))),
     ) {
-        Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+        // Small phones: the box shrinks, and the page scrolls rather than cutting the buttons.
+        val fit = rememberScreenScale(reference = 800f, minimum = 0.55f)
+        FillOrScrollColumn(Modifier.fillMaxSize().safeDrawingPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
                 Spacer(Modifier.weight(1f))
                 Box(
@@ -349,7 +354,7 @@ internal fun GiftOfferScreen(onClose: () -> Unit) {
                 }
             }
             Spacer(Modifier.weight(1f).heightIn(min = 12.dp))
-            GiftBox(stage = stage, rotation = shake.value)
+            GiftBox(stage = stage, rotation = shake.value, fit = fit)
             Spacer(Modifier.weight(1f).heightIn(min = 20.dp))
             Column(
                 Modifier
@@ -477,7 +482,7 @@ private fun GiftCountdown() {
 
 /** The box: drops in, shakes, then opens with a burst of rays behind it. */
 @Composable
-private fun GiftBox(stage: Int, rotation: Float) {
+private fun GiftBox(stage: Int, rotation: Float, fit: Float) {
     val opened = stage >= 3
     val bouncy = spring<Float>(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)
     val boxScale by animateFloatAsState(
@@ -491,7 +496,26 @@ private fun GiftBox(stage: Int, rotation: Float) {
     val boxAlpha by animateFloatAsState(if (stage == 0) 0f else 1f, tween(250), label = "boxAlpha")
     val burst by animateFloatAsState(if (opened) 1f else 0f, bouncy, label = "burst")
     val haloScale by animateFloatAsState(if (opened) 1f else 0.7f, bouncy, label = "halo")
-    Box(Modifier.fillMaxWidth().height(260.dp).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
+    // Drawn at its full size, then scaled down as a whole on small phones ([fit] below 1).
+    Box(Modifier.fillMaxWidth().height(260.dp * fit).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .requiredHeight(260.dp)
+                .graphicsLayer {
+                    scaleX = fit
+                    scaleY = fit
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            GiftBoxContent(burst, haloScale, boxScale, boxAlpha, rotation)
+        }
+    }
+}
+
+@Composable
+private fun GiftBoxContent(burst: Float, haloScale: Float, boxScale: Float, boxAlpha: Float, rotation: Float) {
+    Box(Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
         Rays(progress = burst, from = 70.dp, to = 118.dp, short = 4.dp, long = 26.dp)
         Box(Modifier.size(190.dp).scale(haloScale).background(Color.White.copy(alpha = 0.12f), CircleShape))
         Icon(

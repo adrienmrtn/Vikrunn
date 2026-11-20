@@ -45,6 +45,53 @@ enum Theme {
     static func title(_ size: CGFloat = 28) -> Font { .system(size: size, weight: .bold) }
 }
 
+// MARK: - Small screens
+
+/// Sizes that follow the room on screen: 1 on regular phones, less on small ones (iPhone SE).
+enum ScreenFit {
+    /// `length / reference`, never above 1 and never below `minimum`.
+    static func scale(_ length: CGFloat, reference: CGFloat, minimum: CGFloat = 0.72) -> CGFloat {
+        guard length > 0, reference > 0 else { return 1 }
+        return min(1, max(minimum, length / reference))
+    }
+}
+
+extension View {
+    /// A height of `maximum` points when the screen (or the scroll view around) is at least
+    /// `reference` points high, and proportionally less on smaller phones.
+    func adaptiveHeight(_ maximum: CGFloat, reference: CGFloat = 640, minimumScale: CGFloat = 0.72) -> some View {
+        containerRelativeFrame(.vertical) { length, _ in
+            maximum * ScreenFit.scale(length, reference: reference, minimum: minimumScale)
+        }
+    }
+}
+
+/// Draws `content`, laid out for `height` points, scaled down as a whole when the layout gives it
+/// less room (never below `minHeight`, never above `height`). Give it a layout priority to keep
+/// it as large as the screen allows.
+struct ShrinkToFit<Content: View>: View {
+    let height: CGFloat
+    var minHeight: CGFloat
+    @ViewBuilder var content: Content
+
+    init(height: CGFloat, minHeight: CGFloat, @ViewBuilder content: () -> Content) {
+        self.height = height
+        self.minHeight = minHeight
+        self.content = content()
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let scale: CGFloat = min(1, max(0.1, geo.size.height / height))
+            content
+                .frame(height: height)
+                .scaleEffect(scale)
+                .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .frame(minHeight: min(minHeight, height), maxHeight: height)
+    }
+}
+
 // MARK: - Brand
 
 /// The Atala logo. Tint it with `.foregroundStyle`: forest green on light backgrounds, cream on dark or coloured ones.

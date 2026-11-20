@@ -85,6 +85,19 @@ enum OnboardingWordReveal {
     }
 }
 
+/// Shrinks the texts said by the coach on small phones, so the full-screen coach keeps its room.
+private struct OnboardingTextScaleKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 1
+}
+
+extension EnvironmentValues {
+    /// 1 on regular phones, a little less on the smallest ones (set by `OnboardingTapScreen`).
+    var onboardingTextScale: CGFloat {
+        get { self[OnboardingTextScaleKey.self] }
+        set { self[OnboardingTextScaleKey.self] = newValue }
+    }
+}
+
 /// Text that appears word by word, as if the coach were speaking. The full paragraph is laid out
 /// from the start, so nothing around it moves. `onFinished` is called once, after the last word.
 /// With Reduce Motion the text shows at once and `onFinished` is called immediately.
@@ -100,8 +113,12 @@ struct OnboardingSpokenText: View {
     var onFinished: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.onboardingTextScale) private var textScale
     @State private var revealed = false
     @State private var finished = false
+
+    /// The size actually drawn: `size`, shrunk on small phones.
+    private var scaledSize: CGFloat { size * textScale }
 
     private var words: [String] {
         text.split(separator: " ").map { String($0) }
@@ -129,7 +146,7 @@ struct OnboardingSpokenText: View {
     var body: some View {
         let list: [String] = words
         let starts: [Double] = Self.starts(for: list, after: startDelay)
-        return OnboardingWordFlowLayout(wordSpacing: size * 0.27, lineSpacing: lineSpacing) {
+        return OnboardingWordFlowLayout(wordSpacing: scaledSize * 0.27, lineSpacing: lineSpacing * textScale) {
             ForEach(list.indices, id: \.self) { index in
                 word(list[index], start: index < starts.count ? starts[index] : 0)
             }
@@ -145,7 +162,7 @@ struct OnboardingSpokenText: View {
     private func word(_ value: String, start: Double) -> some View {
         let animation: Animation? = reduceMotion ? nil : OnboardingWordReveal.animation(delay: start)
         return Text(value)
-            .font(.system(size: size, weight: weight))
+            .font(.system(size: scaledSize, weight: weight))
             .foregroundStyle(color)
             .lineLimit(1)
             .fixedSize()

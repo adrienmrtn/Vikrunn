@@ -8,6 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -143,16 +146,23 @@ fun OnboardingWelcomeScreen() {
             .fillMaxSize()
             .background(Color.White),
     ) {
-        val imageHeight = maxOf(220.dp, maxHeight * 0.52f)
+        // Room under the photo for the title and the text: more on small phones and with a large
+        // system font, taken from the photo, so the text is never cut and the buttons stay on screen.
+        val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
+        val textRoom = (if (maxHeight < 700.dp) 184.dp else 150.dp) * fontScale
+        val navigationBar = with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
+        // Dots, the two buttons and the gaps around them.
+        val bottomRoom = 136.dp * fontScale.coerceAtMost(1.15f) + navigationBar
+        val imageHeight = maxOf(180.dp, minOf(maxOf(220.dp, maxHeight * 0.52f), maxHeight - textRoom - bottomRoom))
         Column(Modifier.fillMaxSize()) {
             HorizontalPager(
                 state = pager,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(imageHeight + 150.dp),
+                    .height(imageHeight + textRoom),
                 verticalAlignment = Alignment.Top,
             ) { index ->
-                WelcomeSlideView(slides[index], imageHeight)
+                WelcomeSlideView(slides[index], imageHeight, compact = textRoom > 150.dp)
             }
             WelcomeDots(count = slides.size, page = pager.currentPage, modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 4.dp))
             Spacer(Modifier.weight(1f).heightIn(min = 8.dp))
@@ -203,7 +213,7 @@ fun OnboardingWelcomeScreen() {
 }
 
 @Composable
-private fun WelcomeSlideView(slide: WelcomeSlide, imageHeight: androidx.compose.ui.unit.Dp) {
+private fun WelcomeSlideView(slide: WelcomeSlide, imageHeight: androidx.compose.ui.unit.Dp, compact: Boolean) {
     Column(Modifier.fillMaxSize()) {
         Box(
             Modifier
@@ -227,7 +237,7 @@ private fun WelcomeSlideView(slide: WelcomeSlide, imageHeight: androidx.compose.
             }
         }
         Column(
-            Modifier.padding(start = 24.dp, end = 24.dp, top = 26.dp),
+            Modifier.padding(start = 24.dp, end = 24.dp, top = if (compact) 20.dp else 26.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             // Always whole: longer languages take two lines or shrink a little, never "…".
@@ -239,7 +249,13 @@ private fun WelcomeSlideView(slide: WelcomeSlide, imageHeight: androidx.compose.
                 maxLines = 2,
                 minScale = 0.6f,
             )
-            Text(slide.text, style = Theme.font(16).copy(lineHeight = 22.sp), color = Color(0xFF5A5A5A))
+            OnboardingFitText(
+                slide.text,
+                Theme.font(16).copy(lineHeight = 22.sp),
+                Color(0xFF5A5A5A),
+                maxLines = 5,
+                minScale = 0.85f,
+            )
         }
     }
 }

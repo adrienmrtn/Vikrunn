@@ -166,7 +166,8 @@ struct GuidedExerciseScreen: View {
                 .id(segment.exerciseIndex)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 250)
+        // Lower on small phones (iPhone SE), so the timer stays in view under it.
+        .adaptiveHeight(250)
         .overlay(alignment: .topLeading) {
             if let side = segment.side {
                 GuidedChip(text: side.title)

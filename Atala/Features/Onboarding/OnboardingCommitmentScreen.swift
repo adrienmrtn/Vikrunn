@@ -86,7 +86,7 @@ struct OnboardingCommitmentScreen: View {
             card
             // The coach approves as soon as the card is signed.
             CoachPoseView(coach: store.coach, pose: .thumbsUp)
-                .frame(height: 180)
+                .adaptiveHeight(180)
                 .frame(maxWidth: .infinity)
                 .scaleEffect(strokes.isEmpty ? 0.92 : 1, anchor: .bottom)
                 .opacity(strokes.isEmpty ? 0 : 1)
