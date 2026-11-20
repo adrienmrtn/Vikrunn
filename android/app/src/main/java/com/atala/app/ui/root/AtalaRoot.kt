@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.atala.app.core.l10n.AppLanguage
 import com.atala.app.core.store.AppStore
+import com.atala.app.ui.auth.AuthSyncPrompts
 import com.atala.app.ui.main.MainScreen
 import com.atala.app.ui.onboarding.OnboardingFlow
 import com.atala.app.ui.theme.AtalaTheme
@@ -51,6 +52,8 @@ fun AtalaRoot(store: AppStore) {
                     val direction = if (code == "ar" || code == "he") LayoutDirection.Rtl else LayoutDirection.Ltr
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
                         AppContent(store)
+                        // Restoring overlay and "which plan do you want to keep?" (account team).
+                        AuthSyncPrompts()
                     }
                 }
                 if (!splashDone) SplashScreen(onFinished = { splashDone = true })

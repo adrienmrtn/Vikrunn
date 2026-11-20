@@ -93,6 +93,11 @@ object SyncService {
         }
     }
 
+    /** "Not now" after a failed choice: the question comes back at the next sync (launch, foreground). */
+    fun postponeChoice() {
+        _choicePending.value = false
+    }
+
     /** True when something on the phone has not reached the account yet. */
     fun hasPendingChanges(store: AppStore): Boolean {
         val state = store.current
