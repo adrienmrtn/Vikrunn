@@ -112,7 +112,7 @@ struct GiftOfferPresenter: ViewModifier {
                 await purchases.refresh()
                 guard !purchases.isPro, GiftOfferSchedule.isDue() else { return }
                 // With the store connected, only offer the gift when the store really has it.
-                guard !purchases.canPurchase || purchases.offers[.gift] != nil else { return }
+                guard PurchaseService.isPlaceholder || purchases.offers[.gift] != nil else { return }
                 // Never on top of a sheet, a run or an alert: it waits for the next launch instead.
                 guard !Self.somethingIsPresented else { return }
                 center.presentWhenDue()

@@ -10,6 +10,10 @@ struct CoachChatView: View {
     @State private var isSending: Bool = false
     @ObservedObject private var purchases = PurchaseService.shared
     @FocusState private var inputFocused: Bool
+    /// Asked once, before the first message leaves for the AI provider (App Store guideline 5.1.2).
+    @AppStorage("coachAIConsent") private var aiConsent: Bool = false
+    /// The message waiting for that answer.
+    @State private var pendingText: String?
 
     private static let bottomID = "coach-chat-bottom"
 
@@ -51,6 +55,21 @@ struct CoachChatView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 bottomBar
             }
+            .alert(L("Your coach uses AI"), isPresented: consentShown) {
+                Button(L("Not now"), role: .cancel) { pendingText = nil }
+                Button(L("Continue")) {
+                    aiConsent = true
+                    let text = pendingText
+                    pendingText = nil
+                    if let text { send(text) }
+                }
+            } message: {
+                Text(L("To answer you, Atala sends your messages, your first name, your plan and your recent runs to our AI provider (Google Gemini, via fal.ai). They are only used to write the replies, never for advertising."))
+            }
+    }
+
+    private var consentShown: Binding<Bool> {
+        Binding(get: { pendingText != nil }, set: { if !$0 { pendingText = nil } })
     }
 
     // MARK: Messages
@@ -179,6 +198,11 @@ struct CoachChatView: View {
         let trimmed = String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(2000))
         // Talking to the coach is part of Atala Pro (the screen is locked without it).
         guard purchases.isPro, !trimmed.isEmpty, !isSending else { return }
+        // Nothing goes to the AI provider before the user has agreed to it (the draft stays in the field).
+        guard aiConsent else {
+            pendingText = trimmed
+            return
+        }
         Haptics.tap()
         draft = ""
         store.messages.append(ChatMessage(role: .user, text: trimmed))
