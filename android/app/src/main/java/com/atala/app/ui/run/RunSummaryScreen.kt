@@ -70,7 +70,6 @@ import com.atala.app.ui.components.SecondaryButton
 import com.atala.app.ui.components.card
 import com.atala.app.ui.components.rememberHaptics
 import com.atala.app.ui.main.Navigation
-import com.atala.app.ui.paywall.ProLocked
 import com.atala.app.ui.root.LocalAppStore
 import com.atala.app.ui.root.collectAppState
 import com.atala.app.ui.theme.Theme
@@ -214,13 +213,7 @@ private fun DetailCards(run: RunRecord, analysis: RunAnalysis, fastSplits: List<
         if (gain != null && hasElevation) RunElevationCard(analysis.elevation, gain)
     } else if (hasSplits) {
         // The splits blurred behind a padlock.
-        ProLocked(
-            title = L("Splits, charts and heart rate"),
-            message = L("See the detail of every run with Atala Pro"),
-            onUnlock = onOpenPaywall,
-        ) {
-            RunSplitsCard(analysis.kmSplits.take(6), analysis.fastestSplit?.id)
-        }
+        RunSummaryProTeaser(analysis.kmSplits, analysis.fastestSplit?.id, onOpenPaywall)
     } else if (hasElevation || hasHeartRate || fastSplits.size >= 2) {
         RunSummaryLockedRow(onOpenPaywall)
     }

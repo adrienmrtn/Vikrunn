@@ -50,8 +50,19 @@ object Weekday {
 
     val long: List<String> get() = mondayFirst(DateFormatSymbols.WIDE, englishLong)
 
+    /**
+     * One letter per day for the week strip ("L M M J V S D"), in the app's language. The narrow
+     * forms, not the first letter of [short]: in Arabic and Hebrew every day name starts with the
+     * same letter ("ال…", "יום …"), which would show the same letter seven times.
+     */
+    val narrow: List<String>
+        get() = mondayFirst(DateFormatSymbols.NARROW, englishShort.map { it.take(1) }).map { name ->
+            name.replaceFirstChar { it.uppercase(AppLanguage.locale) }
+        }
+
     fun short(index: Int): String = short[index.coerceIn(1, 7) - 1]
     fun long(index: Int): String = long[index.coerceIn(1, 7) - 1]
+    fun narrow(index: Int): String = narrow[index.coerceIn(1, 7) - 1]
     fun englishLong(index: Int): String = englishLong[index.coerceIn(1, 7) - 1]
 
     /** The symbols list the days from Sunday, at indices 1 to 7. */
