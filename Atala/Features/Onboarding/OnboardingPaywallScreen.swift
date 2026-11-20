@@ -84,13 +84,15 @@ struct PaywallView: View {
     @ObservedObject private var purchases = PurchaseService.shared
     @State private var isBuying = false
     @State private var purchaseError: String?
+    /// True while the store's plans are being loaded (store builds only).
+    @State private var loadingOffers = true
 
     /// The plan the main button buys. Yearly is chosen from the start.
     @State private var plan: PurchasePlan = .yearly
 
     // Store values when the offers are loaded, the placeholder ones otherwise.
     private var trialDays: Int? {
-        purchases.canPurchase ? purchases.offers[.yearly]?.trialDays : OnboardingPaywallOffer.trialDays
+        PurchaseService.isPlaceholder ? OnboardingPaywallOffer.trialDays : purchases.offers[.yearly]?.trialDays
     }
     private var yearlyPerMonth: String {
         purchases.offers[.yearly]?.perMonth ?? OnboardingPaywallOffer.monthlyPrice
@@ -195,7 +197,7 @@ struct PaywallView: View {
             await revealClose()
         }
         .task {
-            await purchases.refresh()
+            await loadOffers()
         }
         .onChange(of: showsMonthly) { _, offered in
             // The monthly card can go away once the real offers load: fall back to the yearly plan.
@@ -318,8 +320,40 @@ struct PaywallView: View {
         return L("Renews automatically. Cancel any time in your App Store settings.")
     }
 
-    /// The plans to choose from: yearly first and selected, monthly under it.
-    private var offerCard: some View {
+    private func loadOffers() async {
+        loadingOffers = true
+        await purchases.refresh()
+        loadingOffers = false
+    }
+
+    /// The plans to choose from. In a store build, example prices are never shown: the real ones
+    /// load first, and if the store cannot be reached the user is told and can try again.
+    @ViewBuilder private var offerCard: some View {
+        if !PurchaseService.isPlaceholder && !purchases.canPurchase {
+            VStack(spacing: 12) {
+                if loadingOffers {
+                    ProgressView()
+                } else {
+                    Text(L("The subscription is not available right now. Please try again in a moment."))
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.body)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button(L("Try again")) {
+                        Task { @MainActor in await loadOffers() }
+                    }
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.green)
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 120)
+        } else {
+            planCards
+        }
+    }
+
+    /// Yearly first and selected, monthly under it.
+    private var planCards: some View {
         VStack(alignment: .leading, spacing: 10) {
             planCard(.yearly,
                      title: L("Yearly"),
@@ -340,7 +374,7 @@ struct PaywallView: View {
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.body)
                 .fixedSize(horizontal: false, vertical: true)
-            if !purchases.canPurchase {
+            if PurchaseService.isPlaceholder {
                 Text(L("Prices shown as an example. Nothing is charged in this version."))
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.muted)

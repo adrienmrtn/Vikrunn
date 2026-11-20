@@ -150,6 +150,17 @@ struct ProfileHealthSection: View {
 struct ProfileSubscriptionSection: View {
     @ObservedObject private var purchases = PurchaseService.shared
     @State private var showPaywall = false
+    @State private var isRestoring = false
+    @State private var restoreMessage: String?
+
+    private var restoreMessageShown: Binding<Bool> {
+        Binding(
+            get: { restoreMessage != nil },
+            set: { shown in
+                if !shown { restoreMessage = nil }
+            }
+        )
+    }
 
     var body: some View {
         Section(L("Subscription")) {
@@ -182,10 +193,27 @@ struct ProfileSubscriptionSection: View {
             .proPaywall(isPresented: $showPaywall)
             if !purchases.isPro, !PurchaseService.isPlaceholder {
                 Button(L("Restore purchases")) {
+                    guard !isRestoring else { return }
                     Haptics.tap()
-                    Task { _ = await purchases.restore() }
+                    isRestoring = true
+                    Task { @MainActor in
+                        let restored = await purchases.restore()
+                        isRestoring = false
+                        if restored {
+                            Haptics.success()
+                        } else {
+                            // Without this, a tap with nothing to restore looked like a broken button.
+                            restoreMessage = L("No active Atala Pro subscription was found for this Apple Account.")
+                        }
+                    }
                 }
                 .foregroundStyle(Theme.ink)
+                .disabled(isRestoring)
+                .alert(L("We couldn't complete that"), isPresented: restoreMessageShown) {
+                    Button(L("OK"), role: .cancel) {}
+                } message: {
+                    Text(restoreMessage ?? L("Please try again."))
+                }
             }
             Button(L("Session reminders")) {
                 Haptics.tap()
