@@ -75,7 +75,6 @@ object PurchaseService {
     const val GIFT_OFFERING_ID = "gift"
 
     private const val PLACEHOLDER_PRO_KEY = "atala.placeholder.pro"
-    private const val PLACEHOLDER_KEY = "atala.placeholder.store"
     private const val TRIAL_KEY = "atala.pro.inTrial"
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -84,7 +83,8 @@ object PurchaseService {
 
     private val _isInTrial = MutableStateFlow(false)
     private val _offers = MutableStateFlow<Map<PurchasePlan, PurchaseOffer>>(emptyMap())
-    private val _isPlaceholder = MutableStateFlow(true)
+    // Only a build without a RevenueCat key shows example prices; a store build never does.
+    private val _isPlaceholder = MutableStateFlow(API_KEY.isBlank())
     /** What the store says about the entitlement (trial included). */
     private var entitled = false
 
@@ -117,7 +117,6 @@ object PurchaseService {
         ProPreferences.init(context)
         if (!configured) {
             configured = true
-            _isPlaceholder.value = !ProPreferences.contains(PLACEHOLDER_KEY) || ProPreferences.bool(PLACEHOLDER_KEY)
             _isInTrial.value = ProPreferences.bool(TRIAL_KEY)
             publish()
             runCatching {
@@ -203,8 +202,8 @@ object PurchaseService {
         val offerings = try {
             purchases.awaitOfferings()
         } catch (error: PurchasesException) {
-            // No product in the store yet: RevenueCat reports a configuration error.
-            if (error.code == PurchasesErrorCode.ConfigurationError) markPlaceholder(true)
+            // No product in the store (RevenueCat reports a configuration error) or no network:
+            // the paywall says so and offers to try again, it never falls back to example prices.
             return
         } catch (error: Exception) {
             return
@@ -214,7 +213,7 @@ object PurchaseService {
         offerings.current?.monthly?.let { loaded[PurchasePlan.Monthly] = offer(it) }
         offerings.getOffering(GIFT_OFFERING_ID)?.annual?.let { loaded[PurchasePlan.Gift] = offer(it) }
         _offers.value = loaded
-        markPlaceholder(loaded[PurchasePlan.Yearly] == null)
+        publish()
     }
 
     /** Buys a plan (the free trial starts when the plan has one and the user is eligible). */
@@ -252,12 +251,6 @@ object PurchaseService {
     // Store state
 
     private fun shared(): Purchases? = if (configured && Purchases.isConfigured) Purchases.sharedInstance else null
-
-    private fun markPlaceholder(value: Boolean) {
-        ProPreferences.setBool(PLACEHOLDER_KEY, value)
-        _isPlaceholder.value = value
-        publish()
-    }
 
     /** Reads the subscription state from what the store says. */
     private fun apply(info: CustomerInfo) {

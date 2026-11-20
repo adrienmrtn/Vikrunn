@@ -1,5 +1,7 @@
 package com.atala.app.ui.paywall
 
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -124,18 +126,24 @@ fun PaywallScreen(closeDelay: Double = 0.0, onFinished: () -> Unit) {
     var purchaseError by remember { mutableStateOf<String?>(null) }
     var plan by rememberSaveable { mutableStateOf(PurchasePlan.Yearly) }
 
-    // Store values when the offers are loaded, the placeholder ones otherwise.
+    // Store values when the offers are loaded; example values only in a build without the store.
     val canPurchase = offers[PurchasePlan.Yearly] != null
-    val trialDays: Int? = if (canPurchase) offers[PurchasePlan.Yearly]?.trialDays else PlaceholderOffer.TRIAL_DAYS
+    // In a store build the plans wait for the real prices (a spinner, then "try again" if the store is unreachable).
+    val waitingForStore = !placeholder && !canPurchase
+    var loadingOffers by remember { mutableStateOf(true) }
+    val trialDays: Int? = if (placeholder) PlaceholderOffer.TRIAL_DAYS else offers[PurchasePlan.Yearly]?.trialDays
     val yearlyPerMonth = offers[PurchasePlan.Yearly]?.perMonth ?: PlaceholderOffer.MONTHLY_PRICE
     val yearlyPrice = offers[PurchasePlan.Yearly]?.price ?: PlaceholderOffer.YEARLY_PRICE
     val monthPrice = offers[PurchasePlan.Monthly]?.price ?: PlaceholderOffer.MONTH_PRICE
-    val yearlySaving: Int? = if (canPurchase) PurchaseService.savingPercent(PurchasePlan.Yearly, offers) else PlaceholderOffer.YEARLY_SAVING
+    val yearlySaving: Int? = if (placeholder) PlaceholderOffer.YEARLY_SAVING else PurchaseService.savingPercent(PurchasePlan.Yearly, offers)
     // The monthly plan is offered when the store has it, and always in the placeholder.
-    val showsMonthly = !canPurchase || offers[PurchasePlan.Monthly] != null
+    val showsMonthly = placeholder || offers[PurchasePlan.Monthly] != null
     val startsWithTrial = plan == PurchasePlan.Yearly && trialDays != null
 
-    LaunchedEffect(Unit) { PurchaseService.refresh() }
+    LaunchedEffect(Unit) {
+        PurchaseService.refresh()
+        loadingOffers = false
+    }
     DisposableEffect(Unit) {
         PaywallPresence.count += 1
         onDispose { PaywallPresence.count -= 1 }
@@ -213,6 +221,15 @@ fun PaywallScreen(closeDelay: Double = 0.0, onFinished: () -> Unit) {
                     Modifier.padding(start = Theme.screenPadding, end = Theme.screenPadding, top = 20.dp, bottom = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
+                    if (waitingForStore) {
+                        StoreWaiting(loading = loadingOffers) {
+                            loadingOffers = true
+                            scope.launch {
+                                PurchaseService.refresh()
+                                loadingOffers = false
+                            }
+                        }
+                    } else {
                     // The amount charged comes first and largest; the monthly equivalent sits under it.
                     PlanCard(
                         selected = plan == PurchasePlan.Yearly,
@@ -244,12 +261,13 @@ fun PaywallScreen(closeDelay: Double = 0.0, onFinished: () -> Unit) {
                         style = Theme.font(13).copy(lineHeight = 18.sp),
                         color = Theme.body,
                     )
-                    if (!canPurchase) {
+                    if (placeholder) {
                         Text(
                             L("Prices shown as an example. Nothing is charged in this version."),
                             style = Theme.font(12),
                             color = Theme.muted,
                         )
+                    }
                     }
                 }
             }
@@ -266,6 +284,7 @@ fun PaywallScreen(closeDelay: Double = 0.0, onFinished: () -> Unit) {
             },
             // What the selected plan costs, right under the button.
             priceLine = when {
+                waitingForStore -> null
                 plan == PurchasePlan.Monthly -> L("%@ a month", monthPrice)
                 startsWithTrial -> L("%@ days free, then %@/year", trialDays!!, yearlyPrice)
                 else -> L("%@ billed yearly", yearlyPrice)
@@ -520,9 +539,36 @@ private fun TopBar(closeShown: Boolean, reduceMotion: Boolean, onClose: () -> Un
     }
 }
 
+/** Store build, plans not loaded yet: a spinner, then the "not available" message with a retry. */
+@Composable
+private fun StoreWaiting(loading: Boolean, onRetry: () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().heightIn(min = 120.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (loading) {
+            CircularProgressIndicator(color = Theme.green, strokeWidth = 3.dp, modifier = Modifier.size(28.dp))
+        } else {
+            Text(
+                L("The subscription is not available right now. Please try again in a moment."),
+                style = Theme.font(14),
+                color = Theme.body,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                L("Try again"),
+                style = Theme.font(15, FontWeight.SemiBold),
+                color = Theme.green,
+                modifier = Modifier.clickable(role = Role.Button, onClick = onRetry).padding(8.dp),
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun CallToAction(title: String, priceLine: String, isBuying: Boolean, onBuy: () -> Unit, onRestore: () -> Unit) {
+private fun CallToAction(title: String, priceLine: String?, isBuying: Boolean, onBuy: () -> Unit, onRestore: () -> Unit) {
     Column(Modifier.fillMaxWidth().background(Color.White)) {
         HorizontalDivider(thickness = 1.dp, color = Theme.hairline)
         Column(
@@ -543,7 +589,9 @@ private fun CallToAction(title: String, priceLine: String, isBuying: Boolean, on
                 Text(title, style = Theme.font(17, FontWeight.Bold), color = Color.White)
                 Text(L("Easy to cancel, at any time"), style = Theme.font(13), color = Theme.greenOnDark)
             }
-            Text(priceLine, style = Theme.font(12), color = Theme.muted, maxLines = 1, textAlign = TextAlign.Center)
+            if (priceLine != null) {
+                Text(priceLine, style = Theme.font(12), color = Theme.muted, maxLines = 1, textAlign = TextAlign.Center)
+            }
             // One line on most phones; "Restore purchases" goes under it rather than being squeezed.
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)) {
                 Icon(Icons.Filled.Lock, null, tint = Theme.muted, modifier = Modifier.size(12.dp).align(Alignment.CenterVertically))
