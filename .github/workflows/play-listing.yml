@@ -1,0 +1,29 @@
+name: Google Play listing
+
+# Writes the store listing of every language in android/play/listings.json to Play Console, without
+# sending anything for review. Started by hand: Actions > Google Play listing > Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Save in Play Console (off = only show what would change)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  listing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet google-auth requests
+      - name: Listing
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: python tools/play_listing.py android/play/listings.json ${{ inputs.apply && '--apply' || '' }}
