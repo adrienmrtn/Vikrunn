@@ -49,7 +49,7 @@ struct OnboardingTapScreen<Backdrop: View, Top: View>: View {
     }
 
     /// Usable height from which nothing is shrunk (iPhone 13 mini and larger).
-    private static let regularHeight: CGFloat = 728
+    private static var regularHeight: CGFloat { 728 }
 
     var body: some View {
         GeometryReader { geo in
