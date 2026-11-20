@@ -465,15 +465,6 @@ private fun ProjectionPhotoStrip(names: List<String>, tileWidth: Dp, height: Dp,
     }
 }
 
-// Community
-
-/** COMMUNITY FIGURE — shown to every new user: keep it true, update it from real usage before release. */
-private object OnboardingCommunityFigure {
-    const val VALUE = 10_000
-    val caption: String get() = L("runners coached every day")
-}
-
-private fun projectionGrouped(value: Int): String = NumberFormat.getIntegerInstance(AppLanguage.locale).format(value)
 
 
 /** `OnboardingPhotoCard`: large rounded photo, darkened at the bottom so white text stays readable. */
