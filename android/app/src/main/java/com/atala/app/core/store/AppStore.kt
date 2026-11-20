@@ -3,6 +3,8 @@ package com.atala.app.core.store
 import android.util.AtomicFile
 import androidx.core.util.readText
 import androidx.core.util.writeText
+import com.atala.app.core.account.AuthKeychain
+import com.atala.app.core.account.withoutTokens
 import com.atala.app.core.model.Account
 import com.atala.app.core.model.AppSettings
 import com.atala.app.core.model.AtalaJson
@@ -58,12 +60,16 @@ class AppStore(file: File?, scope: CoroutineScope) {
     // Persistence
 
     private fun load(): AppState = file?.let {
-        runCatching { AtalaJson.decodeFromString<AppState>(it.readText()) }.getOrNull()
+        val loaded = runCatching { AtalaJson.decodeFromString<AppState>(it.readText()) }.getOrNull() ?: AppState()
+        // The session tokens live in the Keystore-encrypted vault, not in the file.
+        loaded.copy(account = AuthKeychain.restore(loaded.account))
     } ?: AppState()
 
     private fun write(state: AppState) {
         val file = file ?: return
-        synchronized(file) { file.writeText(AtalaJson.encodeToString(AppState.serializer(), state)) }
+        AuthKeychain.sync(state.account)
+        val saved = state.copy(account = state.account?.withoutTokens)
+        synchronized(file) { file.writeText(AtalaJson.encodeToString(AppState.serializer(), saved)) }
     }
 
     /** Writes the state now, without waiting for the pending save (the app is going to the background). */

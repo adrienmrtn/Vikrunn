@@ -2,6 +2,7 @@ package com.atala.app
 
 import android.app.Application
 import android.content.res.Configuration
+import com.atala.app.core.account.AccountServices
 import com.atala.app.core.l10n.AppLanguage
 import com.atala.app.core.l10n.L10n
 import com.atala.app.core.store.AppStore
@@ -16,6 +17,7 @@ class AtalaApplication : Application() {
         super.onCreate()
         AppLanguage.init(this)
         L10n.init(assets)
+        AccountServices.start(this) { store }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
