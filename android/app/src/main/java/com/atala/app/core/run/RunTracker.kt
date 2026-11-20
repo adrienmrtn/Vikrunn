@@ -8,6 +8,7 @@ import android.location.Location
 import android.os.Build
 import android.os.Looper
 import android.os.SystemClock
+import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
 import com.atala.app.core.model.Feeling
 import com.atala.app.core.model.RoutePoint
@@ -126,6 +127,10 @@ class RunTracker(context: Context) {
             ingest(result.locations)
         }
     }
+
+    /** The callback given to the fused location provider: tests feed their fixes through it. */
+    @VisibleForTesting
+    internal val locationCallback: LocationCallback get() = callback
 
     // Derived values
 

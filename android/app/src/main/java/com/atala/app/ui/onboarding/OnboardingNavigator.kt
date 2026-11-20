@@ -1,5 +1,6 @@
 package com.atala.app.ui.onboarding
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -105,7 +106,7 @@ class OnboardingNavigator(private val store: AppStore) {
     fun go(target: OnboardingStep) {
         if (target == step) return
         // Ignore a second tap while the previous transition is still starting.
-        val now = System.nanoTime()
+        val now = nanoTime()
         if (now - lastMove < 300_000_000L) return
         lastMove = now
         step = target
@@ -153,6 +154,10 @@ class OnboardingNavigator(private val store: AppStore) {
     }
 
     companion object {
+        /** Clock of the double-tap guard in [go]. Tests move it on instead of waiting. */
+        @VisibleForTesting
+        internal var nanoTime: () -> Long = System::nanoTime
+
         /** Someone who said they are just starting, or that they do not run yet. */
         fun isStarting(answers: OnboardingAnswers): Boolean =
             (answers.experience ?: Experience.Starting) == Experience.Starting || answers.weeklyVolume == WeeklyVolume.NotYet

@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("io.github.takahirom.roborazzi")
 }
 
 android {
@@ -49,6 +50,15 @@ android {
         compose = true
         buildConfig = true
     }
+    testOptions {
+        unitTests {
+            // Robolectric reads the merged resources and assets (translations, drawables, voice clips).
+            isIncludeAndroidResources = true
+            all {
+                it.maxHeapSize = "3g"
+            }
+        }
+    }
     sourceSets {
         // The translations, coach keywords and run voice clips are shared with the iPhone app.
         getByName("main").assets.srcDirs("src/main/assets", "../../Atala/Resources/Strings", "../../Atala/Resources/CoachWords")
@@ -77,4 +87,17 @@ dependencies {
     implementation("com.revenuecat.purchases:purchases:9.29.1")
     implementation("com.google.android.play:review-ktx:2.0.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    // JVM tests: logic with Robolectric, Compose UI tests and Roborazzi screenshots (no device needed).
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    testImplementation("org.robolectric:robolectric:4.18.1")
+    testImplementation("androidx.test:core-ktx:1.6.1")
+    testImplementation("androidx.test.ext:junit-ktx:1.2.1")
+    testImplementation(composeBom)
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.60.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.60.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-junit-rule:1.60.0")
 }
