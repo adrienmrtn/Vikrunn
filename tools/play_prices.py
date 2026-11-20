@@ -18,7 +18,7 @@ from google.oauth2 import service_account
 
 API = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications"
 SCOPE = "https://www.googleapis.com/auth/androidpublisher"
-REGIONS_VERSIONS = ["2025/03", "2025/02", "2025/01", "2024/03", "2024/02", "2024/01", "2023/03", "2023/02", "2023/01", "2022/02"]
+REGIONS_VERSIONS = ["2026/01", "2025/03", "2025/02", "2025/01", "2024/03", "2024/02", "2024/01", "2023/03", "2023/02", "2023/01", "2022/02"]
 
 
 def session():
@@ -110,6 +110,9 @@ def main():
             print(f"{pid}: Google refused ({r.status_code}) {text}")
             failed = True
             break
+        else:
+            print(f"{pid}: no regions version accepted")
+            failed = True
     sys.exit(1 if failed else 0)
 
 
