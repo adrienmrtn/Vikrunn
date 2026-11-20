@@ -1,5 +1,7 @@
 package com.atala.app.ui.profile
 
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.ClipData
@@ -131,6 +133,8 @@ internal fun ProfileSubscriptionSection(isPro: Boolean, onOpenPaywall: () -> Uni
     val context = LocalContext.current
     val haptics = rememberHaptics()
     val scope = rememberCoroutineScope()
+    var restoring by remember { mutableStateOf(false) }
+    var nothingRestored by remember { mutableStateOf(false) }
     var showLanguages by remember { mutableStateOf(false) }
 
     // First time: the system question (Android 13+). Afterwards the choice lives in the settings.
@@ -153,8 +157,21 @@ internal fun ProfileSubscriptionSection(isPro: Boolean, onOpenPaywall: () -> Uni
         if (!isPro) {
             FormDivider()
             FormButtonRow(L("Restore purchases"), color = Theme.ink) {
+                if (restoring) return@FormButtonRow
                 haptics.tap()
-                scope.launch { PurchaseService.restore() }
+                restoring = true
+                scope.launch {
+                    val restored = PurchaseService.restore()
+                    restoring = false
+                    if (!restored) nothingRestored = true
+                }
+            }
+            if (nothingRestored) {
+                AlertDialog(
+                    onDismissRequest = { nothingRestored = false },
+                    text = { Text(L("No active Atala Pro subscription was found for this Google account.")) },
+                    confirmButton = { TextButton(onClick = { nothingRestored = false }) { Text(L("OK")) } },
+                )
             }
         }
         FormDivider()
