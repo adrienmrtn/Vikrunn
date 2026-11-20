@@ -1,5 +1,6 @@
 package com.atala.app.core.run
 
+import android.app.ActivityManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -35,29 +36,59 @@ class RunTrackingService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var updates: Job? = null
     private var wakeLock: PowerManager.WakeLock? = null
+    /** True once onStartCommand has run (startForeground was called). */
+    private var commanded = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    override fun onCreate() {
+        super.onCreate()
+        instance = this
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) {
-            stopEverything()
-            return START_NOT_STICKY
-        }
+        // Started with startForegroundService: startForeground comes first on every path, even when
+        // the service stops right away, or the system ends the app.
         createChannel(this)
-        val started = runCatching {
-            ServiceCompat.startForeground(
-                this, NOTIFICATION_ID, notification(this, "0:00", RunFormat.distance(0.0)),
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0,
-            )
-        }.isSuccess
-        if (!started) {
-            // No location permission: the clock still runs from the system time, only the service is skipped.
-            stopSelf()
+        val promoted = promote()
+        commanded = true
+        if (!promoted || !requested) {
+            // Refused (Android 14 without location in the foreground, or the app went to the
+            // background meanwhile), or the run already ended: the run keeps its clock without the
+            // service, as when location is off.
+            if (!promoted) requested = false
+            stopEverything()
             return START_NOT_STICKY
         }
         acquireWakeLock()
         observe()
         return START_NOT_STICKY
+    }
+
+    /**
+     * Puts the service in the foreground with its notification, as a location service. When that
+     * is refused, Android 14+ still gets a short service, so the request made with
+     * startForegroundService is honoured before the service stops. True when the location service runs.
+     */
+    private fun promote(): Boolean {
+        val notification = notification(this, "0:00", RunFormat.distance(0.0))
+        val located = runCatching {
+            ServiceCompat.startForeground(
+                this, NOTIFICATION_ID, notification,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0,
+            )
+        }.isSuccess
+        if (!located && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            runCatching {
+                ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE)
+            }
+        }
+        return located
+    }
+
+    /** End of a short service (only used to stop cleanly, see [promote]). */
+    override fun onTimeout(startId: Int) {
+        stopEverything()
     }
 
     private fun observe() {
@@ -94,7 +125,7 @@ class RunTrackingService : Service() {
     }
 
     override fun onDestroy() {
-        running = false
+        if (instance === this) instance = null
         wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
         scope.cancel()
@@ -104,24 +135,42 @@ class RunTrackingService : Service() {
     companion object {
         private const val CHANNEL_ID = "run"
         private const val NOTIFICATION_ID = 4108
-        private const val ACTION_STOP = "com.atala.app.run.STOP"
-        private var running = false
 
+        /** Extra of the notification's intent: the app opens on the run flow. */
+        const val EXTRA_OPEN_RUN = "com.atala.app.run.OPEN"
+
+        /** True from [start] until [stop] (or a refusal): the service is wanted. */
+        private var requested = false
+        private var instance: RunTrackingService? = null
+
+        /**
+         * Starts the service, only while the app is on screen: Android refuses a foreground service
+         * started from the background, and one of type location needs the permission.
+         */
         fun start(context: Context) {
-            if (running) return
-            running = true
+            if (requested) return
+            if (!isAppVisible() || !RunTracker.hasPermission(context)) return
+            requested = true
             runCatching { ContextCompat.startForegroundService(context, Intent(context, RunTrackingService::class.java)) }
-                .onFailure { running = false }
+                .onFailure { requested = false }
         }
 
-        fun stop(context: Context) {
-            if (!running) return
-            running = false
-            runCatching {
-                context.startService(Intent(context, RunTrackingService::class.java).setAction(ACTION_STOP))
-            }.onFailure {
-                context.stopService(Intent(context, RunTrackingService::class.java))
-            }
+        /**
+         * Stops the service. Nothing is started for it: a service still on its way stops itself in
+         * onStartCommand, after startForeground.
+         */
+        fun stop(@Suppress("UNUSED_PARAMETER") context: Context) {
+            if (!requested) return
+            requested = false
+            // Before its first onStartCommand, the service stops itself there (after startForeground).
+            instance?.takeIf { it.commanded }?.stopEverything()
+        }
+
+        private fun isAppVisible(): Boolean {
+            val info = ActivityManager.RunningAppProcessInfo()
+            ActivityManager.getMyMemoryState(info)
+            return info.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND ||
+                info.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
         }
 
         private fun createChannel(context: Context) {
@@ -137,6 +186,7 @@ class RunTrackingService : Service() {
         private fun notification(context: Context, time: String, distance: String): Notification {
             val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
                 ?.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                ?.putExtra(EXTRA_OPEN_RUN, true)
             val content = launch?.let {
                 PendingIntent.getActivity(context, 0, it, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             }

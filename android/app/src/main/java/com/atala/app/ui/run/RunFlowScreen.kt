@@ -63,6 +63,8 @@ fun RunFlowScreen(workoutId: UUID?, nav: Navigation) {
     var confirmShortRun by rememberSaveable { mutableStateOf(false) }
     var confirmFinish by rememberSaveable { mutableStateOf(false) }
     var askedPermission by rememberSaveable { mutableStateOf(false) }
+    // Only approximate location: the run would record no distance (the ready screen says so).
+    var approximateOnly by remember { mutableStateOf(RunTracker.hasPermission(context) && !RunTracker.hasPreciseLocation(context)) }
 
     fun close() {
         ActiveRun.close(run)
@@ -90,6 +92,7 @@ fun RunFlowScreen(workoutId: UUID?, nav: Navigation) {
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
         askedPermission = true
         val granted = LocationPermission.permissions.any { result[it] == true } || RunTracker.hasPermission(context)
+        approximateOnly = granted && !RunTracker.hasPreciseLocation(context)
         LocationPermission.answered(context)
         tracker.authorizationChanged(granted)
     }
@@ -97,7 +100,9 @@ fun RunFlowScreen(workoutId: UUID?, nav: Navigation) {
     LaunchedEffect(run) {
         if (tracker.snapshot.value.state == RunTrackerState.Idle) tracker.prepare()
         VoicePack.prepare(context, store.current.coach.id)
-        if (!RunTracker.hasPermission(context) && !askedPermission) {
+        // Precise location is asked for even when approximate is allowed: Android 12+ then offers
+        // to switch to precise.
+        if (!RunTracker.hasPreciseLocation(context) && !askedPermission) {
             val wanted = LocationPermission.permissions.toMutableList()
             if (Build.VERSION.SDK_INT >= 33) wanted += Manifest.permission.POST_NOTIFICATIONS
             permissionLauncher.launch(wanted.toTypedArray())
@@ -110,6 +115,7 @@ fun RunFlowScreen(workoutId: UUID?, nav: Navigation) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 val granted = RunTracker.hasPermission(context)
+                approximateOnly = granted && !RunTracker.hasPreciseLocation(context)
                 if (granted || askedPermission) tracker.authorizationChanged(granted)
             }
         }
@@ -156,6 +162,7 @@ fun RunFlowScreen(workoutId: UUID?, nav: Navigation) {
                 workout = run.workout,
                 tracker = tracker,
                 snapshot = snapshot,
+                approximateOnly = approximateOnly,
                 onStart = { run.setPhase(RunFlowPhase.Countdown) },
                 onClose = { close() },
                 onOpenPaywall = nav.onOpenPaywall,

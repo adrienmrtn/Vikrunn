@@ -2,7 +2,9 @@ package com.atala.app.core.account
 
 import android.app.Activity
 import android.app.Application
+import android.content.Context
 import android.os.Bundle
+import com.atala.app.core.coach.CoachService
 import com.atala.app.core.model.WorkoutStatus
 import com.atala.app.core.purchases.PurchaseService
 import com.atala.app.core.reminders.RunReminders
@@ -29,14 +31,32 @@ object AccountServices {
     private val foreground = MutableStateFlow(0)
     private var started = 0
 
+    private var vaultReady = false
+
+    /**
+     * Opens the token vault and the auth preferences. Must run before the store's file is read
+     * (`AtalaApplication.store` calls it first), or the account would load without its tokens.
+     * Safe to call more than once.
+     */
+    fun prepareVault(context: Context) {
+        if (vaultReady) return
+        AuthKeychain.init(context)
+        AuthService.init(context)
+        vaultReady = true
+    }
+
     /** [store] is read after the vault is ready: the store's file is loaded with its tokens. */
     fun start(application: Application, store: () -> AppStore) {
-        AuthKeychain.init(application)
-        AuthService.init(application)
+        prepareVault(application)
         RunReminders.createChannel(application)
         val appStore = store()
         SyncService.register(appStore)
         SyncTracker.start(appStore, scope)
+        // An empty coach conversation is refilled from the account after a sign-in or a pull
+        // (CoachService.restoreHistory, called by SyncServicePull on the iPhone).
+        SyncService.restoreHistory = { target ->
+            if (SyncService.isPersistent(target)) CoachService.restoreHistory(target)
+        }
 
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityStarted(activity: Activity) {

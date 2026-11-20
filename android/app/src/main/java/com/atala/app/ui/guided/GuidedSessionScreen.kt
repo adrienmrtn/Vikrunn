@@ -132,6 +132,8 @@ fun GuidedSessionScreen(workoutId: UUID, nav: Navigation) {
         onDispose {
             engine.onEvent = null
             teardown()
+            // The phone's voice engine (TextToSpeech) belongs to this screen: free it.
+            voice.release()
         }
     }
 

@@ -177,6 +177,8 @@ class RunTracker(context: Context) {
         }
         if (now.gps == RunGpsQuality.Denied) _snapshot.update { it.copy(gps = RunGpsQuality.Unknown) }
         if (now.state != RunTrackerState.Finished) startUpdates()
+        // Allowed during the run (back from the settings): the run can now go on with the screen off.
+        if (isRecording) RunTrackingService.start(context)
     }
 
     fun start() {
@@ -275,10 +277,15 @@ class RunTracker(context: Context) {
 
     /** Records the current step as it was actually run. */
     private fun closeCurrentStep() {
-        val step = steps.getOrNull(now.stepIndex) ?: return
+        currentStepSplit()?.let { splits += it }
+    }
+
+    /** The current step as run so far, null when there is none or it has barely started. */
+    private fun currentStepSplit(): RunSplit? {
+        val step = steps.getOrNull(now.stepIndex) ?: return null
         val seconds = (activeTime - stepStartTime).roundToInt()
-        if (seconds < 1) return
-        splits += RunSplit(
+        if (seconds < 1) return null
+        return RunSplit(
             label = step.label, kind = step.kind,
             distanceM = maxOf(0.0, now.distance - stepStartDistance),
             durationSec = seconds, paceFast = step.paceFast, paceSlow = step.paceSlow,
@@ -526,6 +533,28 @@ class RunTracker(context: Context) {
 
     // Result
 
+    /**
+     * A copy of the run so far, for `active_run.json` (the step in progress counts as run up to
+     * now). Null when nothing is being recorded.
+     */
+    fun backup(title: String, workoutId: UUID?): RunBackup? {
+        if (!isRecording) return null
+        val start = startDate ?: return null
+        val open = if (hasSteps && !now.stepsComplete) currentStepSplit() else null
+        return RunBackup(
+            startDate = start,
+            activeSeconds = activeTime,
+            distance = now.distance,
+            route = routePoints.toList(),
+            splits = splits.toList() + listOfNotNull(open),
+            stepIndex = now.stepIndex,
+            workoutId = workoutId,
+            title = title,
+            isPaused = now.state == RunTrackerState.Paused,
+            savedAt = Instant.now(),
+        )
+    }
+
     /** Builds the record of the finished run. */
     fun makeRecord(title: String, workoutId: UUID?, feeling: Feeling? = null): RunRecord = RunRecord(
         workoutId = workoutId,
@@ -550,6 +579,13 @@ class RunTracker(context: Context) {
         fun hasPermission(context: Context): Boolean =
             ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+        /**
+         * Precise location granted. Approximate location alone (Android 12+) gives fixes kilometres
+         * wide, all filtered out: the run would record no distance.
+         */
+        fun hasPreciseLocation(context: Context): Boolean =
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
         /** Emulator only: synthetic progress when no location arrives. */
         val simulationAllowed: Boolean by lazy {

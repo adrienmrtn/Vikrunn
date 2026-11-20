@@ -184,6 +184,8 @@ private fun FinalBenefitRow(text: String) {
 /**
  * Screen 32: the location permission (ACCESS_FINE_LOCATION, asked with ACCESS_COARSE_LOCATION as
  * Android 12+ requires). No background location: runs are tracked by a foreground service.
+ * Approximate location alone is not enough to measure a run: precise is asked for again (Android
+ * 12+ offers the switch), then Settings once Android no longer asks.
  */
 @Composable
 fun OnboardingPermissionsScreen() {
@@ -191,6 +193,10 @@ fun OnboardingPermissionsScreen() {
     val state by collectAppState()
     val haptics = rememberHaptics()
     var allowed by remember { mutableStateOf(context.finalHas(Manifest.permission.ACCESS_FINE_LOCATION)) }
+    // Approximate location only (Android 12+): not enough to measure a run, precise is asked for.
+    var approximate by remember {
+        mutableStateOf(!allowed && context.finalHas(Manifest.permission.ACCESS_COARSE_LOCATION))
+    }
     // The user said no to the system question.
     var refused by rememberSaveable { mutableStateOf(false) }
     // False once Android no longer shows the question (refused twice, or "don't ask again"): Settings only.
@@ -200,6 +206,7 @@ fun OnboardingPermissionsScreen() {
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         allowed = context.finalHas(Manifest.permission.ACCESS_FINE_LOCATION)
+        approximate = !allowed && context.finalHas(Manifest.permission.ACCESS_COARSE_LOCATION)
         refused = !allowed
         canAskAgain = context.finalActivity()?.let {
             ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -211,6 +218,7 @@ fun OnboardingPermissionsScreen() {
         val now = context.finalHas(Manifest.permission.ACCESS_FINE_LOCATION)
         if (now && !allowed && asked) haptics.play(HapticKind.Success)
         allowed = now
+        approximate = !now && context.finalHas(Manifest.permission.ACCESS_COARSE_LOCATION)
         if (now) refused = false
     }
 
@@ -218,9 +226,12 @@ fun OnboardingPermissionsScreen() {
     val buttonTitle = when {
         allowed -> L("Location allowed")
         opensSettings -> L("Open Settings")
+        approximate -> L("Allow precise location")
         else -> L("Allow location")
     }
-    val footnote = if (refused && !allowed) {
+    val footnote = if (approximate) {
+        L("Atala only has your approximate location, which can't measure a run. Allow precise location, or log your runs by hand.")
+    } else if (refused && !allowed) {
         L("Location is off for Atala. Turn it on in Settings, or log your runs by hand.")
     } else {
         L("Only while you're running with the app. You can say no and log your runs by hand.")

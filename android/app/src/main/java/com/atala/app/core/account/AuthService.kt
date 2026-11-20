@@ -25,6 +25,12 @@ import kotlinx.serialization.json.put
 import java.time.Instant
 import java.util.UUID
 
+/** A Google sign-in completed with no screen waiting for it ([AuthService.recoveredGoogleSignIn]). */
+sealed interface RecoveredGoogleSignIn {
+    data class SignedIn(val account: Account) : RecoveredGoogleSignIn
+    data class Failed(val error: AuthError) : RecoveredGoogleSignIn
+}
+
 /**
  * Accounts through Supabase Auth (GoTrue REST): Google and e-mail one-time code (AuthService.swift).
  * Sign in with Apple exists on the iPhone only. Everything runs on the main thread, like the
@@ -52,6 +58,54 @@ object AuthService {
     /** Called once at launch (AccountServices). */
     fun init(context: Context) {
         prefs = context.applicationContext.getSharedPreferences("atala", Context.MODE_PRIVATE)
+    }
+
+    // Google sign-in finished with nobody waiting (AuthServiceProviders.kt)
+
+    private val _recoveredGoogleSignIn = MutableStateFlow<RecoveredGoogleSignIn?>(null)
+
+    /**
+     * A Google sign-in whose page answered after the screen that opened it was gone (activity
+     * rebuilt, or process ended while the page was open). The screen showing the sign-in options
+     * takes it with [takeRecoveredGoogleSignIn] and completes it like any other sign-in.
+     */
+    val recoveredGoogleSignIn: StateFlow<RecoveredGoogleSignIn?> = _recoveredGoogleSignIn.asStateFlow()
+
+    /** Hands the recovered sign-in to exactly one taker. */
+    fun takeRecoveredGoogleSignIn(): RecoveredGoogleSignIn? {
+        val value = _recoveredGoogleSignIn.value ?: return null
+        _recoveredGoogleSignIn.value = null
+        return value
+    }
+
+    internal fun publishRecoveredGoogleSignIn(value: RecoveredGoogleSignIn) {
+        _recoveredGoogleSignIn.value = value
+    }
+
+    // The PKCE verifier of the Google sign-in in progress, kept on disk while the page is open.
+
+    private const val GOOGLE_VERIFIER_KEY = "auth.google.verifier"
+    private const val GOOGLE_STARTED_KEY = "auth.google.startedAt"
+    private const val GOOGLE_PENDING_MAX_MILLIS = 15 * 60 * 1000L
+
+    internal fun savePendingGoogleVerifier(verifier: String) {
+        prefs?.edit()?.putString(GOOGLE_VERIFIER_KEY, verifier)?.putLong(GOOGLE_STARTED_KEY, System.currentTimeMillis())?.commit()
+    }
+
+    /** The verifier of a Google sign-in started less than 15 minutes ago, null otherwise. */
+    internal fun pendingGoogleVerifier(): String? {
+        val prefs = prefs ?: return null
+        val verifier = prefs.getString(GOOGLE_VERIFIER_KEY, null)?.takeIf { it.isNotEmpty() } ?: return null
+        val age = System.currentTimeMillis() - prefs.getLong(GOOGLE_STARTED_KEY, 0L)
+        if (age !in 0..GOOGLE_PENDING_MAX_MILLIS) {
+            clearPendingGoogleVerifier()
+            return null
+        }
+        return verifier
+    }
+
+    internal fun clearPendingGoogleVerifier() {
+        prefs?.edit()?.remove(GOOGLE_VERIFIER_KEY)?.remove(GOOGLE_STARTED_KEY)?.commit()
     }
 
     // E-mail one-time code

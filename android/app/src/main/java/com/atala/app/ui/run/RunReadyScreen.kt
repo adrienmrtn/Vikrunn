@@ -76,6 +76,7 @@ fun RunReadyScreen(
     workout: Workout?,
     tracker: RunTracker,
     snapshot: RunTrackerSnapshot,
+    approximateOnly: Boolean,
     onStart: () -> Unit,
     onClose: () -> Unit,
     onOpenPaywall: () -> Unit,
@@ -124,10 +125,16 @@ fun RunReadyScreen(
                     Text(L("No plan, no target. Your distance, time and pace are recorded."), style = Theme.font(15), color = Theme.muted)
                 }
             }
+            // Approximate location only: no distance can be measured, whatever the signal says.
+            val approximate = approximateOnly && !snapshot.isSimulating
             RunReadyGpsLine(
-                quality = snapshot.gps,
+                quality = if (approximate) RunGpsQuality.Denied else snapshot.gps,
                 simulated = snapshot.isSimulating,
-                text = gpsText(snapshot),
+                text = if (approximate) {
+                    L("Approximate location only: your distance can't be measured. Allow precise location in Settings, or add the run by hand afterwards.")
+                } else {
+                    gpsText(snapshot)
+                },
                 onSettings = {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

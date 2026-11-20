@@ -61,6 +61,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atala.app.core.l10n.L
+import com.atala.app.ui.auth.RecoveredGoogleSignInEffect
 import com.atala.app.ui.auth.SignInOptionsSheet
 import com.atala.app.ui.components.PrimaryButton
 import com.atala.app.ui.components.rememberHaptics
@@ -196,6 +197,8 @@ fun OnboardingWelcomeScreen() {
             onDismiss = { showSignIn = false },
         )
     }
+    // Google answered after this screen was rebuilt (or the app restarted): same path.
+    RecoveredGoogleSignInEffect(onSignedIn = { signIn.finish(it) }, onFailed = { signIn.fail(it) })
     signIn.ErrorAlert()
 }
 

@@ -30,6 +30,7 @@ import com.atala.app.BuildConfig
 import com.atala.app.R
 import com.atala.app.core.account.AuthService
 import com.atala.app.core.account.AuthSignInFlow
+import com.atala.app.ui.auth.RecoveredGoogleSignInEffect
 import com.atala.app.core.l10n.Fmt
 import com.atala.app.core.l10n.L
 import com.atala.app.core.model.Account
@@ -250,6 +251,11 @@ internal fun ProfileAccountSection(state: AppState) {
             onDismiss = { showSignIn = false },
         )
     }
+    // Google answered after this screen was rebuilt (or the app restarted): same path.
+    RecoveredGoogleSignInEffect(
+        onSignedIn = { finishSignIn(it) },
+        onFailed = { message -> alert = AccountAlert.Error(message) },
+    )
 
     alert?.let { current ->
         val title = when (current) {

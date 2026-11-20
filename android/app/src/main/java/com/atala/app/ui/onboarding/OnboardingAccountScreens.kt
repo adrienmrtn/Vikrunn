@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atala.app.R
 import com.atala.app.core.account.AuthSignInFlow
+import com.atala.app.ui.auth.RecoveredGoogleSignInEffect
 import com.atala.app.core.l10n.Fmt
 import com.atala.app.core.l10n.L
 import com.atala.app.core.l10n.midSentence
@@ -146,6 +147,8 @@ fun OnboardingSignInScreen() {
             onDismiss = { showOptions = false },
         )
     }
+    // Google answered after this screen was rebuilt (or the app restarted): same path.
+    RecoveredGoogleSignInEffect(onSignedIn = { signIn.finish(it) }, onFailed = { signIn.fail(it) })
     signIn.ErrorAlert()
 }
 
@@ -179,6 +182,11 @@ internal class OnboardingSignIn(
                 }
             }
         }
+    }
+
+    /** A sign-in that failed before reaching this screen (recovered Google sign-in). */
+    fun fail(message: String) {
+        error = message
     }
 
     @Composable

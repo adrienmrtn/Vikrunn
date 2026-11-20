@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +36,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.atala.app.core.account.AuthService
 import com.atala.app.ui.coach.CoachScreen
 import com.atala.app.ui.guided.GuidedSessionScreen
 import com.atala.app.ui.paywall.MainAppOverlays
@@ -115,6 +118,14 @@ fun MainScreen(isSplashDone: Boolean = true) {
     // wait behind it (see `ReviewPromptState`), only while a tab is on screen with nothing over it.
     ReviewPrompt(isActive = isSplashDone, canPresent = tab != null && !showPlus && PaywallPresence.count == 0)
     MainAppOverlays(canPresent = tab != null && !showPlus)
+    // Back to the run in progress, and the run interrupted by the end of the process.
+    MainRunRecovery(controller, nav, isReady = entry != null, isSplashDone = isSplashDone)
+    // A Google sign-in that came back after the profile was gone: the profile takes it.
+    val recoveredSignIn by AuthService.recoveredGoogleSignIn.collectAsStateWithLifecycle()
+    LaunchedEffect(recoveredSignIn != null, entry != null) {
+        if (recoveredSignIn == null || entry == null) return@LaunchedEffect
+        if (controller.currentDestination?.hasRoute(ProfileRoute::class) != true) nav.onOpenProfile()
+    }
 }
 
 private fun uuid(value: String): UUID = UUID.fromString(value)

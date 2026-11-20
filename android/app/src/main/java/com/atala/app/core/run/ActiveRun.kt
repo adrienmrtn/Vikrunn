@@ -9,7 +9,16 @@ import com.atala.app.core.model.Workout
 import com.atala.app.core.store.AppStore
 import com.atala.app.core.voice.VoiceClip
 import com.atala.app.core.voice.VoiceCoach
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -27,7 +36,7 @@ enum class RunFlowPhase { Ready, Countdown, Active, Feeling }
  * screen picks it up again ([obtain]); the voice coach hears the tracker even when no screen is shown.
  */
 class ActiveRun private constructor(
-    context: Context,
+    private val context: Context,
     private val store: AppStore,
     val workout: Workout?,
 ) {
@@ -42,6 +51,8 @@ class ActiveRun private constructor(
     /** The run once saved (exactly once, when the runner finishes and keeps it). */
     val savedRun: StateFlow<RunRecord?> = _savedRun.asStateFlow()
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
     private val _events = MutableSharedFlow<RunTrackerEvent>(extraBufferCapacity = 8, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     /** Tracker events, for the haptics of the screen that is showing. */
     val events: SharedFlow<RunTrackerEvent> = _events.asSharedFlow()
@@ -53,6 +64,30 @@ class ActiveRun private constructor(
             _events.tryEmit(event)
             voice.handle(event, tracker, ProAccess.voice(store.current.settings.voice))
         }
+        // A copy on disk (active_run.json) at the start, on every pause and resume, and every 15 s
+        // while running, so a run cut short by the end of the process can still be saved.
+        scope.launch {
+            tracker.snapshot.map { it.state }.distinctUntilChanged().collect { state ->
+                if (state == RunTrackerState.Running || state == RunTrackerState.Paused) persist()
+            }
+        }
+        scope.launch {
+            while (isActive) {
+                delay(15_000)
+                if (tracker.snapshot.value.state == RunTrackerState.Running) persist()
+            }
+        }
+    }
+
+    /** True while the run is recorded (running or paused). */
+    val isRecording: Boolean
+        get() = tracker.snapshot.value.state.let { it == RunTrackerState.Running || it == RunTrackerState.Paused }
+
+    private val title: String get() = workout?.title ?: "Free run"
+
+    /** Writes the run so far to `active_run.json` (nothing when it is not being recorded). */
+    fun persist() {
+        tracker.backup(title, workout?.id)?.let { RunBackupStore.write(context, it) }
     }
 
     fun setPhase(phase: RunFlowPhase) {
@@ -75,9 +110,15 @@ class ActiveRun private constructor(
         if (_savedRun.value != null) return _savedRun.value
         tracker.stop()
         voice.stop()
-        if (!save) return null
-        val run = tracker.makeRecord(title = workout?.title ?: "Free run", workoutId = workout?.id)
+        if (!save) {
+            RunBackupStore.delete(context)
+            return null
+        }
+        val run = tracker.makeRecord(title = title, workoutId = workout?.id)
         store.addRun(run)
+        // On disk before the copy of the run in progress goes.
+        store.save()
+        RunBackupStore.delete(context)
         _savedRun.value = run
         _phase.value = RunFlowPhase.Feeling
         return run
@@ -103,10 +144,7 @@ class ActiveRun private constructor(
          */
         fun obtain(context: Context, store: AppStore, workout: Workout?): ActiveRun {
             current?.let { existing ->
-                val recording = existing.tracker.snapshot.value.state.let {
-                    it == RunTrackerState.Running || it == RunTrackerState.Paused
-                }
-                if (existing.workoutId == workout?.id || recording) return existing
+                if (existing.workoutId == workout?.id || existing.isRecording) return existing
                 existing.release()
             }
             return ActiveRun(context.applicationContext, store, workout).also { current = it }
@@ -117,9 +155,34 @@ class ActiveRun private constructor(
             run.release()
             if (current === run) current = null
         }
+
+        /** The app goes to the background: the run in progress is copied to disk now. */
+        fun persistCurrent() {
+            current?.persist()
+        }
+
+        /**
+         * The run flow to show again when the app opens (after it was swiped away during a run):
+         * a run being recorded, or one just finished waiting for its feeling. Null otherwise.
+         */
+        val resumable: ActiveRun?
+            get() = current?.takeIf { run ->
+                run.phase.value == RunFlowPhase.Active && run.isRecording ||
+                    run.phase.value == RunFlowPhase.Feeling && run.savedRun.value != null
+            }
+
+        private val _showRequests = MutableStateFlow(0)
+
+        /** Bumped when the "Run in progress" notification is tapped: the app shows the run flow. */
+        val showRequests: StateFlow<Int> = _showRequests.asStateFlow()
+
+        fun requestShow() {
+            _showRequests.value += 1
+        }
     }
 
     private fun release() {
+        scope.cancel()
         tracker.release()
         voice.release()
     }
