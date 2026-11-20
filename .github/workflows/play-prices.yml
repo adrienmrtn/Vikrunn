@@ -1,0 +1,34 @@
+name: Google Play prices
+
+# Sets the zone B, C and D prices of the Android subscriptions through the Google Play Developer
+# API. Started by hand: Actions > Google Play prices > Run workflow. Needs the repository secret
+# PLAY_SERVICE_ACCOUNT_JSON (the content of the service account key file used by RevenueCat).
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Change the prices (off = only show what would change)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  prices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet google-auth requests
+      - name: Prices
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "The repository secret PLAY_SERVICE_ACCOUNT_JSON is missing." >&2; exit 1
+          fi
+          python tools/play_prices.py android/play/prices.json ${{ inputs.apply && '--apply' || '' }}
