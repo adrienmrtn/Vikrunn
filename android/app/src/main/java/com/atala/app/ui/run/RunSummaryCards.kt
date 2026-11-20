@@ -1,5 +1,6 @@
 package com.atala.app.ui.run
 
+import android.os.Build
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,6 +30,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -164,6 +167,58 @@ fun RunSummaryLockedRow(onUnlock: () -> Unit) {
             Text(L("See the detail of every run with Atala Pro"), style = Theme.font(13), color = Theme.muted)
         }
         RunProTag()
+    }
+}
+
+/**
+ * What a free runner sees in place of the splits when the run has some (`RunSummaryProTeaser` in
+ * RunSummaryFigures.swift): the splits blurred behind a padlock, with the title, the message and
+ * the unlock capsule. The teaser is as tall as the taller of the two, so nothing is ever cut, even
+ * over the two splits of a short run. A tap opens the paywall.
+ */
+@Composable
+fun RunSummaryProTeaser(splits: List<RunKmSplit>, fastestId: Int?, onUnlock: () -> Unit) {
+    val haptics = rememberHaptics()
+    val label = L("Splits, charts and heart rate: see the detail of every run with Atala Pro")
+    // Blur exists from Android 12; before it, an almost opaque veil keeps the figures hidden.
+    val canBlur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val shape = RoundedCornerShape(24.dp)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .clickable(role = Role.Button) {
+                haptics.tap()
+                onUnlock()
+            }
+            .clearAndSetSemantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(if (canBlur) Modifier.blur(7.dp) else Modifier) {
+            RunSplitsCard(splits.take(6), fastestId)
+        }
+        Box(Modifier.matchParentSize().background(Color.White.copy(alpha = if (canBlur) 0.35f else 0.94f)))
+        Column(
+            Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(Modifier.size(48.dp).background(Theme.forest, CircleShape), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Lock, null, tint = Color.White, modifier = Modifier.size(20.dp))
+            }
+            Text(L("Splits, charts and heart rate"), style = Theme.font(17, FontWeight.Bold), color = Theme.ink, textAlign = TextAlign.Center)
+            Text(L("See the detail of every run with Atala Pro"), style = Theme.font(14), color = Theme.body, textAlign = TextAlign.Center)
+            Box(
+                Modifier
+                    .padding(top = 2.dp)
+                    .height(42.dp)
+                    .background(Theme.forest, CircleShape)
+                    .padding(horizontal = 18.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(L("Unlock with Atala Pro"), style = Theme.font(15, FontWeight.Bold), color = Color.White, maxLines = 1)
+            }
+        }
     }
 }
 

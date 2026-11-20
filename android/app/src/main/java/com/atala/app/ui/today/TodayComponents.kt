@@ -144,7 +144,7 @@ internal fun TodayWeekStrip(modifier: Modifier = Modifier) {
 private fun DayColumn(day: Instant, offset: Int, dayState: DayState, modifier: Modifier) {
     val isToday = PlanCalendar.isToday(day)
     val number = day.atZone(ZoneId.systemDefault()).dayOfMonth
-    val letter = Weekday.short(offset + 1).take(1)
+    val letter = Weekday.narrow(offset + 1)
     val stateLabel = when (dayState) {
         DayState.None -> L("no session")
         DayState.Planned -> L("session planned")

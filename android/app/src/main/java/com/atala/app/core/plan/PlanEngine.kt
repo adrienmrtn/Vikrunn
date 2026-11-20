@@ -139,10 +139,13 @@ object PlanEngine {
             }
             val easyDays = otherDays.filter { it !in qualityDays }
 
-            val longKm = if (runDays.size == 1) minOf(km, longCap) else minOf(km * 0.36, longCap)
+            // The long run keeps the biggest share of the week, whatever the number of run days.
+            val longShare = when (runDays.size) { 1 -> 1.0; 2 -> 0.55; 3 -> 0.40; else -> 0.36 }
+            val longKm = minOf(km * longShare, longCap)
             val qualityKm = km * 0.24
             val easyTotal = maxOf(0.0, km - longKm - qualityKm * qualityDays.size)
-            val easyKm = if (easyDays.isEmpty()) 0.0 else maxOf(2.5, easyTotal / easyDays.size)
+            // An easy run is never longer than the long run, even when the long run hits its cap.
+            val easyKm = if (easyDays.isEmpty()) 0.0 else maxOf(2.5, minOf(easyTotal / easyDays.size, longKm * 0.9))
 
             var workouts = buildList {
                 qualityDays.forEachIndexed { i, day ->
