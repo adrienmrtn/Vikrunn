@@ -5,6 +5,8 @@ PLAY_SERVICE_ACCOUNT_JSON.
     python tools/play_listing.py android/play/listings.json           # shows what would change
     python tools/play_listing.py android/play/listings.json --apply   # saves it in Play Console
 
+A language that already has a listing in Play Console is left as it is, unless --overwrite.
+
 Saved with changesNotSentForReview: the listing is stored in Play Console and nothing is sent for
 review or published; that stays a decision taken in Play Console.
 """
@@ -63,6 +65,9 @@ def main():
     changed = 0
     for language, fields in sorted(listings.items()):
         old = current.get(language, {})
+        if old and "--overwrite" not in sys.argv:
+            print(f"{language}: already in Play Console, kept as it is")
+            continue
         diff = [key for key in LIMITS if old.get(key) != fields[key]]
         if not diff:
             print(f"{language}: unchanged")
