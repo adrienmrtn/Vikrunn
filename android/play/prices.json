@@ -1,0 +1,429 @@
+{
+ "package": "com.atala.app",
+ "note": "Prices of zones B, C and D, tax included, in the currency Google Play uses for each region. Zone A is the base price set in Play Console and Google's conversion.",
+ "products": [
+  {
+   "productId": "atala_pro_yearly",
+   "basePlanId": "yearly",
+   "regions": {
+    "BG": {
+     "zone": "B",
+     "currency": "EUR",
+     "amount": 34.99
+    },
+    "HR": {
+     "zone": "B",
+     "currency": "EUR",
+     "amount": 34.99
+    },
+    "PL": {
+     "zone": "B",
+     "currency": "PLN",
+     "amount": 159.99
+    },
+    "CZ": {
+     "zone": "B",
+     "currency": "CZK",
+     "amount": 899.0
+    },
+    "HU": {
+     "zone": "B",
+     "currency": "HUF",
+     "amount": 15990.0
+    },
+    "RO": {
+     "zone": "B",
+     "currency": "RON",
+     "amount": 199.99
+    },
+    "CL": {
+     "zone": "B",
+     "currency": "CLP",
+     "amount": 41990.0
+    },
+    "SA": {
+     "zone": "B",
+     "currency": "SAR",
+     "amount": 139.99
+    },
+    "QA": {
+     "zone": "B",
+     "currency": "QAR",
+     "amount": 139.99
+    },
+    "TW": {
+     "zone": "B",
+     "currency": "TWD",
+     "amount": 990.0
+    },
+    "MX": {
+     "zone": "C",
+     "currency": "MXN",
+     "amount": 549.0
+    },
+    "BR": {
+     "zone": "C",
+     "currency": "BRL",
+     "amount": 169.9
+    },
+    "ZA": {
+     "zone": "C",
+     "currency": "ZAR",
+     "amount": 549.99
+    },
+    "MY": {
+     "zone": "C",
+     "currency": "MYR",
+     "amount": 129.9
+    },
+    "TH": {
+     "zone": "C",
+     "currency": "THB",
+     "amount": 1090.0
+    },
+    "CO": {
+     "zone": "C",
+     "currency": "COP",
+     "amount": 129900.0
+    },
+    "PE": {
+     "zone": "C",
+     "currency": "PEN",
+     "amount": 129.9
+    },
+    "TR": {
+     "zone": "D",
+     "currency": "TRY",
+     "amount": 999.99
+    },
+    "IN": {
+     "zone": "D",
+     "currency": "INR",
+     "amount": 1999.0
+    },
+    "ID": {
+     "zone": "D",
+     "currency": "IDR",
+     "amount": 399000.0
+    },
+    "PH": {
+     "zone": "D",
+     "currency": "PHP",
+     "amount": 1190.0
+    },
+    "VN": {
+     "zone": "D",
+     "currency": "VND",
+     "amount": 599000.0
+    },
+    "EG": {
+     "zone": "D",
+     "currency": "EGP",
+     "amount": 999.99
+    },
+    "NG": {
+     "zone": "D",
+     "currency": "NGN",
+     "amount": 31900.0
+    },
+    "PK": {
+     "zone": "D",
+     "currency": "PKR",
+     "amount": 4900.0
+    },
+    "AR": {
+     "zone": "D",
+     "currency": "ARS",
+     "amount": 28600.0
+    },
+    "KZ": {
+     "zone": "D",
+     "currency": "KZT",
+     "amount": 11990.0
+    }
+   }
+  },
+  {
+   "productId": "atala_pro_monthly",
+   "basePlanId": "monthly",
+   "regions": {
+    "BG": {
+     "zone": "B",
+     "currency": "EUR",
+     "amount": 6.99
+    },
+    "HR": {
+     "zone": "B",
+     "currency": "EUR",
+     "amount": 6.99
+    },
+    "PL": {
+     "zone": "B",
+     "currency": "PLN",
+     "amount": 34.99
+    },
+    "CZ": {
+     "zone": "B",
+     "currency": "CZK",
+     "amount": 179.0
+    },
+    "HU": {
+     "zone": "B",
+     "currency": "HUF",
+     "amount": 3190.0
+    },
+    "RO": {
+     "zone": "B",
+     "currency": "RON",
+     "amount": 34.99
+    },
+    "CL": {
+     "zone": "B",
+     "currency": "CLP",
+     "amount": 6990.0
+    },
+    "SA": {
+     "zone": "B",
+     "currency": "SAR",
+     "amount": 27.99
+    },
+    "QA": {
+     "zone": "B",
+     "currency": "QAR",
+     "amount": 27.99
+    },
+    "TW": {
+     "zone": "B",
+     "currency": "TWD",
+     "amount": 220.0
+    },
+    "MX": {
+     "zone": "C",
+     "currency": "MXN",
+     "amount": 109.0
+    },
+    "BR": {
+     "zone": "C",
+     "currency": "BRL",
+     "amount": 32.9
+    },
+    "ZA": {
+     "zone": "C",
+     "currency": "ZAR",
+     "amount": 109.99
+    },
+    "MY": {
+     "zone": "C",
+     "currency": "MYR",
+     "amount": 27.9
+    },
+    "TH": {
+     "zone": "C",
+     "currency": "THB",
+     "amount": 219.0
+    },
+    "CO": {
+     "zone": "C",
+     "currency": "COP",
+     "amount": 27900.0
+    },
+    "PE": {
+     "zone": "C",
+     "currency": "PEN",
+     "amount": 24.9
+    },
+    "TR": {
+     "zone": "D",
+     "currency": "TRY",
+     "amount": 199.99
+    },
+    "IN": {
+     "zone": "D",
+     "currency": "INR",
+     "amount": 399.0
+    },
+    "ID": {
+     "zone": "D",
+     "currency": "IDR",
+     "amount": 79000.0
+    },
+    "PH": {
+     "zone": "D",
+     "currency": "PHP",
+     "amount": 249.0
+    },
+    "VN": {
+     "zone": "D",
+     "currency": "VND",
+     "amount": 119000.0
+    },
+    "EG": {
+     "zone": "D",
+     "currency": "EGP",
+     "amount": 199.99
+    },
+    "NG": {
+     "zone": "D",
+     "currency": "NGN",
+     "amount": 5900.0
+    },
+    "PK": {
+     "zone": "D",
+     "currency": "PKR",
+     "amount": 1199.0
+    },
+    "AR": {
+     "zone": "D",
+     "currency": "ARS",
+     "amount": 5700.0
+    },
+    "KZ": {
+     "zone": "D",
+     "currency": "KZT",
+     "amount": 2390.0
+    }
+   }
+  },
+  {
+   "productId": "atala_pro_yearly_gift",
+   "basePlanId": "yearly",
+   "regions": {
+    "BG": {
+     "zone": "B",
+     "currency": "EUR",
+     "amount": 17.99
+    },
+    "HR": {
+     "zone": "B",
+     "currency": "EUR",
+     "amount": 17.99
+    },
+    "PL": {
+     "zone": "B",
+     "currency": "PLN",
+     "amount": 79.99
+    },
+    "CZ": {
+     "zone": "B",
+     "currency": "CZK",
+     "amount": 449.0
+    },
+    "HU": {
+     "zone": "B",
+     "currency": "HUF",
+     "amount": 7990.0
+    },
+    "RO": {
+     "zone": "B",
+     "currency": "RON",
+     "amount": 99.99
+    },
+    "CL": {
+     "zone": "B",
+     "currency": "CLP",
+     "amount": 20990.0
+    },
+    "SA": {
+     "zone": "B",
+     "currency": "SAR",
+     "amount": 69.99
+    },
+    "QA": {
+     "zone": "B",
+     "currency": "QAR",
+     "amount": 69.99
+    },
+    "TW": {
+     "zone": "B",
+     "currency": "TWD",
+     "amount": 490.0
+    },
+    "MX": {
+     "zone": "C",
+     "currency": "MXN",
+     "amount": 279.0
+    },
+    "BR": {
+     "zone": "C",
+     "currency": "BRL",
+     "amount": 84.9
+    },
+    "ZA": {
+     "zone": "C",
+     "currency": "ZAR",
+     "amount": 279.99
+    },
+    "MY": {
+     "zone": "C",
+     "currency": "MYR",
+     "amount": 64.9
+    },
+    "TH": {
+     "zone": "C",
+     "currency": "THB",
+     "amount": 549.0
+    },
+    "CO": {
+     "zone": "C",
+     "currency": "COP",
+     "amount": 64900.0
+    },
+    "PE": {
+     "zone": "C",
+     "currency": "PEN",
+     "amount": 64.9
+    },
+    "TR": {
+     "zone": "D",
+     "currency": "TRY",
+     "amount": 499.99
+    },
+    "IN": {
+     "zone": "D",
+     "currency": "INR",
+     "amount": 999.0
+    },
+    "ID": {
+     "zone": "D",
+     "currency": "IDR",
+     "amount": 199000.0
+    },
+    "PH": {
+     "zone": "D",
+     "currency": "PHP",
+     "amount": 599.0
+    },
+    "VN": {
+     "zone": "D",
+     "currency": "VND",
+     "amount": 299000.0
+    },
+    "EG": {
+     "zone": "D",
+     "currency": "EGP",
+     "amount": 499.99
+    },
+    "NG": {
+     "zone": "D",
+     "currency": "NGN",
+     "amount": 15900.0
+    },
+    "PK": {
+     "zone": "D",
+     "currency": "PKR",
+     "amount": 2499.0
+    },
+    "AR": {
+     "zone": "D",
+     "currency": "ARS",
+     "amount": 14300.0
+    },
+    "KZ": {
+     "zone": "D",
+     "currency": "KZT",
+     "amount": 5990.0
+    }
+   }
+  }
+ ]
+}
