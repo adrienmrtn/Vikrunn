@@ -34,5 +34,33 @@
                 <data android:scheme="atala" android:host="auth-callback" />
             </intent-filter>
         </activity>
+
+        <!-- Run recording: keeps the GPS, the clock and the voice going with the screen off. -->
+        <service
+            android:name=".core.run.RunTrackingService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- The run picture shared from the summary (cache/shared). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Gives the coach's voice the application context, whoever builds a VoiceCoach. -->
+        <provider
+            android:name=".core.voice.VoiceContextProvider"
+            android:authorities="${applicationId}.voicecontext"
+            android:exported="false" />
+
+        <!-- Set from ATALA_MAPS_API_KEY (empty: the summary draws the route without map tiles). -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
     </application>
 </manifest>
