@@ -1,7 +1,8 @@
 name: Google Play listing
 
-# Writes the store listing of every language in android/play/listings.json to Play Console, without
-# sending anything for review. Started by hand: Actions > Google Play listing > Run workflow.
+# Writes the store listing of every language in android/play/listings.json to Play Console, with
+# the phone screenshots of each language rendered from appstore/screenshots/src. Nothing is
+# published. Started by hand: Actions > Google Play listing > Run workflow.
 on:
   workflow_dispatch:
     inputs:
@@ -9,21 +10,54 @@ on:
         description: "Save in Play Console (off = only show what would change)"
         type: boolean
         default: false
+      screenshots:
+        description: "Render and send the phone screenshots of each language"
+        type: boolean
+        default: true
+      overwrite:
+        description: "Replace the texts and screenshots already in Play Console"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
+concurrency:
+  group: play-listing
+  cancel-in-progress: false
+
 jobs:
   listing:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # macOS so that the screenshots are set in San Francisco, as on the App Store.
+    runs-on: macos-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install --quiet google-auth requests
+      - run: pip install --quiet google-auth requests pillow
+
+      - name: Render the screenshots
+        if: ${{ inputs.screenshots }}
+        run: python tools/play_screenshots.py build/play-screenshots
+
+      - name: Keep the rendered screenshots
+        if: ${{ inputs.screenshots }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: play-screenshots
+          path: build/play-screenshots
+          retention-days: 14
+
       - name: Listing
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-        run: python tools/play_listing.py android/play/listings.json ${{ inputs.apply && '--apply' || '' }}
+        run: |
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "The repository secret PLAY_SERVICE_ACCOUNT_JSON is missing." >&2; exit 1
+          fi
+          python tools/play_listing.py android/play/listings.json \
+            ${{ inputs.screenshots && '--screenshots build/play-screenshots' || '' }} \
+            ${{ inputs.overwrite && '--overwrite' || '' }} \
+            ${{ inputs.apply && '--apply' || '' }}
