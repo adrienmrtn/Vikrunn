@@ -6,8 +6,8 @@ Developer API, with the service account in PLAY_SERVICE_ACCOUNT_JSON.
     python tools/play_listing.py android/play/listings.json --apply   # saves it in Play Console
     python tools/play_listing.py android/play/listings.json --screenshots build/play-screenshots --apply
 
-A language that already has a listing in Play Console keeps its texts, and a language that already
-has phone screenshots keeps them, unless --overwrite. --screenshots is the folder written by
+A language that already has a listing in Play Console keeps its texts and its screenshots, unless
+--overwrite. --screenshots is the folder written by
 tools/play_screenshots.py: <folder>/<language>/*.jpg, sent in the order of their names.
 
 Saved with changesNotSentForReview: the listing is stored in Play Console and nothing is sent for
@@ -104,8 +104,8 @@ def main():
                     sys.exit(f"{language}: Google refused ({r.status_code}) {readable(r)}")
 
         shots = local_screenshots(folder, language) if folder else []
-        if not shots:
-            continue
+        if not shots or (old and not overwrite):
+            continue  # a language written by hand in Play Console keeps its own screenshots too
         images = f"listings/{language}/phoneScreenshots"
         r = s.get(f"{base}/{images}") if old or apply else None
         online = [image.get("sha256") for image in r.json().get("images", [])] if r is not None and r.status_code == 200 else []
