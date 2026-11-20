@@ -306,7 +306,9 @@ struct PaywallView: View {
     }
 
     /// "3 days free, then €49.99/year", or the price of the monthly plan when it is the one selected.
-    private var priceLine: String {
+    /// Nil until the store's real prices are loaded (store builds never show example prices).
+    private var priceLine: String? {
+        if !PurchaseService.isPlaceholder && !purchases.canPurchase { return nil }
         if plan == .monthly { return L("%@ a month", monthPrice) }
         if startsWithTrial, let days = trialDays { return L("%@ days free, then %@/year", days, yearlyPrice) }
         return L("%@ billed yearly", yearlyPrice)
@@ -460,11 +462,13 @@ struct PaywallView: View {
             .buttonStyle(.plain)
             .disabled(isBuying)
             // What the selected plan costs, right under the button.
-            Text(priceLine)
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.muted)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+            if let priceLine {
+                Text(priceLine)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.muted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
             HStack(spacing: 6) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 11))
