@@ -5,6 +5,7 @@ import android.content.res.Configuration
 import com.atala.app.core.account.AccountServices
 import com.atala.app.core.l10n.AppLanguage
 import com.atala.app.core.l10n.L10n
+import com.atala.app.core.purchases.PurchaseService
 import com.atala.app.core.store.AppStore
 import kotlinx.coroutines.MainScope
 import java.io.File
@@ -17,6 +18,8 @@ class AtalaApplication : Application() {
         super.onCreate()
         AppLanguage.init(this)
         L10n.init(assets)
+        // Subscriptions (RevenueCat): configured now, then linked to the signed-in account.
+        PurchaseService.observe(this, store)
         AccountServices.start(this) { store }
     }
 

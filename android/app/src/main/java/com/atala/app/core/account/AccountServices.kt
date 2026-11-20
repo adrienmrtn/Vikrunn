@@ -62,13 +62,7 @@ object AccountServices {
             override fun onActivityDestroyed(activity: Activity) {}
         })
 
-        // Signing in links the purchases to the account straight away, not at the next launch.
-        appStore.state
-            .map { state -> state.account?.takeIf { !it.isGuest }?.userId }
-            .distinctUntilChanged()
-            .drop(1)
-            .onEach { userId -> PurchaseService.start(application, userId) }
-            .launchIn(scope)
+        // Linking the purchases to the account is done by PurchaseService.observe (AtalaApplication).
 
         // Everything the reminders depend on: when one of these changes, they are scheduled again.
         val planKey = appStore.state.map { state ->
