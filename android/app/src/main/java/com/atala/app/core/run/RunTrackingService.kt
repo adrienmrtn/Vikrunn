@@ -94,6 +94,7 @@ class RunTrackingService : Service() {
     }
 
     override fun onDestroy() {
+        running = false
         wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
         scope.cancel()
