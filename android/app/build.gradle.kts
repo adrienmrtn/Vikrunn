@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.atala.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.atala.app"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = (System.getenv("ATALA_VERSION_CODE") ?: "1").toInt()
         versionName = "0.1.0"
         // Google Maps key for the run summary map: Gradle property or environment variable
@@ -74,7 +74,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.maps.android:maps-compose:6.2.1")
-    implementation("com.revenuecat.purchases:purchases:8.10.6")
+    implementation("com.revenuecat.purchases:purchases:9.29.1")
     implementation("com.google.android.play:review-ktx:2.0.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
