@@ -18,6 +18,7 @@ from google.oauth2 import service_account
 
 API = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications"
 SCOPE = "https://www.googleapis.com/auth/androidpublisher"
+REGIONS_VERSIONS = ["2025/03", "2025/02", "2025/01", "2024/03", "2024/02", "2024/01", "2023/03", "2023/02", "2023/01", "2022/02"]
 
 
 def session():
@@ -94,17 +95,21 @@ def main():
         print(f"{pid}/{bp_id}: {changes} price(s) to change")
         if not apply or changes == 0:
             continue
-        params = {
-            "updateMask": "basePlans",
-            "regionsVersion.version": "2022/02",
-            "allowMissing": "false",
-        }
-        r = s.patch(f"{API}/{package}/subscriptions/{pid}", params=params, json=sub)
-        if r.status_code == 200:
-            print(f"{pid}: prices updated")
-        else:
-            print(f"{pid}: Google refused ({r.status_code}) {readable(r)}")
+        # The regions version decides which currency Google expects per region (Argentina moved
+        # from USD to ARS in a later version). Use the newest one Google accepts.
+        for version in REGIONS_VERSIONS:
+            params = {"updateMask": "basePlans", "regionsVersion.version": version, "allowMissing": "false"}
+            r = s.patch(f"{API}/{package}/subscriptions/{pid}", params=params, json=sub)
+            text = readable(r)
+            if r.status_code == 200:
+                print(f"{pid}: prices updated (regions version {version})")
+                break
+            if "version" in text.lower() and r.status_code == 400:
+                print(f"  regions version {version}: {text[:200]}")
+                continue
+            print(f"{pid}: Google refused ({r.status_code}) {text}")
             failed = True
+            break
     sys.exit(1 if failed else 0)
 
 
