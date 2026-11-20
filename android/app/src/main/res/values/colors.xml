@@ -1,0 +1,4 @@
+<resources>
+    <!-- Cream of the iPhone icon: the foreground picture is opaque and already carries it. -->
+    <color name="ic_launcher_background">#F1F1EF</color>
+</resources>

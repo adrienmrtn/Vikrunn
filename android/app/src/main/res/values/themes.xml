@@ -1,0 +1,8 @@
+<resources>
+    <!-- Cream like the splash, so a cold launch goes straight from the system window into it. -->
+    <style name="Theme.Atala" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/ic_launcher_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
+    </style>
+</resources>
