@@ -1,12 +1,12 @@
 name: Google Play upload
 
-# Sends a signed .aab, attached to a draft GitHub release, to a Google Play testing track.
+# Sends a signed .aab, committed alone on a temporary branch, to a Google Play testing track.
 # Started by hand: Actions > Google Play upload > Run workflow. Never production.
 on:
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: "Tag of the draft release that holds the .aab"
+      bundle_branch:
+        description: "Temporary branch that holds the .aab (delete it afterwards)"
         required: true
       track:
         description: "Testing track"
@@ -19,8 +19,7 @@ on:
         default: false
 
 permissions:
-  # Draft releases are only visible with write access.
-  contents: write
+  contents: read
 
 jobs:
   upload:
@@ -32,10 +31,14 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install --quiet google-auth requests
-      - name: Download the bundle
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release download "${{ inputs.release_tag }}" --repo "${{ github.repository }}" --pattern "*.aab" --output bundle.aab
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.bundle_branch }}
+          path: bundle
+      - name: Find the bundle
+        run: |
+          test "$(ls bundle/*.aab | wc -l)" = "1"
+          mv bundle/*.aab bundle.aab
       - name: Upload
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
