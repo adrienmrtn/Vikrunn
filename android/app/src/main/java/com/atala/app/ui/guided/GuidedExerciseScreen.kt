@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.atala.app.ui.components.adaptiveHeight
 import com.atala.app.core.exercise.ExerciseInfo
 import com.atala.app.core.exercise.GuidedPrescription
 import com.atala.app.core.l10n.L
@@ -201,7 +202,8 @@ private fun Panel(engine: GuidedSessionEngine, segment: GuidedSegment, exercise:
     Box(
         Modifier
             .fillMaxWidth()
-            .height(250.dp)
+            // Lower on small phones, so the timer stays in view under it.
+            .height(adaptiveHeight(250.dp))
             .background(color, RoundedCornerShape(28.dp)),
     ) {
         GuidedExerciseAnimation(

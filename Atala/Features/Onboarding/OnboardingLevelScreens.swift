@@ -59,7 +59,7 @@ private struct OnboardingLevelCoachFigure: View {
 
     var body: some View {
         CoachPoseView(coach: coach, pose: pose)
-            .frame(height: height)
+            .adaptiveHeight(height)
             .frame(maxWidth: .infinity)
             .scaleEffect(visible ? 1 : 0.92, anchor: .bottom)
             .opacity(visible ? 1 : 0)

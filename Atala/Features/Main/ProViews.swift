@@ -198,7 +198,11 @@ struct ProWelcomeView: View {
                 .ignoresSafeArea()
             VStack(spacing: 0) {
                 Spacer(minLength: 24)
-                crown
+                // Shrinks on small phones so the list and the button always fit.
+                ShrinkToFit(height: 230, minHeight: 130) {
+                    crown
+                }
+                .layoutPriority(1)
                 VStack(spacing: 6) {
                     Text(L("Welcome to Atala Pro,"))
                         .font(.system(size: 20, weight: .semibold))
@@ -262,7 +266,6 @@ struct ProWelcomeView: View {
                 .font(.system(size: 60, weight: .bold))
                 .foregroundStyle(Theme.forest)
         }
-        .frame(height: 230)
         .scaleEffect(stage >= 1 ? 1 : 0.3)
         .opacity(stage >= 1 ? 1 : 0)
         .accessibilityHidden(true)
@@ -283,6 +286,8 @@ struct ProWelcomeView: View {
             Text(item.title)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(unlocked ? Color.white : Color.white.opacity(0.45))
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             Image(systemName: "checkmark")

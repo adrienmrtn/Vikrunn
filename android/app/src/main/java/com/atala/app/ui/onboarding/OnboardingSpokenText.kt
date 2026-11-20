@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -179,6 +180,12 @@ internal fun rememberWordClock(
 }
 
 /**
+ * Shrinks the texts said by the coach on small phones, so the full-screen coach keeps its room
+ * (`onboardingTextScale`): 1 on regular phones, set lower by [OnboardingTapScreen].
+ */
+val LocalOnboardingTextScale = compositionLocalOf { 1f }
+
+/**
  * Text that appears word by word, as if the coach were speaking (`OnboardingSpokenText`): a
  * steady reading pace with a breath after punctuation. The whole paragraph is laid out from the
  * start, so nothing around it moves. [onFinished] is called once, after the last word.
@@ -208,10 +215,11 @@ fun OnboardingSpokenText(
         isEmpty = words.isEmpty(),
         onFinished = onFinished,
     )
-    val style = TextStyle(fontSize = size.sp, fontWeight = weight)
+    val textScale = LocalOnboardingTextScale.current
+    val style = TextStyle(fontSize = (size * textScale).sp, fontWeight = weight)
     OnboardingWordFlow(
-        wordSpacing = (size * 0.27f).dp,
-        lineSpacing = lineSpacing,
+        wordSpacing = (size * textScale * 0.27f).dp,
+        lineSpacing = lineSpacing * textScale,
         spaceAfter = { words.getOrNull(it)?.spaceAfter ?: true },
         modifier = modifier
             .fillMaxWidth()

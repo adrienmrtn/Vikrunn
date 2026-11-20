@@ -242,7 +242,11 @@ struct GiftOfferView: View {
                 }
                 .padding(.horizontal, 8)
                 Spacer(minLength: 12)
-                box
+                // Shrinks on small phones so the offer and the buttons always fit.
+                ShrinkToFit(height: 260, minHeight: 120) {
+                    box
+                }
+                .layoutPriority(1)
                 Spacer(minLength: 20)
                 offer
                     .opacity(stage >= 4 ? 1 : 0)
@@ -287,7 +291,6 @@ struct GiftOfferView: View {
                 .scaleEffect(stage == 0 ? 0.2 : (stage >= 3 ? 1.12 : 1))
                 .opacity(stage == 0 ? 0 : 1)
         }
-        .frame(height: 260)
         .accessibilityHidden(true)
     }
 
@@ -317,6 +320,8 @@ struct GiftOfferView: View {
                 (Text(weeklyPrice).font(.system(size: 46, weight: .bold))
                     + Text(L(" /week")).font(.system(size: 20, weight: .semibold)))
                     .foregroundColor(Color.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 (Text(L("Billed %@ a year, instead of ", yearlyPrice))
                     + Text(fullPrice).strikethrough()
                     + Text("."))

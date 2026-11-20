@@ -9,6 +9,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -76,6 +78,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.atala.app.ui.components.rememberScreenScale
 import com.atala.app.core.l10n.L
 import com.atala.app.core.model.Gender
 import com.atala.app.core.model.StreakEngine
@@ -195,7 +198,14 @@ fun PaywallScreen(closeDelay: Double = 0.0, onFinished: () -> Unit) {
     ) {
         Box(Modifier.weight(1f)) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                PhotoStrip(stripPhotoNames(state.answers.gender), Modifier.padding(top = 52.dp))
+                // Small phones: a lower strip, so the plans come into view sooner.
+                val stripScale = rememberScreenScale(reference = 800f, minimum = 0.75f)
+                PhotoStrip(
+                    stripPhotoNames(state.answers.gender),
+                    Modifier.padding(top = 52.dp),
+                    tileWidth = 132.dp * stripScale,
+                    height = 176.dp * stripScale,
+                )
                 Headline(state.firstName, PaywallCopy.goalLine(state.answers, state.plan))
                 FeatureList(features(state), Modifier.padding(start = Theme.screenPadding, end = Theme.screenPadding, top = 20.dp))
                 Column(
@@ -391,6 +401,7 @@ private fun FeatureList(features: List<PaywallFeature>, modifier: Modifier = Mod
 }
 
 /** One plan to choose: its name and badges, the amount charged in large, the detail under it. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PlanCard(
     selected: Boolean,
@@ -419,14 +430,23 @@ private fun PlanCard(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(title, style = Theme.font(15, FontWeight.Bold), color = Theme.ink)
+            // On one line on most phones; the chips go under the title rather than being squeezed
+            // on a narrow phone or with a large system font.
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(title, style = Theme.font(15, FontWeight.Bold), color = Theme.ink, modifier = Modifier.align(Alignment.CenterVertically))
                 if (badge != null) {
                     Text(
                         badge,
                         style = Theme.font(11, FontWeight.Bold).copy(letterSpacing = 0.6.sp),
                         color = Color.White,
-                        modifier = Modifier.background(Theme.green, CircleShape).padding(horizontal = 8.dp, vertical = 4.dp),
+                        maxLines = 1,
+                        modifier = Modifier
+                            .align(Alignment.CenterVertically)
+                            .background(Theme.green, CircleShape)
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
                 if (saving != null) {
@@ -434,7 +454,11 @@ private fun PlanCard(
                         saving,
                         style = Theme.font(11, FontWeight.Bold),
                         color = Theme.orangeDeep,
-                        modifier = Modifier.background(Theme.orangeTint, CircleShape).padding(horizontal = 8.dp, vertical = 4.dp),
+                        maxLines = 1,
+                        modifier = Modifier
+                            .align(Alignment.CenterVertically)
+                            .background(Theme.orangeTint, CircleShape)
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
             }
@@ -489,6 +513,7 @@ private fun TopBar(closeShown: Boolean, reduceMotion: Boolean, onClose: () -> Un
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CallToAction(title: String, isBuying: Boolean, onBuy: () -> Unit, onRestore: () -> Unit) {
     Column(Modifier.fillMaxWidth().background(Color.White)) {
@@ -511,15 +536,18 @@ private fun CallToAction(title: String, isBuying: Boolean, onBuy: () -> Unit, on
                 Text(title, style = Theme.font(17, FontWeight.Bold), color = Color.White)
                 Text(L("Easy to cancel, at any time"), style = Theme.font(13), color = Theme.greenOnDark)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Lock, null, tint = Theme.muted, modifier = Modifier.size(12.dp))
-                Text(L("Secured by Google Play"), style = Theme.font(12), color = Theme.muted)
-                Text("·", style = Theme.font(12), color = Theme.muted)
+            // One line on most phones; "Restore purchases" goes under it rather than being squeezed.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)) {
+                Icon(Icons.Filled.Lock, null, tint = Theme.muted, modifier = Modifier.size(12.dp).align(Alignment.CenterVertically))
+                Text(L("Secured by Google Play"), style = Theme.font(12), color = Theme.muted, modifier = Modifier.align(Alignment.CenterVertically))
+                Text("·", style = Theme.font(12), color = Theme.muted, modifier = Modifier.align(Alignment.CenterVertically))
                 Text(
                     L("Restore purchases"),
                     style = Theme.font(12, FontWeight.SemiBold),
                     color = Theme.muted,
+                    maxLines = 1,
                     modifier = Modifier
+                        .align(Alignment.CenterVertically)
                         .widthIn(min = 44.dp)
                         .clickable(enabled = !isBuying, role = Role.Button, onClick = onRestore)
                         .padding(vertical = 6.dp),

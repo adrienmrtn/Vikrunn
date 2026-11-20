@@ -51,6 +51,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.atala.app.ui.components.FillOrScrollColumn
+import com.atala.app.ui.components.rememberScreenScale
 import com.atala.app.core.l10n.L
 import com.atala.app.ui.components.HapticKind
 import com.atala.app.ui.components.rememberHaptics
@@ -105,16 +107,18 @@ internal fun ProWelcomeScreen(onClose: () -> Unit) {
     val buttonAlpha by animateFloatAsState(if (stage >= last) 1f else 0f, tween(400), label = "button")
 
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Theme.green, Theme.forest)))) {
-        Column(Modifier.fillMaxSize().safeDrawingPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
+        // Small phones: the crown shrinks, and the page scrolls rather than cutting the button.
+        val fit = rememberScreenScale(reference = 760f, minimum = 0.6f)
+        FillOrScrollColumn(Modifier.fillMaxSize().safeDrawingPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.weight(1f).heightIn(min = 24.dp))
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(230.dp)
+                    .height(230.dp * fit)
                     .clearAndSetSemantics {}
                     .graphicsLayer {
-                        scaleX = crownScale
-                        scaleY = crownScale
+                        scaleX = crownScale * fit
+                        scaleY = crownScale * fit
                         alpha = crownAlpha
                     },
                 contentAlignment = Alignment.Center,

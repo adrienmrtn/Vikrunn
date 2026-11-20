@@ -13,7 +13,8 @@ struct OnboardingPhotoCard<Caption: View>: View {
     var body: some View {
         Color(hex: 0x1B1B1B)
             .frame(maxWidth: .infinity)
-            .frame(height: height)
+            // A little lower on small phones (iPhone SE), so the text under it stays in view.
+            .adaptiveHeight(height, minimumScale: 0.75)
             .overlay(alignment: alignment) {
                 Image(name)
                     .resizable()
@@ -352,7 +353,7 @@ struct OnboardingReadyScreen: View {
     var body: some View {
         OnboardingScaffold(buttonTitle: L("I'm ready"), buttonHaptic: .strong, buttonsVisible: spoken >= 2) {
             CoachPoseView(coach: store.coach, pose: .thumbsUp)
-                .frame(height: 250)
+                .adaptiveHeight(250)
                 .frame(maxWidth: .infinity)
                 .scaleEffect(coachShown ? 1 : 0.9, anchor: .bottom)
                 .opacity(coachShown ? 1 : 0)

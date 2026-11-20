@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
@@ -70,14 +71,16 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 /** Geometry of the coach carousel, computed from the container size only (`OnboardingCoachCarouselMetrics`). */
-private class CoachCarouselMetrics(width: Dp, height: Dp) {
+private class CoachCarouselMetrics(width: Dp, height: Dp, fontScale: Float) {
     val figureWidth: Dp
     val figureHeight: Dp
     /** Distance between the centres of two coaches. */
     val spacing: Dp
+    /** Room for the name and the trait under the picture: taller with a larger system font. */
+    val labelHeight: Dp = (LABEL_HEIGHT * fontScale.coerceAtLeast(1f)).dp
 
     init {
-        val byHeight = max(140f, height.value - LABEL_HEIGHT - 8)
+        val byHeight = max(140f, height.value - labelHeight.value - 8)
         val byWidth = width.value * 0.62f / ASPECT
         val h = min(byHeight, byWidth)
         val w = h * ASPECT
@@ -113,7 +116,7 @@ private fun CoachCarousel(index: Int, position: Animatable<Float, *>, onIndex: (
     val density = LocalDensity.current
 
     BoxWithConstraints(modifier.fillMaxSize()) {
-        val metrics = CoachCarouselMetrics(maxWidth, maxHeight)
+        val metrics = CoachCarouselMetrics(maxWidth, maxHeight, density.fontScale)
         val spacingPx = with(density) { metrics.spacing.toPx() }
 
         fun select(target: Int) {
@@ -214,14 +217,29 @@ private fun CoachCarousel(index: Int, position: Animatable<Float, *>, onIndex: (
                     )
                     Column(
                         Modifier
-                            .height((CoachCarouselMetrics.LABEL_HEIGHT - 8).dp)
+                            .height(metrics.labelHeight - 8.dp)
                             .alpha(1f - near)
                             .clearAndSetSemantics {},
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
-                        Text(coach.name, style = Theme.font(22, FontWeight.Bold), color = Theme.ink, maxLines = 1, softWrap = false)
-                        Text(coach.trait, style = Theme.font(15), color = Theme.muted, maxLines = 1, softWrap = false)
+                        // Never cut: the line may run wider than the picture, as on the iPhone (`fixedSize`).
+                        Text(
+                            coach.name,
+                            style = Theme.font(22, FontWeight.Bold),
+                            color = Theme.ink,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.wrapContentWidth(unbounded = true),
+                        )
+                        Text(
+                            coach.trait,
+                            style = Theme.font(15),
+                            color = Theme.muted,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.wrapContentWidth(unbounded = true),
+                        )
                     }
                 }
             }
@@ -287,7 +305,7 @@ fun OnboardingCoachScreen() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ArrowButton(Icons.AutoMirrored.Filled.ArrowBackIos, L("Previous coach"), enabled = index > 0) { move(-1) }
-            Text(L("Swipe to change coach"), style = Theme.font(13), color = Theme.muted)
+            OnboardingFitText(L("Swipe to change coach"), Theme.font(13), Theme.muted, Modifier.weight(1f, fill = false), minScale = 0.75f)
             ArrowButton(Icons.AutoMirrored.Filled.ArrowForwardIos, L("Next coach"), enabled = index < coaches.lastIndex) { move(1) }
         }
         BottomBar(Modifier.navigationBarsPadding()) {

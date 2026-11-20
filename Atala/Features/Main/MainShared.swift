@@ -68,7 +68,8 @@ extension View {
 
 // MARK: - Small shared views
 
-/// Rounded illustration used at the top of the main screens.
+/// Rounded illustration used at the top of the main screens. `height` on regular phones, a little
+/// less on small ones (iPhone SE), so the session of the day stays in view.
 struct MainHeroImage: View {
     let name: String
     var height: CGFloat = 170
@@ -78,7 +79,7 @@ struct MainHeroImage: View {
     var body: some View {
         Color.clear
             .frame(maxWidth: .infinity)
-            .frame(height: height)
+            .adaptiveHeight(height, reference: 680, minimumScale: 0.75)
             .overlay(alignment: alignment) {
                 Image(name)
                     .resizable()

@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.atala.app.ui.components.adaptiveHeight
 import com.atala.app.core.l10n.L
 import com.atala.app.core.model.Coach
 import com.atala.app.core.model.CoachPose
@@ -94,7 +95,7 @@ private fun LevelCoachFigure(coach: Coach, pose: CoachPose, visible: Boolean, he
         pose = pose,
         modifier = Modifier
             .fillMaxWidth()
-            .height(height)
+            .height(adaptiveHeight(height))
             .onboardingSpringIn(visible)
             .clearAndSetSemantics {},
     )

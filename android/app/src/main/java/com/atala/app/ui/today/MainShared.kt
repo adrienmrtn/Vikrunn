@@ -66,6 +66,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.atala.app.ui.components.adaptiveHeight
 import com.atala.app.core.l10n.Fmt
 import com.atala.app.core.l10n.L
 import com.atala.app.core.model.PlanCalendar
@@ -211,7 +212,10 @@ internal fun Modifier.mainGlass(radius: Dp = 22.dp): Modifier {
 
 // MARK: - Small shared views
 
-/** Rounded illustration used at the top of the main screens. */
+/**
+ * Rounded illustration used at the top of the main screens: [height] on regular phones, a little
+ * less on small ones, so the session of the day stays in view.
+ */
 @Composable
 internal fun MainHeroImage(name: String, height: Dp = 170.dp, alignment: Alignment = Alignment.Center) {
     val id = AtalaImages[name] ?: return
@@ -222,7 +226,7 @@ internal fun MainHeroImage(name: String, height: Dp = 170.dp, alignment: Alignme
         alignment = alignment,
         modifier = Modifier
             .fillMaxWidth()
-            .height(height)
+            .height(adaptiveHeight(height, reference = 780f, minimum = 0.75f))
             .clip(RoundedCornerShape(24.dp)),
     )
 }

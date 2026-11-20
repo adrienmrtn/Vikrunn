@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -85,19 +86,25 @@ fun OnboardingHelloScreen() {
     }
 }
 
-/** A large soft circle rising from the bottom of an explainer's backdrop. */
+/**
+ * A large soft circle rising from the bottom of an explainer's backdrop (`OnboardingBackdropCircle`).
+ * Sized from the screen: 1.6 times its width, its top 46 % of the height above the bottom, so it
+ * stays behind the coach on small and large phones alike.
+ */
 @Composable
 private fun BackdropCircle(background: Color, circle: Color) {
-    Box(
+    BoxWithConstraints(
         Modifier
             .fillMaxSize()
             .background(background),
     ) {
+        val diameter = maxWidth * 1.6f
+        val visible = maxHeight * 0.46f
         Box(
             Modifier
                 .align(Alignment.BottomCenter)
-                .offset(y = 240.dp)
-                .requiredSize(630.dp)
+                .offset(y = diameter - visible)
+                .requiredSize(diameter)
                 .background(circle, CircleShape),
         )
     }

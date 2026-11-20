@@ -128,12 +128,22 @@ struct OnboardingWelcomeScreen: View {
         }
     }
 
+    /// Room under the photo for the title and the text. Small phones (iPhone SE) give it a little
+    /// more, taken from the photo, so a two-line title and a long text are never cut.
+    private static func textRoom(height: CGFloat) -> CGFloat {
+        height < 740 ? 184 : 150
+    }
+
+    /// Height of the dots, the buttons and the room around them under the slides.
+    private static let bottomRoom: CGFloat = 136
+
     private func pager(size: CGSize) -> some View {
-        let imageHeight = max(220, size.height * 0.52)
+        let textRoom: CGFloat = Self.textRoom(height: size.height)
+        let imageHeight: CGFloat = max(180, min(max(220, size.height * 0.52), size.height - textRoom - Self.bottomRoom))
         return ScrollView(.horizontal) {
             HStack(spacing: 0) {
                 ForEach(OnboardingWelcomeSlide.all) { slide in
-                    slideView(slide, width: size.width, imageHeight: imageHeight)
+                    slideView(slide, width: size.width, imageHeight: imageHeight, textRoom: textRoom)
                 }
             }
             .scrollTargetLayout()
@@ -141,10 +151,11 @@ struct OnboardingWelcomeScreen: View {
         .scrollTargetBehavior(.paging)
         .scrollPosition(id: $page)
         .scrollIndicators(.hidden)
-        .frame(height: imageHeight + 150)
+        .frame(height: imageHeight + textRoom)
     }
 
-    private func slideView(_ slide: OnboardingWelcomeSlide, width: CGFloat, imageHeight: CGFloat) -> some View {
+    private func slideView(_ slide: OnboardingWelcomeSlide, width: CGFloat, imageHeight: CGFloat,
+                           textRoom: CGFloat) -> some View {
         let usesPhoto = slide.usesPhoto
         return VStack(alignment: .leading, spacing: 0) {
             Image(usesPhoto ? slide.photo : slide.illustration)
@@ -173,14 +184,14 @@ struct OnboardingWelcomeScreen: View {
                     .font(.system(size: 16))
                     .foregroundStyle(Color(hex: 0x5A5A5A))
                     .lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .minimumScaleFactor(0.85)
             }
             .padding(.horizontal, 24)
-            .padding(.top, 26)
+            .padding(.top, textRoom > 150 ? 20 : 26)
             .frame(width: width, alignment: .leading)
             Spacer(minLength: 0)
         }
-        .frame(width: width, height: imageHeight + 150, alignment: .top)
+        .frame(width: width, height: imageHeight + textRoom, alignment: .top)
     }
 
     private var dots: some View {
