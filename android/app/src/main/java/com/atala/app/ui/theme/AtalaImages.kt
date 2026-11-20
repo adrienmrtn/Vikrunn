@@ -127,7 +127,7 @@ object AtalaImages {
     @DrawableRes
     fun exercise(name: String, coachId: Int): Int? {
         if (coachId != 1 && name.startsWith("exercise_")) {
-            byName["exercise_c_" + name.removePrefix("exercise_")]?.let { return it }
+            byName["exercise_c${coachId}_" + name.removePrefix("exercise_")]?.let { return it }
         }
         return byName[name]
     }
