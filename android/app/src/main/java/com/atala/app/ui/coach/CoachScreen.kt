@@ -1,5 +1,8 @@
 package com.atala.app.ui.coach
 
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -117,12 +120,39 @@ fun CoachScreen(nav: Navigation) {
         scrolledOnce = true
     }
 
+    // Asked once, before the first message leaves for the AI provider.
+    val consentPrefs = remember(context) { context.applicationContext.getSharedPreferences("atala.coach", Context.MODE_PRIVATE) }
+    var aiConsent by remember { mutableStateOf(consentPrefs.getBoolean("aiConsent", false)) }
+    var pendingText by rememberSaveable { mutableStateOf<String?>(null) }
+
     fun send(text: String) {
         // Talking to the coach is part of Atala Pro (the screen is locked without it).
         if (!isPro || text.isBlank() || isSending) return
+        // Nothing goes to the AI provider before the user has agreed to it (the draft stays in the field).
+        if (!aiConsent) {
+            pendingText = text
+            return
+        }
         haptics.tap()
         draft = ""
         CoachService.post(text, store)
+    }
+
+    pendingText?.let { text ->
+        AlertDialog(
+            onDismissRequest = { pendingText = null },
+            title = { Text(L("Your coach uses AI")) },
+            text = { Text(L("To answer you, Atala sends your messages, your first name, your plan and your recent runs to our AI provider (Google Gemini, via fal.ai). They are only used to write the replies, never for advertising.")) },
+            confirmButton = {
+                TextButton(onClick = {
+                    aiConsent = true
+                    consentPrefs.edit().putBoolean("aiConsent", true).apply()
+                    pendingText = null
+                    send(text)
+                }) { Text(L("Continue")) }
+            },
+            dismissButton = { TextButton(onClick = { pendingText = null }) { Text(L("Not now")) } },
+        )
     }
 
     Column(Modifier.fillMaxSize().background(Color.White).safeDrawingPadding()) {

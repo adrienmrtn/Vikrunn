@@ -76,6 +76,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atala.app.ui.components.rememberScreenScale
@@ -262,6 +263,12 @@ fun PaywallScreen(closeDelay: Double = 0.0, onFinished: () -> Unit) {
                 isBuying -> L("One moment…")
                 startsWithTrial -> L("Start my free trial")
                 else -> L("Subscribe")
+            },
+            // What the selected plan costs, right under the button.
+            priceLine = when {
+                plan == PurchasePlan.Monthly -> L("%@ a month", monthPrice)
+                startsWithTrial -> L("%@ days free, then %@/year", trialDays!!, yearlyPrice)
+                else -> L("%@ billed yearly", yearlyPrice)
             },
             isBuying = isBuying,
             onBuy = ::startTrial,
@@ -515,7 +522,7 @@ private fun TopBar(closeShown: Boolean, reduceMotion: Boolean, onClose: () -> Un
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun CallToAction(title: String, isBuying: Boolean, onBuy: () -> Unit, onRestore: () -> Unit) {
+private fun CallToAction(title: String, priceLine: String, isBuying: Boolean, onBuy: () -> Unit, onRestore: () -> Unit) {
     Column(Modifier.fillMaxWidth().background(Color.White)) {
         HorizontalDivider(thickness = 1.dp, color = Theme.hairline)
         Column(
@@ -536,6 +543,7 @@ private fun CallToAction(title: String, isBuying: Boolean, onBuy: () -> Unit, on
                 Text(title, style = Theme.font(17, FontWeight.Bold), color = Color.White)
                 Text(L("Easy to cancel, at any time"), style = Theme.font(13), color = Theme.greenOnDark)
             }
+            Text(priceLine, style = Theme.font(12), color = Theme.muted, maxLines = 1, textAlign = TextAlign.Center)
             // One line on most phones; "Restore purchases" goes under it rather than being squeezed.
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)) {
                 Icon(Icons.Filled.Lock, null, tint = Theme.muted, modifier = Modifier.size(12.dp).align(Alignment.CenterVertically))

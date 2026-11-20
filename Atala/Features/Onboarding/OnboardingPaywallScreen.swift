@@ -303,6 +303,13 @@ struct PaywallView: View {
         }
     }
 
+    /// "3 days free, then €49.99/year", or the price of the monthly plan when it is the one selected.
+    private var priceLine: String {
+        if plan == .monthly { return L("%@ a month", monthPrice) }
+        if startsWithTrial, let days = trialDays { return L("%@ days free, then %@/year", days, yearlyPrice) }
+        return L("%@ billed yearly", yearlyPrice)
+    }
+
     private var trialTerms: String {
         if startsWithTrial, let days = trialDays {
             return L("Free for %@ days, then %@ a year. Renews automatically. Cancel any time in your App Store settings.",
@@ -418,6 +425,12 @@ struct PaywallView: View {
             }
             .buttonStyle(.plain)
             .disabled(isBuying)
+            // What the selected plan costs, right under the button.
+            Text(priceLine)
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             HStack(spacing: 6) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 11))
