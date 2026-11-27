@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 #if canImport(RevenueCat)
 import RevenueCat
 #endif
@@ -163,7 +164,14 @@ final class PurchaseService: ObservableObject {
             return .failed(L("The subscription is not available right now. Please try again in a moment."))
         }
         do {
-            let result = try await Purchases.shared.purchase(package: package)
+            // The scene the App Store sheet must appear in, given to StoreKit explicitly. Without
+            // it StoreKit guesses, and on an iPad running this iPhone app in a window the guess
+            // can fail with "An unknown error occurred" (App Review, iPadOS 27).
+            var builder = PurchaseParams.Builder(package: package)
+            if let scene = Self.purchaseScene() {
+                builder = builder.with(confirmInScene: scene)
+            }
+            let result = try await Purchases.shared.purchase(builder.build())
             if result.userCancelled { return .cancelled }
             apply(result.customerInfo)
             return isPro ? .purchased : .failed(L("The purchase went through but Atala Pro is not active yet. Tap Restore purchases in a moment."))
@@ -199,6 +207,14 @@ final class PurchaseService: ObservableObject {
         // Kept on the phone: if the store cannot be reached at the next launch, someone in a
         // free trial is still known as such (and gets no reminder).
         UserDefaults.standard.set(isInTrial, forKey: Self.trialKey)
+    }
+
+    /// The window scene on screen: the one in front first, else any scene with a window.
+    private static func purchaseScene() -> UIWindowScene? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        return scenes.first { $0.activationState == .foregroundActive }
+            ?? scenes.first { $0.activationState == .foregroundInactive }
+            ?? scenes.first
     }
 
     private static func package(for plan: PurchasePlan, in offerings: Offerings) -> Package? {
