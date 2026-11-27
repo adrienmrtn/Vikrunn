@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import CoreLocation
 
 /// Atala on the left, the service it connects to on the right, and dots travelling between them.
 struct OnboardingLinkGraphic: View {
@@ -97,14 +98,22 @@ private struct OnboardingBenefitRow: View {
 }
 
 /// Screen 32: the location permission.
+/// One neutral "Continue" button that leads to the system question (guideline 5.1.1(iv)): no
+/// "Allow" wording and no way around the question here. Whatever the answer, the flow moves on.
 struct OnboardingPermissionsScreen: View {
     @EnvironmentObject private var store: AppStore
+    @EnvironmentObject private var nav: OnboardingNavigator
     @ObservedObject private var location = LocationPermission.shared
-    /// True once the user has tapped the button: the answer that follows deserves a haptic.
-    @State private var asked = false
+    /// True between the tap and the user's answer to the system question.
+    @State private var isAsking = false
 
     var body: some View {
-        OnboardingScaffold(title: L("Let Atala follow your runs")) {
+        OnboardingScaffold(title: L("Let Atala follow your runs"),
+                           buttonTitle: L("Continue"),
+                           canContinue: !isAsking,
+                           secondaryTitle: location.isRefused ? L("Open Settings") : nil,
+                           onSecondary: location.isRefused ? openSettings : nil,
+                           onContinue: continueTapped) {
             OnboardingLinkGraphic(symbol: "location.fill", tint: Theme.orange, linked: location.isAllowed)
                 .animation(.spring(response: 0.45, dampingFraction: 0.7), value: location.isAllowed)
             VStack(alignment: .leading, spacing: 12) {
@@ -112,7 +121,6 @@ struct OnboardingPermissionsScreen: View {
                 OnboardingBenefitRow(text: L("%@'s voice when you're too fast or too slow", store.coach.name))
                 OnboardingBenefitRow(text: L("Your route on a map after every run"))
             }
-            locationButton
             Text(locationFootnote)
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.muted)
@@ -120,15 +128,13 @@ struct OnboardingPermissionsScreen: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .onAppear { location.refresh() }
-        .onChange(of: location.isAllowed) { _, allowed in
-            if allowed, asked { Haptics.success() }
+        .onChange(of: location.status) { _, status in
+            // The user has answered the system question: on to the next screen.
+            guard isAsking, status != .notDetermined else { return }
+            isAsking = false
+            if location.isAllowed { Haptics.success() }
+            nav.next(store)
         }
-    }
-
-    private var locationButtonTitle: String {
-        if location.isAllowed { return L("Location allowed") }
-        if location.isRefused { return L("Open Settings") }
-        return L("Allow location")
     }
 
     private var locationFootnote: String {
@@ -138,70 +144,39 @@ struct OnboardingPermissionsScreen: View {
         return L("Only while you're running with the app. You can say no and log your runs by hand.")
     }
 
-    private var locationButton: some View {
-        Button(action: locationTapped) {
-            HStack(spacing: 8) {
-                Image(systemName: location.isAllowed ? "checkmark" : "location.fill")
-                    .font(.system(size: 14, weight: .bold))
-                Text(locationButtonTitle)
-                    .font(.system(size: 16, weight: .semibold))
-            }
-            .foregroundStyle(location.isAllowed ? Theme.green : Color.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(location.isAllowed ? Theme.greenTint : Theme.orange, in: Capsule())
+    /// First time: shows the system question, and the answer moves the flow on.
+    /// Already answered (allowed or refused): straight to the next screen.
+    private func continueTapped() {
+        guard !isAsking else { return }
+        guard location.status == .notDetermined else {
+            nav.next(store)
+            return
         }
-        .buttonStyle(.plain)
-        .disabled(location.isAllowed)
+        isAsking = true
+        location.request()
     }
 
-    private func locationTapped() {
-        Haptics.confirm()
-        asked = true
-        if location.isRefused {
-            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-            UIApplication.shared.open(url)
-        } else {
-            location.request()
-        }
+    private func openSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 }
 
-/// Screen 33: optional Apple Health connection, then into the app.
+/// Screen 33: Apple Health, then into the app.
+/// Like the location screen, one neutral "Continue" button leads to the system sheet
+/// (guideline 5.1.1(iv)), where the user picks what to share or declines. Then into the app.
 struct OnboardingHealthConnectScreen: View {
     @EnvironmentObject private var store: AppStore
     @State private var isAsking = false
-    @State private var wasRefused = false
-    /// Number of runs brought in from Health, once the import has run.
-    @State private var importedCount: Int?
 
     private var connected: Bool { store.settings.healthImportEnabled }
     private var available: Bool { HealthKitService.shared.isAvailable }
 
-    private var connectTitle: String {
-        if connected { return L("Connected") }
-        if !available { return L("Not available on this device") }
-        return isAsking ? L("Connecting…") : L("Connect Apple Health")
-    }
-
-    private var footnote: String {
-        if wasRefused { return L("Access was not granted. You can turn it on later in your profile.") }
-        if let importedCount {
-            if importedCount == 0 {
-                return L("Connected. No run found in the last 60 days: your history starts with your first session.")
-            }
-            return importedCount == 1
-                ? L("%@ run from the last 60 days added to your history.", importedCount)
-                : L("%@ runs from the last 60 days added to your history.", importedCount)
-        }
-        return L("Optional. You can turn it off at any time in your profile.")
-    }
-
     var body: some View {
         OnboardingScaffold(title: L("Connect Apple Health"),
-                           buttonTitle: L("Start"),
+                           buttonTitle: isAsking ? L("One moment…") : L("Continue"),
                            canContinue: !isAsking,
-                           onContinue: { store.finishOnboarding() }) {
+                           onContinue: continueTapped) {
             OnboardingLinkGraphic(symbol: "heart.fill", tint: Color(hex: 0xFF2D55), linked: connected)
                 .animation(.spring(response: 0.45, dampingFraction: 0.7), value: connected)
             VStack(alignment: .leading, spacing: 12) {
@@ -209,8 +184,9 @@ struct OnboardingHealthConnectScreen: View {
                 OnboardingBenefitRow(text: L("Runs from your watch count in your plan"))
                 OnboardingBenefitRow(text: L("Your heart rate on every run summary"))
             }
-            connectButton
-            Text(footnote)
+            Text(available
+                 ? L("Optional. You can turn it off at any time in your profile.")
+                 : L("Not available on this device"))
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -220,26 +196,25 @@ struct OnboardingHealthConnectScreen: View {
         }
     }
 
-    private var connectButton: some View {
-        Button(action: connect) {
-            HStack(spacing: 8) {
-                Image(systemName: connected ? "checkmark" : "heart.fill")
-                    .font(.system(size: 14, weight: .bold))
-                Text(connectTitle)
-                    .font(.system(size: 16, weight: .semibold))
-            }
-            .foregroundStyle(connected ? Theme.green : Color.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(buttonColor, in: Capsule())
+    /// Shows the Health sheet when it can, brings in the recent runs if the user shared them,
+    /// then opens the app. Whatever the answer, the user goes on.
+    private func continueTapped() {
+        guard !isAsking else { return }
+        guard available, !connected else {
+            store.finishOnboarding()
+            return
         }
-        .buttonStyle(.plain)
-        .disabled(connected || !available || isAsking)
-    }
-
-    private var buttonColor: Color {
-        if connected { return Theme.greenTint }
-        return available && !isAsking ? Theme.ink : Theme.faint
+        isAsking = true
+        Task { @MainActor in
+            let granted = await HealthKitService.shared.requestAuthorization()
+            store.settings.healthImportEnabled = granted
+            if granted {
+                Haptics.success()
+                _ = await HealthKitService.shared.importRecentRuns(into: store)
+            }
+            isAsking = false
+            store.finishOnboarding()
+        }
     }
 
     private func firstSessionCard(_ workout: Workout) -> some View {
@@ -276,26 +251,6 @@ struct OnboardingHealthConnectScreen: View {
                 .foregroundStyle(Color(hex: 0x5A5A5A))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func connect() {
-        guard available, !connected, !isAsking else { return }
-        Haptics.confirm()
-        isAsking = true
-        Task { @MainActor in
-            let granted = await HealthKitService.shared.requestAuthorization()
-            store.settings.healthImportEnabled = granted
-            wasRefused = !granted
-            if granted {
-                Haptics.success()
-            } else {
-                Haptics.warning()
-            }
-            if granted {
-                importedCount = await HealthKitService.shared.importRecentRuns(into: store)
-            }
-            isAsking = false
-        }
     }
 }
 

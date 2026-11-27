@@ -419,11 +419,11 @@ struct OnboardingNotificationsScreen: View {
     var body: some View {
         let list = samples
         return OnboardingScaffold(title: L("Never miss a run"),
-                                  buttonTitle: isAsking ? L("One moment…") : L("Remind me to run"),
+                                  // Neutral wording and no way around the system question
+                                  // (guideline 5.1.1(iv)): the user answers it there.
+                                  buttonTitle: isAsking ? L("One moment…") : L("Continue"),
                                   canContinue: !isAsking,
                                   buttonsVisible: stage >= Self.delays.count,
-                                  secondaryTitle: L("Not now"),
-                                  onSecondary: { nav.next(store) },
                                   onContinue: allow) {
             VStack(spacing: 10) {
                 ForEach(list) { sample in
